@@ -327,17 +327,17 @@ function applyIdleAnimation(
 
   // Breathing: spine subtle up/down rotation
   const breathCycle = time * 1.3 + hash * Math.PI * 2;
-  const breathIntensity = isSpeaking ? 0.02 : 0.012;
+  const breathIntensity = isSpeaking ? 0.025 : 0.012;
   const targetSpineX = Math.sin(breathCycle) * breathIntensity;
 
-  // Sway: subtle left-right lean
-  const swayCycle = time * 0.4 + hash * 5;
-  const swayIntensity = isSpeaking ? 0.005 : 0.008;
-  const targetSpineZ = Math.sin(swayCycle) * swayIntensity;
+  // Weight shifting (重心移動): slow left-right weight transfer
+  const weightCycle = time * 0.15 + hash * 7;
+  const weightShift = Math.sin(weightCycle) * (isSpeaking ? 0.012 : 0.018);
+  const targetSpineZ = weightShift;
 
   // Smooth interpolation
   state.spineRotX += (targetSpineX - state.spineRotX) * 0.08;
-  state.spineRotZ += (targetSpineZ - state.spineRotZ) * 0.06;
+  state.spineRotZ += (targetSpineZ - state.spineRotZ) * 0.04;
 
   // Apply to Spine bone
   const spine = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Spine);
@@ -346,20 +346,31 @@ function applyIdleAnimation(
     spine.rotation.z = state.spineRotZ;
   }
 
-  // Upper body micro-motion on chest
+  // Hips (weight shift visible)
+  const hips = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Hips);
+  if (hips) {
+    hips.rotation.z = weightShift * 0.5;
+    hips.rotation.y = Math.sin(weightCycle * 0.7) * 0.01;
+  }
+
+  // Chest (breathing + speaking forward lean)
   const chest = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Chest);
   if (chest) {
-    chest.rotation.x = Math.sin(breathCycle * 0.8) * breathIntensity * 0.5;
+    const chestBreath = Math.sin(breathCycle * 0.8) * breathIntensity * 0.5;
+    const speakLean = isSpeaking ? 0.04 : 0;
+    chest.rotation.x = chestBreath + speakLean;
   }
 
   // Head idle micro-movement (when not looking at speaker)
   const head = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Head);
   if (head) {
     const headNodCycle = time * 0.25 + hash * 3;
-    const targetHeadX = Math.sin(headNodCycle) * 0.015;
+    const nodBase = isSpeaking ? 0.025 : 0.015;
+    const targetHeadX = Math.sin(headNodCycle) * nodBase;
+    const speakNod = isSpeaking ? Math.sin(time * 2.5) * 0.015 : 0;
     const targetHeadY = Math.cos(headNodCycle * 0.7) * 0.02;
 
-    state.headRotX += (targetHeadX - state.headRotX) * 0.04;
+    state.headRotX += (targetHeadX + speakNod - state.headRotX) * 0.06;
     state.headRotY += (targetHeadY - state.headRotY) * 0.04;
 
     head.rotation.x += state.headRotX;
@@ -369,16 +380,17 @@ function applyIdleAnimation(
   // Shoulder micro-motion
   const leftShoulder = humanoid.getNormalizedBoneNode(VRMHumanBoneName.LeftShoulder);
   const rightShoulder = humanoid.getNormalizedBoneNode(VRMHumanBoneName.RightShoulder);
+  const shoulderBreath = Math.sin(breathCycle + 0.5) * (isSpeaking ? 0.01 : 0.005);
   if (leftShoulder) {
-    leftShoulder.rotation.z = Math.sin(breathCycle + 0.5) * 0.005;
+    leftShoulder.rotation.z = shoulderBreath;
   }
   if (rightShoulder) {
-    rightShoulder.rotation.z = -Math.sin(breathCycle + 0.5) * 0.005;
+    rightShoulder.rotation.z = -shoulderBreath;
   }
 
   // If speaking: lean forward slightly
   if (isSpeaking && spine) {
-    spine.rotation.x += 0.03; // Slight forward lean
+    spine.rotation.x += 0.025;
   }
 
   // Arms: break T-Pose by rotating upper arms down  
@@ -395,10 +407,14 @@ function applyIdleAnimation(
   const leftLowerArm = humanoid.getNormalizedBoneNode(VRMHumanBoneName.LeftLowerArm);
   const rightLowerArm = humanoid.getNormalizedBoneNode(VRMHumanBoneName.RightLowerArm);
   if (leftLowerArm) {
-    leftLowerArm.rotation.z = 0.15 + Math.sin(time * 0.4 + hash * 2) * 0.02;
+    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash) * 0.06 : 0;
+    leftLowerArm.rotation.z = 0.15 + Math.sin(time * 0.4 + hash * 2) * 0.02 + gesture;
+    leftLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.2) * 0.04 : 0;
   }
   if (rightLowerArm) {
-    rightLowerArm.rotation.z = -0.15 - Math.sin(time * 0.4 + hash * 2 + 0.5) * 0.02;
+    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash + 2) * 0.06 : 0;
+    rightLowerArm.rotation.z = -0.15 - Math.sin(time * 0.4 + hash * 2 + 0.5) * 0.02 - gesture;
+    rightLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.0 + 1) * 0.04 : 0;
   }
 }
 
