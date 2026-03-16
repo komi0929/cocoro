@@ -15,6 +15,7 @@ import { DemoOrchestrator } from '@/engine/demo/DemoOrchestrator';
 import { VoiceAnalyzer } from '@/engine/audio/VoiceAnalyzer';
 import { useAmbientPresence } from '@/engine/audio/AmbientPresence';
 import { useCliMaxDirector, CliMaxOverlay } from '@/engine/choreography/CliMaxDirector';
+import { usePrivateBubble, PrivateBubbleOverlay, BubbleButton } from '@/components/ui/PrivateBubble';
 import { v4 as uuidv4 } from 'uuid';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
@@ -34,6 +35,7 @@ export default function SpacePage() {
   const voiceAnalyzerRef = useRef<VoiceAnalyzer | null>(null);
   const store = useKokoroStore;
   const climaxState = useCliMaxDirector();
+  const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
 
   // Ambient presence (audio)
   useAmbientPresence();
@@ -160,8 +162,16 @@ export default function SpacePage() {
       {/* Text Chat */}
       <TextChatOverlay />
 
-      {/* CliMax Overlay (盛り上がりモーメント) */}
+      {/* CliMax Overlay */}
       <CliMaxOverlay state={climaxState} />
+
+      {/* Private Bubble */}
+      <PrivateBubbleOverlay state={bubbleState} />
+
+      {/* Bubble Button (bottom-left) */}
+      <div className="fixed bottom-6 left-4 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <BubbleButton onActivate={() => activateBubble()} />
+      </div>
 
       {/* Cinematic Loading Overlay (NOT a "Loading..." text) */}
       {!isLoaded && (
