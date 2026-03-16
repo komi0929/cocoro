@@ -13,6 +13,7 @@ export interface VoiceAnalysisResult {
   isSpeaking: boolean;
   volume: number;    // RMS 0-1
   pitch: number;     // Hz
+  pitchNormalized: number; // 0-1 (mapped to vocal range 75-500Hz)
   viseme: VisemeResult;
 }
 
@@ -93,6 +94,7 @@ export class VoiceAnalyzer {
       isSpeaking,
       volume: Math.min(1, volume * 5), // Normalize for UI
       pitch,
+      pitchNormalized: this.normalizePitch(pitch),
       viseme,
     });
 
@@ -233,6 +235,27 @@ export class VoiceAnalyzer {
    */
   getAudioContext(): AudioContext | null {
     return this.audioContext;
+  }
+
+  /**
+   * 正規化されたFFT周波数データを取得（外部連携用）
+   * Returns Float32Array of 0-1 values
+   */
+  getFrequencyDataNormalized(): Float32Array {
+    if (!this.frequencyData) return new Float32Array(0);
+    const out = new Float32Array(this.frequencyData.length);
+    for (let i = 0; i < this.frequencyData.length; i++) {
+      out[i] = this.frequencyData[i] / 255;
+    }
+    return out;
+  }
+
+  /**
+   * ピッチをボーカル範囲（75-500Hz）に正規化（0-1）
+   */
+  private normalizePitch(hz: number): number {
+    if (hz <= 0) return 0;
+    return Math.min(1, Math.max(0, (hz - 75) / (500 - 75)));
   }
 
   /**

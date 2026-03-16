@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useKokoroStore } from '@/store/useKokoroStore';
 import { SpaceHUD } from '@/components/ui/SpaceHUD';
@@ -13,6 +13,9 @@ import { ReactionPanel } from '@/components/ui/ReactionPanel';
 import { TextChatOverlay } from '@/components/ui/TextChatOverlay';
 import { DemoOrchestrator } from '@/engine/demo/DemoOrchestrator';
 import { VoiceAnalyzer } from '@/engine/audio/VoiceAnalyzer';
+import { VoiceEmotionClassifier } from '@/engine/audio/VoiceEmotionClassifier';
+import { VoiceSignature } from '@/engine/audio/VoiceSignature';
+import { spatialMemory } from '@/engine/memory/SpatialMemory';
 import { useAmbientPresence } from '@/engine/audio/AmbientPresence';
 import { useCliMaxDirector, CliMaxOverlay } from '@/engine/choreography/CliMaxDirector';
 import { usePrivateBubble, PrivateBubbleOverlay, BubbleButton } from '@/components/ui/PrivateBubble';
@@ -37,6 +40,13 @@ export default function SpacePage() {
   const store = useKokoroStore;
   const climaxState = useCliMaxDirector();
   const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
+
+  // Persistent instances for emotion + signature (no AI runtime)
+  const emotionClassifier = useMemo(() => new VoiceEmotionClassifier(), []);
+  const voiceSignature = useMemo(() => new VoiceSignature(), []);
+  const angerFramesRef = useRef(0);  // Consecutive anger frames for auto-bubble
+  const speechSecondsRef = useRef(0); // Accumulated speech time
+  const heatmapTimerRef = useRef(0);  // Throttle heatmap writes
 
   // Ambient presence (audio)
   useAmbientPresence();
@@ -122,6 +132,7 @@ export default function SpacePage() {
       try {
         const analyzer = new VoiceAnalyzer();
         await analyzer.start((result) => {
+          // === 1. Update speaking state in store ===
           store.getState().updateParticipant(localId, {
             speakingState: {
               isSpeaking: result.isSpeaking,
@@ -131,6 +142,61 @@ export default function SpacePage() {
               visemeWeight: result.viseme.weight,
             },
           });
+
+          // === 2. Emotion classification (REAL FFT data) ===
+          const freqData = analyzer.getFrequencyDataNormalized();
+          if (freqData.length > 0) {
+            const emotion = emotionClassifier.classify(
+              freqData,
+              result.volume,
+              result.pitchNormalized,
+              result.isSpeaking,
+            );
+
+            // Write emotion to store
+            store.getState().updateParticipant(localId, {
+              emotion: {
+                joy: emotion.joy,
+                anger: emotion.anger,
+                sorrow: emotion.sorrow,
+                surprise: emotion.surprise,
+                neutral: emotion.neutral,
+              },
+            });
+
+            // === 3. Anger auto-bubble (safety mechanism) ===
+            if (emotion.anger > 0.6) {
+              angerFramesRef.current++;
+              if (angerFramesRef.current > 90) { // ~1.5 sec sustained anger
+                activateBubble();
+                angerFramesRef.current = 0;
+              }
+            } else {
+              angerFramesRef.current = Math.max(0, angerFramesRef.current - 2);
+            }
+
+            // === 4. Voice Signature calibration (REAL FFT) ===
+            if (!voiceSignature.isCalibrated) {
+              voiceSignature.feed(freqData, result.volume);
+            }
+
+            // === 5. Spatial Memory heatmap (throttled to 1/sec) ===
+            if (result.isSpeaking) {
+              speechSecondsRef.current += 1 / 60;
+              heatmapTimerRef.current++;
+              if (heatmapTimerRef.current >= 60) { // once per second
+                heatmapTimerRef.current = 0;
+                const pos = store.getState().participants.get(localId)?.transform.position;
+                if (pos) {
+                  spatialMemory.updateHeatmap(
+                    pos.x, pos.z,
+                    result.volume,
+                    emotion.dominant,
+                  ).catch(() => {}); // fire-and-forget IndexedDB write
+                }
+              }
+            }
+          }
         });
         voiceAnalyzerRef.current = analyzer;
         setIsMicActive(true);
@@ -138,12 +204,34 @@ export default function SpacePage() {
         console.error('Failed to start microphone:', err);
       }
     }
-  }, [isMicActive, store]);
+  }, [isMicActive, store, emotionClassifier, voiceSignature, activateBubble]);
 
   // Leave space
   const handleLeave = useCallback(() => {
+    // Save avatar evolution to IndexedDB on leave
+    const localId = store.getState().localParticipantId;
+    const avatarId = localId
+      ? store.getState().participants.get(localId)?.avatarId ?? 'seed-san'
+      : 'seed-san';
+    spatialMemory.saveAvatarEvolution({
+      avatarId,
+      totalSpeechSeconds: speechSecondsRef.current,
+      emotionCounts: {},
+      voiceSignatureHex: voiceSignature.signature?.hexColor ?? null,
+      lastSeen: Date.now(),
+    }).catch(() => {});
+
+    // Record visit
+    spatialMemory.recordVisit({
+      roomId: store.getState().roomId ?? 'demo-room',
+      timestamp: Date.now(),
+      durationSeconds: Math.round(performance.now() / 1000),
+      dominantEmotion: 'neutral',
+      participantCount: store.getState().participants.size,
+    }).catch(() => {});
+
     window.location.href = '/';
-  }, []);
+  }, [store, voiceSignature]);
 
   return (
     <div className="fixed inset-0 bg-[#0f0a1a]">
