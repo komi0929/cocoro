@@ -1,7 +1,7 @@
 /**
- * kokoro — Space Page
+ * cocoro — Space Page
  * メインの空間ページ（3D描画 + 音声 + UI）
- * シネマティックローディング + アンビエントプレゼンス
+ * シネマティックローディング + アンビエントプレゼンス + CliMax演出
  */
 'use client';
 
@@ -14,6 +14,7 @@ import { TextChatOverlay } from '@/components/ui/TextChatOverlay';
 import { DemoOrchestrator } from '@/engine/demo/DemoOrchestrator';
 import { VoiceAnalyzer } from '@/engine/audio/VoiceAnalyzer';
 import { useAmbientPresence } from '@/engine/audio/AmbientPresence';
+import { useCliMaxDirector, CliMaxOverlay } from '@/engine/choreography/CliMaxDirector';
 import { v4 as uuidv4 } from 'uuid';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
@@ -32,6 +33,7 @@ export default function SpacePage() {
   const demoRef = useRef<DemoOrchestrator | null>(null);
   const voiceAnalyzerRef = useRef<VoiceAnalyzer | null>(null);
   const store = useKokoroStore;
+  const climaxState = useCliMaxDirector();
 
   // Ambient presence (audio)
   useAmbientPresence();
@@ -57,7 +59,7 @@ export default function SpacePage() {
       displayName: 'あなた',
       vrmUrl: null,
       avatarId: typeof window !== 'undefined'
-        ? localStorage.getItem('kokoro_avatar_id') ?? 'seed-san'
+        ? localStorage.getItem('cocoro_avatar_id') ?? 'seed-san'
         : 'seed-san',
       isGuest: false,
       transform: {
@@ -155,8 +157,11 @@ export default function SpacePage() {
       {/* Reaction Panel (ROM専向け) */}
       <ReactionPanel />
 
-      {/* Text Chat (ROM専 — 声なしでも参加) */}
+      {/* Text Chat */}
       <TextChatOverlay />
+
+      {/* CliMax Overlay (盛り上がりモーメント) */}
+      <CliMaxOverlay state={climaxState} />
 
       {/* Cinematic Loading Overlay (NOT a "Loading..." text) */}
       {!isLoaded && (
@@ -195,7 +200,7 @@ export default function SpacePage() {
                 transform: loadingPhase >= 2 ? 'translateY(0)' : 'translateY(10px)',
               }}
             >
-              kokoro
+              cocoro
             </p>
           </div>
         </div>

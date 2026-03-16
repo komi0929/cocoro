@@ -1,23 +1,28 @@
 /**
- * kokoro — Spatial Stage Component
- * 空間全体を管理する3Dステージ
- * GLSL AuroraFloor + CosmicParticles + プレミアムライティング
+ * cocoro — Spatial Stage Component
+ * 声の物理量で空間が変形する超越的3Dステージ
+ * VoiceReactiveFloor (GLSL) + GhostParticles + CosmicParticles + プレミアムライティング
  */
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useKokoroStore } from '@/store/useKokoroStore';
 import { SpacePhase } from '@/types/kokoro';
-import { AuroraFloor } from './AuroraFloor';
+import { VoiceReactiveFloor } from './VoiceReactiveFloor';
 import { CosmicParticles } from './CosmicParticles';
+import { GhostParticles } from './GhostParticles';
 import { TouchInteraction } from './TouchInteraction';
 
 export function SpatialStage() {
   const phase = useKokoroStore((s) => s.phase);
   const density = useKokoroStore((s) => s.density);
   const lighting = useKokoroStore((s) => s.lighting);
+  
+  // Voice metrics from active speakers
+  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const participants = useKokoroStore((s) => s.participants);
 
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const pointLightRef = useRef<THREE.PointLight>(null);
@@ -25,8 +30,42 @@ export function SpatialStage() {
   const rimLight1Ref = useRef<THREE.DirectionalLight>(null);
   const rimLight2Ref = useRef<THREE.DirectionalLight>(null);
 
+  // Aggregate voice energy from all speakers
+  const [voiceEnergy, setVoiceEnergy] = useState({ bass: 0, mid: 0, treble: 0, energy: 0, smoothEnergy: 0 });
+  
+  const updateVoiceEnergy = useCallback(() => {
+    let totalVolume = 0;
+    let speakerCount = 0;
+    
+    for (const id of activeSpeakers) {
+      const p = participants.get(id);
+      if (p && p.speakingState.isSpeaking) {
+        totalVolume += p.speakingState.volume;
+        speakerCount++;
+      }
+    }
+    
+    const avgVolume = speakerCount > 0 ? totalVolume / speakerCount : 0;
+    // Simulate frequency bands from volume (real FFT would come from VoiceFFTAnalyzer)
+    const bass = avgVolume * 1.2;
+    const mid = avgVolume * 0.9;
+    const treble = avgVolume * 0.5;
+    const energy = Math.min(1, avgVolume * 2);
+    
+    setVoiceEnergy(prev => ({
+      bass: prev.bass * 0.85 + bass * 0.15,
+      mid: prev.mid * 0.85 + mid * 0.15,
+      treble: prev.treble * 0.85 + treble * 0.15,
+      energy,
+      smoothEnergy: prev.smoothEnergy * 0.92 + energy * 0.08,
+    }));
+  }, [activeSpeakers, participants]);
+
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
+    
+    // Update voice energy each frame
+    updateVoiceEnergy();
 
     // --- Ambient light with color temperature ---
     if (ambientRef.current) {
@@ -44,31 +83,33 @@ export function SpatialStage() {
       const flicker =
         phase === SpacePhase.SILENCE
           ? Math.sin(time * 2) * 0.1 + 0.3
-          : 0.5 + density * 0.8;
+          : 0.5 + density * 0.8 + voiceEnergy.smoothEnergy * 0.5;
       pointLightRef.current.intensity = THREE.MathUtils.lerp(
         pointLightRef.current.intensity,
         flicker,
         0.05
       );
+      // Color shifts with voice energy
       const warmth = 1 - density * 0.3;
-      pointLightRef.current.color.setHSL(0.08 * warmth, 0.8, 0.5);
+      const hue = 0.08 * warmth - voiceEnergy.smoothEnergy * 0.03;
+      pointLightRef.current.color.setHSL(hue, 0.8, 0.5);
     }
 
     // --- Spotlight (speaker focus) ---
     if (spotlightRef.current) {
       spotlightRef.current.intensity = THREE.MathUtils.lerp(
         spotlightRef.current.intensity,
-        lighting.spotlightIntensity,
+        lighting.spotlightIntensity + voiceEnergy.energy * 0.3,
         0.03
       );
     }
 
-    // --- Rim lights: pulse gently in GRAVITY ---
+    // --- Rim lights: pulse with voice ---
     if (rimLight1Ref.current) {
       const rimIntensity =
         phase === SpacePhase.GRAVITY
-          ? 0.2 + Math.sin(time * 1.5) * 0.05 + density * 0.15
-          : 0.15;
+          ? 0.2 + Math.sin(time * 1.5) * 0.05 + density * 0.15 + voiceEnergy.bass * 0.1
+          : 0.15 + voiceEnergy.smoothEnergy * 0.05;
       rimLight1Ref.current.intensity = THREE.MathUtils.lerp(
         rimLight1Ref.current.intensity,
         rimIntensity,
@@ -116,36 +157,29 @@ export function SpatialStage() {
         shadow-mapSize-height={512}
       />
 
-      {/* Rim lights for silhouette separation */}
-      <directionalLight
-        ref={rimLight1Ref}
-        position={[5, 5, 5]}
-        intensity={0.15}
-        color="#c4b5fd"
-      />
-      <directionalLight
-        ref={rimLight2Ref}
-        position={[-5, 3, -5]}
-        intensity={0.1}
-        color="#fbbf24"
+      {/* Rim lights */}
+      <directionalLight ref={rimLight1Ref} position={[5, 5, 5]} intensity={0.15} color="#c4b5fd" />
+      <directionalLight ref={rimLight2Ref} position={[-5, 3, -5]} intensity={0.1} color="#fbbf24" />
+
+      {/* Under-light */}
+      <pointLight position={[0, -1, 0]} intensity={0.05} color="#8b5cf6" distance={10} decay={2} />
+
+      {/* === Voice Reactive Floor (GLSL Custom Shader) === */}
+      <VoiceReactiveFloor
+        bass={voiceEnergy.bass}
+        mid={voiceEnergy.mid}
+        treble={voiceEnergy.treble}
+        energy={voiceEnergy.energy}
+        smoothEnergy={voiceEnergy.smoothEnergy}
       />
 
-      {/* Subtle under-light for dramatic effect */}
-      <pointLight
-        position={[0, -1, 0]}
-        intensity={0.05}
-        color="#8b5cf6"
-        distance={10}
-        decay={2}
-      />
-
-      {/* === GLSL Aurora Floor === */}
-      <AuroraFloor />
+      {/* === Ghost Particles (Past Visitor Presence) === */}
+      <GhostParticles />
 
       {/* === Cosmic Particles === */}
       <CosmicParticles />
 
-      {/* === Touch Interaction (ROM specialist) === */}
+      {/* === Touch Interaction === */}
       <TouchInteraction />
 
       {/* === Fog === */}

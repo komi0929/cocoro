@@ -1,5 +1,5 @@
 /**
- * kokoro — Landing Page
+ * cocoro — Landing Page
  * 「カメラのいらないテレビ電話」ランディング
  */
 'use client';
@@ -53,7 +53,7 @@ export default function LandingPage() {
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
             <span className="bg-linear-to-r from-violet-300 via-fuchsia-300 to-amber-300 bg-clip-text text-transparent">
-              kokoro
+              cocoro
             </span>
           </h1>
 
