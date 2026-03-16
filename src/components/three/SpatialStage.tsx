@@ -36,14 +36,10 @@ export function SpatialStage() {
 
   // Emotion-driven theme colors
   const emotionClassifier = useMemo(() => new VoiceEmotionClassifier(), []);
-  const [emotionColors, setEmotionColors] = useState<{
-    base: [number, number, number];
-    active: [number, number, number];
-    peak: [number, number, number];
-  }>({
-    base: [0.03, 0.01, 0.08],
-    active: [0.2, 0.05, 0.4],
-    peak: [0.6, 0.1, 0.3],
+  const [emotionColors, setEmotionColors] = useState({
+    base: [0.03, 0.01, 0.08] as [number, number, number],
+    active: [0.2, 0.05, 0.4] as [number, number, number],
+    peak: [0.6, 0.1, 0.3] as [number, number, number],
   });
   
   const updateVoiceEnergy = useCallback(() => {
@@ -59,19 +55,19 @@ export function SpatialStage() {
     }
     
     const avgVolume = speakerCount > 0 ? totalVolume / speakerCount : 0;
-    // Simulate frequency bands from volume (real FFT would come from VoiceFFTAnalyzer)
     const bass = avgVolume * 1.2;
     const mid = avgVolume * 0.9;
     const treble = avgVolume * 0.5;
     const energy = Math.min(1, avgVolume * 2);
     
-    setVoiceEnergy(prev => ({
-      bass: prev.bass * 0.85 + bass * 0.15,
-      mid: prev.mid * 0.85 + mid * 0.15,
-      treble: prev.treble * 0.85 + treble * 0.15,
+    const prev_ve = voiceEnergy;
+    setVoiceEnergy({
+      bass: prev_ve.bass * 0.85 + bass * 0.15,
+      mid: prev_ve.mid * 0.85 + mid * 0.15,
+      treble: prev_ve.treble * 0.85 + treble * 0.15,
       energy,
-      smoothEnergy: prev.smoothEnergy * 0.92 + energy * 0.08,
-    }));
+      smoothEnergy: prev_ve.smoothEnergy * 0.92 + energy * 0.08,
+    });
 
     // Emotion classification from aggregate voice data
     const fakeFFT = new Float32Array(64);
@@ -89,12 +85,12 @@ export function SpatialStage() {
       neutral:  { base: [0.03, 0.01, 0.08], active: [0.2, 0.05, 0.4], peak: [0.6, 0.1, 0.3] },
     };
     const targetTheme = EMOTION_THEMES[emotion.dominant] ?? EMOTION_THEMES.neutral;
-    setEmotionColors(prev => ({
-      base: prev.base.map((v, i) => v * 0.9 + targetTheme.base[i] * 0.1) as [number, number, number],
-      active: prev.active.map((v, i) => v * 0.9 + targetTheme.active[i] * 0.1) as [number, number, number],
-      peak: prev.peak.map((v, i) => v * 0.9 + targetTheme.peak[i] * 0.1) as [number, number, number],
+    setEmotionColors(prev_ec => ({
+      base: prev_ec.base.map((v, i) => v * 0.9 + targetTheme.base[i] * 0.1) as [number, number, number],
+      active: prev_ec.active.map((v, i) => v * 0.9 + targetTheme.active[i] * 0.1) as [number, number, number],
+      peak: prev_ec.peak.map((v, i) => v * 0.9 + targetTheme.peak[i] * 0.1) as [number, number, number],
     }));
-  }, [activeSpeakers, participants, emotionClassifier]);
+  }, [activeSpeakers, participants, emotionClassifier, voiceEnergy]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();

@@ -14,6 +14,7 @@ import type { Participant, SpeakingState, EmotionState } from '@/types/kokoro';
 import { getAvatarById } from '@/data/avatarCatalog';
 import { AuraSystem } from './AuraSystem';
 import { EmotionParticles } from './EmotionParticles';
+import { useSpatialMemoryAvatar } from '@/hooks/useSpatialMemory';
 
 interface AvatarEntityProps {
   participant: Participant;
@@ -94,11 +95,18 @@ function hashString(s: string): number {
 
 export function AvatarEntity({
   participant,
-  isLocal: _isLocal = false,
 }: AvatarEntityProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [vrm, setVrm] = useState<VRM | null>(null);
   const [loading, setLoading] = useState(true);
+  const speechAccRef = useRef(0); // frame-level speech accumulator
+
+  // Load saved evolution data from IndexedDB
+  const { avatarEvolution } = useSpatialMemoryAvatar(
+    participant.avatarId ?? 'seed-san'
+  );
+  const savedSpeechSeconds = avatarEvolution?.totalSpeechSeconds ?? 0;
+  const savedSignatureColor = avatarEvolution?.voiceSignatureHex ?? undefined;
 
   // Unique hash for per-avatar variation
   const avatarHash = useMemo(() => hashString(participant.id), [participant.id]);
@@ -182,6 +190,11 @@ export function AvatarEntity({
 
     // === EMOTION ===
     applyEmotion(vrm, participant.emotion, blendWeights.current, clampedDelta);
+
+    // === SPEECH TIME ACCUMULATOR ===
+    if (participant.speakingState.isSpeaking) {
+      speechAccRef.current += clampedDelta;
+    }
 
     // === POSITION & ROTATION (LERP) ===
     if (groupRef.current) {
@@ -275,10 +288,11 @@ export function AvatarEntity({
         </mesh>
       )}
 
-      {/* Aura System (進化オーラ — 累積発話量で成長) */}
+      {/* Aura System (進化オーラ — IndexedDBから累積発話量を読み込み) */}
       <AuraSystem
-        speechSeconds={0} // TODO: load from SpatialMemory on mount
+        speechSeconds={savedSpeechSeconds + speechAccRef.current}
         isSpeaking={participant.speakingState.isSpeaking}
+        accentColor={savedSignatureColor}
       />
 
       {/* Emotion Particles (感情パーティクル放出) */}
