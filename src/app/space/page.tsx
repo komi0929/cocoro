@@ -16,6 +16,7 @@ import { VoiceAnalyzer } from '@/engine/audio/VoiceAnalyzer';
 import { useAmbientPresence } from '@/engine/audio/AmbientPresence';
 import { useCliMaxDirector, CliMaxOverlay } from '@/engine/choreography/CliMaxDirector';
 import { usePrivateBubble, PrivateBubbleOverlay, BubbleButton } from '@/components/ui/PrivateBubble';
+import { PerformanceOverlay } from '@/components/ui/PerformanceMonitor';
 import { v4 as uuidv4 } from 'uuid';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
@@ -172,6 +173,9 @@ export default function SpacePage() {
       <div className="fixed bottom-6 left-4 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <BubbleButton onActivate={() => activateBubble()} />
       </div>
+
+      {/* Performance Monitor (debug) */}
+      <PerformanceOverlay visible={process.env.NODE_ENV === 'development'} />
 
       {/* Cinematic Loading Overlay (NOT a "Loading..." text) */}
       {!isLoaded && (
