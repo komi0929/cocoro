@@ -12,6 +12,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils, VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
 import type { Participant, SpeakingState, EmotionState } from '@/types/kokoro';
 import { getAvatarById } from '@/data/avatarCatalog';
+import { AuraSystem } from './AuraSystem';
+import { EmotionParticles } from './EmotionParticles';
 
 interface AvatarEntityProps {
   participant: Participant;
@@ -272,6 +274,20 @@ export function AvatarEntity({
           />
         </mesh>
       )}
+
+      {/* Aura System (進化オーラ — 累積発話量で成長) */}
+      <AuraSystem
+        speechSeconds={0} // TODO: load from SpatialMemory on mount
+        isSpeaking={participant.speakingState.isSpeaking}
+      />
+
+      {/* Emotion Particles (感情パーティクル放出) */}
+      <EmotionParticles
+        joy={participant.emotion.joy}
+        surprise={participant.emotion.surprise}
+        isSpeaking={participant.speakingState.isSpeaking}
+        volume={participant.speakingState.volume}
+      />
     </group>
   );
 }
