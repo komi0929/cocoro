@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useKokoroStore } from '@/store/useKokoroStore';
@@ -14,6 +14,7 @@ import { VoiceReactiveFloor } from './VoiceReactiveFloor';
 import { CosmicParticles } from './CosmicParticles';
 import { GhostParticles } from './GhostParticles';
 import { TouchInteraction } from './TouchInteraction';
+import { VoiceEmotionClassifier } from '@/engine/audio/VoiceEmotionClassifier';
 
 export function SpatialStage() {
   const phase = useKokoroStore((s) => s.phase);
@@ -32,6 +33,18 @@ export function SpatialStage() {
 
   // Aggregate voice energy from all speakers
   const [voiceEnergy, setVoiceEnergy] = useState({ bass: 0, mid: 0, treble: 0, energy: 0, smoothEnergy: 0 });
+
+  // Emotion-driven theme colors
+  const emotionClassifier = useMemo(() => new VoiceEmotionClassifier(), []);
+  const [emotionColors, setEmotionColors] = useState<{
+    base: [number, number, number];
+    active: [number, number, number];
+    peak: [number, number, number];
+  }>({
+    base: [0.03, 0.01, 0.08],
+    active: [0.2, 0.05, 0.4],
+    peak: [0.6, 0.1, 0.3],
+  });
   
   const updateVoiceEnergy = useCallback(() => {
     let totalVolume = 0;
@@ -59,7 +72,29 @@ export function SpatialStage() {
       energy,
       smoothEnergy: prev.smoothEnergy * 0.92 + energy * 0.08,
     }));
-  }, [activeSpeakers, participants]);
+
+    // Emotion classification from aggregate voice data
+    const fakeFFT = new Float32Array(64);
+    for (let i = 0; i < 64; i++) {
+      fakeFFT[i] = avgVolume * (1 - i / 64) * (1 + Math.sin(i * 0.5) * 0.3);
+    }
+    const emotion = emotionClassifier.classify(fakeFFT, avgVolume, avgVolume * 0.7, speakerCount > 0);
+
+    // Map dominant emotion to theme colors
+    const EMOTION_THEMES: Record<string, { base: [number, number, number]; active: [number, number, number]; peak: [number, number, number] }> = {
+      joy:      { base: [0.05, 0.03, 0.01], active: [0.5, 0.3, 0.05], peak: [1.0, 0.7, 0.1] },
+      anger:    { base: [0.08, 0.01, 0.01], active: [0.5, 0.05, 0.05], peak: [0.8, 0.1, 0.05] },
+      sorrow:   { base: [0.01, 0.01, 0.06], active: [0.05, 0.05, 0.3], peak: [0.1, 0.1, 0.5] },
+      surprise: { base: [0.01, 0.05, 0.06], active: [0.05, 0.3, 0.4], peak: [0.2, 0.8, 1.0] },
+      neutral:  { base: [0.03, 0.01, 0.08], active: [0.2, 0.05, 0.4], peak: [0.6, 0.1, 0.3] },
+    };
+    const targetTheme = EMOTION_THEMES[emotion.dominant] ?? EMOTION_THEMES.neutral;
+    setEmotionColors(prev => ({
+      base: prev.base.map((v, i) => v * 0.9 + targetTheme.base[i] * 0.1) as [number, number, number],
+      active: prev.active.map((v, i) => v * 0.9 + targetTheme.active[i] * 0.1) as [number, number, number],
+      peak: prev.peak.map((v, i) => v * 0.9 + targetTheme.peak[i] * 0.1) as [number, number, number],
+    }));
+  }, [activeSpeakers, participants, emotionClassifier]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
@@ -171,6 +206,7 @@ export function SpatialStage() {
         treble={voiceEnergy.treble}
         energy={voiceEnergy.energy}
         smoothEnergy={voiceEnergy.smoothEnergy}
+        themeColors={emotionColors}
       />
 
       {/* === Ghost Particles (Past Visitor Presence) === */}

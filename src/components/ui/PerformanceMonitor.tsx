@@ -82,7 +82,7 @@ export function PerformanceOverlay({ visible = false }: { visible?: boolean }) {
 
   return (
     <div
-      className="fixed top-2 right-2 z-[200] pointer-events-none
+      className="fixed top-2 right-2 z-200 pointer-events-none
         font-mono text-[10px] leading-tight
         bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1.5
         border border-white/10"
