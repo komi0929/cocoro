@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { SilenceState } from '@/engine/choreography/SilenceDirector';
 import type { ArcState } from '@/engine/choreography/ConversationArcDirector';
 
@@ -21,7 +21,17 @@ interface ConversationHUDProps {
   participantCount: number;
 }
 
-export function ConversationHUD({ silenceState, arcState, sessionMinutes, participantCount }: ConversationHUDProps) {
+export function ConversationHUD({ silenceState, arcState, participantCount }: ConversationHUDProps) {
+  // Client-side session timer to avoid hydration mismatch
+  const [clientMinutes, setClientMinutes] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const id = setInterval(() => {
+      setClientMinutes(Math.floor((performance.now() - start) / 60000));
+    }, 10000);
+    return () => clearInterval(id);
+  }, []);
+
   const arcColor = useMemo(() => {
     switch (arcState.phase) {
       case 'opening': return 'from-blue-400/20 to-blue-600/20';
@@ -47,7 +57,7 @@ export function ConversationHUD({ silenceState, arcState, sessionMinutes, partic
       {/* Session info */}
       <div className="flex items-center gap-3 mb-2 justify-center">
         <span className="text-[9px] text-white/20">
-          {Math.floor(sessionMinutes)}分 · {participantCount}人
+          {clientMinutes}分 · {participantCount}人
         </span>
       </div>
 

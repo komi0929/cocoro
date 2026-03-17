@@ -732,11 +732,11 @@ export default function SpacePage() {
           phase: (engineStatus.conversationArc as 'opening' | 'developing' | 'climax' | 'resolution' | 'ending') || 'opening',
           intensity: engineStatus.emotionIntensity,
           peakIntensity: engineStatus.emotionIntensity,
-          peakTime: Date.now(),
+          peakTime: 0,
           effectMultiplier: engineStatus.conversationArc === 'climax' ? 2.0 : 1.0,
           suggestedAction: engineStatus.conversationArc === 'ending' ? 'そろそろ振り返りの時間かも' : null,
         }}
-        sessionMinutes={Math.round(performance.now() / 60000)}
+        sessionMinutes={0}
         participantCount={store.getState().participants.size}
       />
 
