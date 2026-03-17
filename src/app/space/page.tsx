@@ -713,6 +713,33 @@ export default function SpacePage() {
       <div className="fixed inset-0 pointer-events-none z-0"
         style={{ background: `radial-gradient(ellipse at 50% 80%, ${engines.seasonalTheme.bgColor.replace('from-', '').split(' ')[0]}10, transparent 70%)` }} />
 
+      {/* Conversation HUD (沈黙+会話アーク+セッション時間) */}
+      <ConversationHUD
+        silenceState={{
+          phase: engineStatus.silenceDuration > 30 ? 'encourage'
+            : engineStatus.silenceDuration > 15 ? 'suggest'
+            : engineStatus.silenceDuration > 10 ? 'thinking'
+            : engineStatus.silenceDuration > 5 ? 'ambient'
+            : 'none',
+          durationSeconds: engineStatus.silenceDuration,
+          bgmVolume: Math.min(0.5, engineStatus.silenceDuration / 60),
+          showThinking: engineStatus.silenceDuration > 10 && engineStatus.silenceDuration < 15,
+          showTopicSuggestion: engineStatus.silenceDuration > 15,
+          showEncouragement: engineStatus.silenceDuration > 30,
+          encouragementText: engineStatus.silenceDuration > 30 ? '何か話してみましょう 🌟' : engineStatus.silenceDuration > 20 ? '静かなひとときですね… 🌙' : '',
+        }}
+        arcState={{
+          phase: (engineStatus.conversationArc as 'opening' | 'developing' | 'climax' | 'resolution' | 'ending') || 'opening',
+          intensity: engineStatus.emotionIntensity,
+          peakIntensity: engineStatus.emotionIntensity,
+          peakTime: Date.now(),
+          effectMultiplier: engineStatus.conversationArc === 'climax' ? 2.0 : 1.0,
+          suggestedAction: engineStatus.conversationArc === 'ending' ? 'そろそろ振り返りの時間かも' : null,
+        }}
+        sessionMinutes={Math.round(performance.now() / 60000)}
+        participantCount={store.getState().participants.size}
+      />
+
       {/* === P0統合: 未マウントだった主要UIコンポーネント === */}
 
       {/* Game Overlay (ワードウルフ等の会話ゲーム) */}
@@ -803,7 +830,10 @@ export default function SpacePage() {
               onNext={() => {}}
               onChoose={() => {}}
               isVoiceActive={isMicActive}
-              volume={0}
+              volume={(() => {
+                const lp = store.getState().participants.get(store.getState().localParticipantId ?? '');
+                return lp?.speakingState?.volume ?? 0;
+              })()}
             />
           </div>
         ) : null;
@@ -838,13 +868,13 @@ export default function SpacePage() {
             durationMinutes: Math.round(performance.now() / 60000),
             participantCount: store.getState().participants.size,
             topKeywords: [],
-            myTalkTimePercent: 30,
-            reactionsReceived: 0,
+            myTalkTimePercent: Math.round(engineStatus.activeParticipantRatio * 100),
+            reactionsReceived: Math.round(engineStatus.bondLevel * 10),
             levelBefore: 1,
-            levelAfter: 1,
-            xpGained: 0,
-            moodSummary: 'neutral',
-            bestMoment: null,
+            levelAfter: 1 + Math.floor(engineStatus.eqScore * 3),
+            xpGained: Math.round(engineStatus.eqScore * 200 + engineStatus.groupEnergy * 100),
+            moodSummary: engineStatus.roomMoodLabel,
+            bestMoment: engineStatus.conversationArc === 'climax' ? '🔥 最高潮の瞬間' : null,
             streakDays: 0,
           }}
           onClose={() => setShowSessionSummary(false)}
@@ -857,8 +887,15 @@ export default function SpacePage() {
         <HighlightReel
           sessionDuration={Math.round(performance.now() / 60000)}
           moments={[]}
-          participants={[]}
-          flowPeakMinute={0}
+          participants={Array.from(store.getState().participants.values()).map(p => ({
+            id: p.id,
+            name: p.displayName,
+            speakingMinutes: p.speakingState.isSpeaking ? 1 : 0,
+            reactionsGiven: 0,
+            dominantEmotion: Object.entries(p.emotion).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'neutral',
+            role: p.speakingState.isSpeaking ? 'speaker' as const : 'listener' as const,
+          }))}
+          flowPeakMinute={Math.round(performance.now() / 120000)}
           roomName="kokoro space"
           onClose={() => setShowHighlightReel(false)}
           onShare={() => {}}

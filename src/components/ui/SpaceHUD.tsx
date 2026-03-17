@@ -312,50 +312,122 @@ export function SpaceHUD({
         )}
       </div>
 
-      {/* Engine Status Mini Panel */}
+      {/* Engine Status Dashboard — 全エンジン出力を可視化 */}
       {engineStatus && (
-        <div className="fixed top-4 left-4 z-40 flex flex-col gap-1 pointer-events-none"
+        <div className="fixed top-4 left-4 z-40 flex flex-col gap-1 pointer-events-auto max-w-[280px]"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-          <div className="bg-black/30 backdrop-blur-xl rounded-lg px-3 py-2 border border-white/5">
-            <div className="flex items-center gap-3 text-[10px]">
-              {/* Flow */}
+          <div className="bg-black/40 backdrop-blur-2xl rounded-xl px-3 py-2 border border-white/8 shadow-lg">
+            {/* Row 1: Core state */}
+            <div className="flex items-center gap-2.5 text-[10px] flex-wrap">
               <span className={`${engineStatus.flowLevel === 'zone' ? 'text-amber-400' : engineStatus.flowLevel === 'flowing' ? 'text-green-400' : 'text-white/30'}`}>
                 🌊 {engineStatus.flowLevel}
               </span>
-              {/* Emotion */}
               <span className="text-white/40">
                 💜 {engineStatus.dominantEmotion}
               </span>
-              {/* Trust */}
               <span className="text-white/30">
                 🤝 {Math.round(engineStatus.trustLevel * 100)}%
               </span>
-              {/* Safety */}
               <span className={`${engineStatus.safetyLevel === 'green' ? 'text-green-400/50' : 'text-red-400'}`}>
                 🛡 {engineStatus.safetyLevel}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-[10px] mt-0.5">
-              {/* BGM */}
+
+            {/* Row 2: Conversation */}
+            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
+              <span className="text-white/35">
+                📖 {engineStatus.conversationArc}
+              </span>
+              <span className="text-white/25">
+                🤫 {engineStatus.silenceDuration.toFixed(0)}s
+              </span>
+              <span className="text-white/30">
+                🎭 {Math.round(engineStatus.emotionIntensity * 100)}%
+              </span>
+              <span className="text-white/25">
+                🌈 {engineStatus.roomMoodLabel}
+              </span>
+            </div>
+
+            {/* Row 3: Social */}
+            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
+              <span className="text-white/30">
+                💞 絆{Math.round(engineStatus.bondLevel * 100)}%
+              </span>
+              <span className="text-white/30">
+                ⚡ エナジー{Math.round(engineStatus.groupEnergy * 100)}%
+              </span>
+              <span className="text-white/25">
+                👥 {Math.round(engineStatus.activeParticipantRatio * 100)}%活動
+              </span>
+            </div>
+
+            {/* Row 4: Audio + Game */}
+            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
               <span className="text-white/25">
                 🎵 {engineStatus.bgmGenre}
               </span>
-              {/* Game */}
+              {engineStatus.voiceEffectActive !== 'none' && (
+                <span className="text-cyan-300/40">
+                  🎤 {engineStatus.voiceEffectActive}
+                </span>
+              )}
               {engineStatus.activeGame && (
                 <span className="text-amber-300/60">
                   🎮 {engineStatus.activeGame}
                 </span>
               )}
-              {/* Performance */}
+              {engineStatus.debateActive && (
+                <span className="text-red-300/50">
+                  ⚔️ ディベート中
+                </span>
+              )}
               <span className="text-white/20">
-                ⚡ {engineStatus.fps}fps
+                🎪 {engineStatus.showState}
               </span>
-              {/* Coins */}
+            </div>
+
+            {/* Row 5: Economy + Governance */}
+            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
               {engineStatus.coinBalance > 0 && (
                 <span className="text-yellow-300/50">
                   🪙 {engineStatus.coinBalance}
                 </span>
               )}
+              <span className="text-white/20">
+                👑 {engineStatus.memberTier}
+              </span>
+              {engineStatus.reputationScore > 0 && (
+                <span className="text-white/25">
+                  ⭐ rep.{engineStatus.reputationScore}
+                </span>
+              )}
+              {engineStatus.moderationActive && (
+                <span className="text-orange-300/40">
+                  🔒 モデレーション中
+                </span>
+              )}
+            </div>
+
+            {/* Row 6: Cognitive + Performance */}
+            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
+              <span className="text-white/25">
+                🧠 EQ:{Math.round(engineStatus.eqScore * 100)}
+              </span>
+              <span className="text-white/20">
+                📊 負荷:{Math.round(engineStatus.cognitiveLoad * 100)}%
+              </span>
+              <span className="text-white/20">
+                ⚡ {engineStatus.fps}fps
+              </span>
+              {engineStatus.memoryUsageMB > 0 && (
+                <span className="text-white/15">
+                  💾 {engineStatus.memoryUsageMB}MB
+                </span>
+              )}
+              <span className={`${engineStatus.networkQuality === 'good' ? 'text-green-400/30' : 'text-red-400/50'}`}>
+                📶 {engineStatus.networkQuality}
+              </span>
             </div>
           </div>
         </div>
