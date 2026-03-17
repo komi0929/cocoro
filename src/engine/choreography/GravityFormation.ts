@@ -38,7 +38,7 @@ const DAMPING_D = 3.0;        // Damping coefficient (overdamped to prevent osci
 const REPULSION_C = 0.8;      // Repulsion constant (between avatars)
 const MIN_DISTANCE = 1.2;     // Minimum inter-avatar distance
 const ATTRACTION_HEAT = 1.5;  // Extra attraction when conversation heats up
-const LEAN_IN_FACTOR = 0.35;  // How much speakers lean toward center
+const LEAN_IN_FACTOR = 0.85;  // How much speakers lean toward center (popopoスポットライト効果)
 const DT = 0.016;             // Fixed timestep (~60fps)
 
 // デフォルトパラメータ
@@ -147,7 +147,7 @@ export class GravityFormation {
         let angleDiff = targetAngle - rotY;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        rotY += angleDiff * 0.06; // Soft follow
+        rotY += angleDiff * 0.10; // Responsive follow (popopoスポットライト)
       }
 
       targetTransforms.set(id, {
@@ -221,7 +221,7 @@ export class GravityFormation {
 
         // Inner ring contracts with density + heat
         const innerRadius =
-          this.params.circleRadius * 0.35 * (1 - density * 0.5);
+          this.params.circleRadius * 0.20 * (1 - density * 0.5);
         // Outer ring also contracts
         const outerRadius =
           this.params.circleRadius * (1 - density * 0.55);

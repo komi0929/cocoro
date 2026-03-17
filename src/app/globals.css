@@ -9,6 +9,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-noto: var(--font-noto), "Noto Sans JP", sans-serif;
 }
 
 body {
@@ -145,6 +146,39 @@ body {
   animation: shimmer 2s ease-in-out infinite;
 }
 
+/* CliMax Director — 映画的クライマックス演出 */
+@keyframes climax-pulse {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes climax-rise {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes climax-explode {
+  0% { opacity: 0; transform: scale(0.5); }
+  30% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+@keyframes climax-ring {
+  0% { width: 10px; height: 10px; opacity: 0.8; }
+  100% { width: 80vw; height: 80vw; opacity: 0; }
+}
+@keyframes climax-afterglow {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+/* Cinematic Entrance — 入室体験 */
+@keyframes breath-glow {
+  0%, 100% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+@keyframes entrance-rise {
+  0%, 100% { opacity: 0.3; transform: translateY(10px); }
+  50% { opacity: 0.6; transform: translateY(-5px); }
+}
+
 /* Breathe (avatar selection ring) */
 @keyframes breathe {
   0%, 100% { box-shadow: 0 0 0 0 var(--glow-color, rgba(139, 92, 246, 0.3)); }
@@ -153,3 +187,62 @@ body {
 .animate-breathe {
   animation: breathe 2s ease-in-out infinite;
 }
+
+/* Welcome Toast slide-in */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Spring bounce for buttons */
+@keyframes spring-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.9); }
+  50% { transform: scale(1.08); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+.animate-spring-bounce {
+  animation: spring-bounce 0.4s ease-out;
+}
+
+/* Mic onboarding pulse */
+@keyframes mic-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+.animate-mic-pulse {
+  animation: mic-pulse 2s ease-in-out infinite;
+}
+
+/* Fade in up (for cognitive messages & toasts) */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out;
+}
+
+/* Flash out (for screen flash effect) */
+@keyframes flash-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.animate-flash-out {
+  animation: flash-out 0.5s ease-out forwards;
+}
+
+/* Topic card entry */
+@keyframes topic-card-enter {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Gesture burst (emoji float up) */
+@keyframes gesture-burst {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+}
+

@@ -19,6 +19,9 @@ const particleVertexShader = /* glsl */ `
 
   uniform float uTime;
   uniform float uDensity;
+  uniform float uEmotionJoy;
+  uniform float uEmotionAnger;
+  uniform float uEmotionSorrow;
 
   varying float vAlpha;
   varying vec3 vColor;
@@ -80,7 +83,13 @@ const particleVertexShader = /* glsl */ `
     // Alpha: fade near edges, boost with density
     float heightFade = 1.0 - abs(pos.y - 5.0) / 5.0;
     vAlpha = heightFade * (0.3 + uDensity * 0.4) * (0.5 + aOffset * 0.5);
-    vColor = aColor;
+    
+    // Emotion-reactive color shift (Regenerative Space)
+    vec3 emotionShift = vec3(0.0);
+    emotionShift += vec3(0.3, 0.2, -0.1) * uEmotionJoy;    // warm amber
+    emotionShift += vec3(0.3, -0.2, -0.2) * uEmotionAnger;  // crimson
+    emotionShift += vec3(-0.2, -0.1, 0.3) * uEmotionSorrow; // deep blue
+    vColor = aColor + emotionShift * 0.5;
   }
 `;
 
@@ -108,6 +117,13 @@ export function CosmicParticles() {
   const density = useKokoroStore((s) => s.density);
 
   const { positions, sizes, offsets, colors } = useMemo(() => {
+    // Seeded PRNG for deterministic particle generation (lint-safe)
+    let _seed = 42;
+    const rng = () => {
+      _seed = (_seed * 16807 + 0) % 2147483647;
+      return (_seed - 1) / 2147483646;
+    };
+
     const pos = new Float32Array(PARTICLE_COUNT * 3);
     const sz = new Float32Array(PARTICLE_COUNT);
     const off = new Float32Array(PARTICLE_COUNT);
@@ -117,32 +133,32 @@ export function CosmicParticles() {
       const t = i / PARTICLE_COUNT;
       const angle = t * Math.PI * 2 * 13.7; // Golden angle spiral
       const radius = 1 + t * 10;
-      const height = Math.random() * 10;
+      const height = rng() * 10;
 
-      pos[i * 3] = Math.cos(angle) * radius * (0.3 + Math.random() * 0.7);
+      pos[i * 3] = Math.cos(angle) * radius * (0.3 + rng() * 0.7);
       pos[i * 3 + 1] = height;
-      pos[i * 3 + 2] = Math.sin(angle) * radius * (0.3 + Math.random() * 0.7);
+      pos[i * 3 + 2] = Math.sin(angle) * radius * (0.3 + rng() * 0.7);
 
-      sz[i] = 0.5 + Math.random() * 2.5;
-      off[i] = Math.random();
+      sz[i] = 0.5 + rng() * 2.5;
+      off[i] = rng();
 
       // Color palette: violet → magenta → soft cyan
-      const colorT = Math.random();
+      const colorT = rng();
       if (colorT < 0.4) {
         // Violet
-        col[i * 3] = 0.5 + Math.random() * 0.2;
-        col[i * 3 + 1] = 0.3 + Math.random() * 0.2;
-        col[i * 3 + 2] = 0.8 + Math.random() * 0.2;
+        col[i * 3] = 0.5 + rng() * 0.2;
+        col[i * 3 + 1] = 0.3 + rng() * 0.2;
+        col[i * 3 + 2] = 0.8 + rng() * 0.2;
       } else if (colorT < 0.7) {
         // Magenta/Pink
-        col[i * 3] = 0.7 + Math.random() * 0.3;
-        col[i * 3 + 1] = 0.2 + Math.random() * 0.2;
-        col[i * 3 + 2] = 0.6 + Math.random() * 0.3;
+        col[i * 3] = 0.7 + rng() * 0.3;
+        col[i * 3 + 1] = 0.2 + rng() * 0.2;
+        col[i * 3 + 2] = 0.6 + rng() * 0.3;
       } else {
         // Cyan/Teal
-        col[i * 3] = 0.1 + Math.random() * 0.2;
-        col[i * 3 + 1] = 0.5 + Math.random() * 0.3;
-        col[i * 3 + 2] = 0.7 + Math.random() * 0.3;
+        col[i * 3] = 0.1 + rng() * 0.2;
+        col[i * 3 + 1] = 0.5 + rng() * 0.3;
+        col[i * 3 + 2] = 0.7 + rng() * 0.3;
       }
     }
 
@@ -153,6 +169,9 @@ export function CosmicParticles() {
     () => ({
       uTime: { value: 0 },
       uDensity: { value: 0 },
+      uEmotionJoy: { value: 0 },
+      uEmotionAnger: { value: 0 },
+      uEmotionSorrow: { value: 0 },
     }),
     []
   );
@@ -160,6 +179,19 @@ export function CosmicParticles() {
   useFrame((state) => {
     uniforms.uTime.value = state.clock.getElapsedTime();
     uniforms.uDensity.value = density;
+
+    // Read local participant's emotion for spatial color shift
+    const store = useKokoroStore.getState();
+    const localId = store.localParticipantId;
+    if (localId) {
+      const p = store.participants.get(localId);
+      if (p?.emotion) {
+        // Smooth emotion transition
+        uniforms.uEmotionJoy.value += (p.emotion.joy - uniforms.uEmotionJoy.value) * 0.05;
+        uniforms.uEmotionAnger.value += (p.emotion.anger - uniforms.uEmotionAnger.value) * 0.05;
+        uniforms.uEmotionSorrow.value += (p.emotion.sorrow - uniforms.uEmotionSorrow.value) * 0.05;
+      }
+    }
   });
 
   return (

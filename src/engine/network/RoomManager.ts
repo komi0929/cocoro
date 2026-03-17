@@ -228,6 +228,17 @@ export class RoomManager {
   }
 
   /**
+   * ParticipantIDからSocketIDを逆引き（WebRTCシグナリング用）
+   */
+  getSocketIdForParticipant(participantId: string): string | null {
+    for (const room of this.rooms.values()) {
+      const p = room.participants.get(participantId);
+      if (p) return p.socketId;
+    }
+    return null;
+  }
+
+  /**
    * 参加者のアバター状態を更新
    */
   updateParticipantState(

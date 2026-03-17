@@ -22,6 +22,7 @@ import type {
   RoomCreateResponse,
 } from '../SyncProtocol';
 import { SYNC_CONFIG } from '../SyncProtocol';
+import { SFUServerHandler } from './SFUServer';
 
 type TypedServer = SocketIOServer<ClientToServerEvents, ServerToClientEvents>;
 type TypedSocket = Parameters<Parameters<TypedServer['on']>[1]>[0];
@@ -30,6 +31,7 @@ export class SignalingServer {
   private io: TypedServer;
   private roomManager: RoomManager;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+  private sfuHandler: SFUServerHandler;
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -45,6 +47,12 @@ export class SignalingServer {
     this.roomManager = new RoomManager();
     this.roomManager.initializeDefaultRooms(3);
 
+    // SFU Handler (mediasoup対応 or P2Pパススルー)
+    this.sfuHandler = new SFUServerHandler(this.io as unknown as import('socket.io').Server, {
+      enabled: !!process.env.MEDIASOUP_ENABLED,
+      hasMediasoup: false,
+    });
+
     this.setupEventHandlers();
     this.startCleanupLoop();
 
@@ -57,6 +65,9 @@ export class SignalingServer {
   private setupEventHandlers(): void {
     this.io.on('connection', (socket: TypedSocket) => {
       console.log(`[SignalingServer] Client connected: ${socket.id}`);
+
+      // SFUイベントハンドラをアタッチ
+      this.sfuHandler.setupHandlers(socket as unknown as import('socket.io').Socket, socket.id);
 
       // --- Room Join ---
       socket.on('room:join', (data: RoomJoinRequest, ack: (response: RoomJoinResponse) => void) => {
@@ -209,6 +220,43 @@ export class SignalingServer {
       // --- Room Leave ---
       socket.on('room:leave', () => {
         this.handleDisconnect(socket);
+      });
+
+      // --- WebRTC Signaling Relay ---
+      socket.on('webrtc:offer', (data: { targetId: string; sdp: RTCSessionDescriptionInit }) => {
+        const info = this.roomManager.findParticipantBySocketId(socket.id);
+        if (!info) return;
+        const targetSocketId = this.roomManager.getSocketIdForParticipant(data.targetId);
+        if (targetSocketId) {
+          this.io.to(targetSocketId).emit('webrtc:offer', {
+            fromId: info.participantId,
+            sdp: data.sdp,
+          });
+        }
+      });
+
+      socket.on('webrtc:answer', (data: { targetId: string; sdp: RTCSessionDescriptionInit }) => {
+        const info = this.roomManager.findParticipantBySocketId(socket.id);
+        if (!info) return;
+        const targetSocketId = this.roomManager.getSocketIdForParticipant(data.targetId);
+        if (targetSocketId) {
+          this.io.to(targetSocketId).emit('webrtc:answer', {
+            fromId: info.participantId,
+            sdp: data.sdp,
+          });
+        }
+      });
+
+      socket.on('webrtc:ice-candidate', (data: { targetId: string; candidate: RTCIceCandidateInit }) => {
+        const info = this.roomManager.findParticipantBySocketId(socket.id);
+        if (!info) return;
+        const targetSocketId = this.roomManager.getSocketIdForParticipant(data.targetId);
+        if (targetSocketId) {
+          this.io.to(targetSocketId).emit('webrtc:ice-candidate', {
+            fromId: info.participantId,
+            candidate: data.candidate,
+          });
+        }
       });
 
       // --- Disconnect ---

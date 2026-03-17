@@ -54,7 +54,7 @@ const VERTEX_SHADER = `
   }
 `;
 
-// Fragment shader: 声のエネルギーで色が変化
+// Fragment shader: 声のエネルギーで色が変化 + heatmap overlay
 const FRAGMENT_SHADER = `
   uniform float uTime;
   uniform float uBass;
@@ -66,11 +66,14 @@ const FRAGMENT_SHADER = `
   uniform vec3 uActiveColor;
   uniform vec3 uPeakColor;
   
+  // Heatmap: max 16 memory spots (position.xz + energy)
+  uniform vec3 uHeatSpots[16]; // xy = position, z = energy
+  uniform int uHeatSpotCount;
+  
   varying vec2 vUv;
   varying float vElevation;
   varying float vDistFromCenter;
   
-  // Simplex noise approximation
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
   }
@@ -79,12 +82,10 @@ const FRAGMENT_SHADER = `
     vec2 i = floor(p);
     vec2 f = fract(p);
     f = f * f * (3.0 - 2.0 * f);
-    
     float a = hash(i);
     float b = hash(i + vec2(1.0, 0.0));
     float c = hash(i + vec2(0.0, 1.0));
     float d = hash(i + vec2(1.0, 1.0));
-    
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
   }
   
@@ -118,6 +119,26 @@ const FRAGMENT_SHADER = `
     float centerGlow = smoothstep(3.0, 0.0, vDistFromCenter) * uSmoothEnergy * 0.3;
     color += centerGlow * uActiveColor;
     
+    // === HEATMAP OVERLAY (past memory spots) ===
+    // Convert vUv (0-1) to world coords (-6 to +6)
+    vec2 worldPos = (vUv - 0.5) * 12.0;
+    
+    for (int i = 0; i < 16; i++) {
+      if (i >= uHeatSpotCount) break;
+      vec2 spotPos = uHeatSpots[i].xy;
+      float spotEnergy = uHeatSpots[i].z;
+      float spotDist = length(worldPos - spotPos);
+      
+      // Warm glow falloff
+      float glow = smoothstep(1.5, 0.0, spotDist) * spotEnergy;
+      // Pulsing animation
+      glow *= 0.7 + 0.3 * sin(uTime * 0.8 + float(i) * 0.5);
+      
+      // Warm amber color for memory spots
+      vec3 memoryColor = vec3(0.8, 0.4, 0.1) * glow;
+      color += memoryColor;
+    }
+    
     // Alpha: fade at edges
     float alpha = distFade * (0.4 + uSmoothEnergy * 0.4);
     
@@ -136,6 +157,7 @@ interface VoiceReactiveFloorProps {
     active: [number, number, number];
     peak: [number, number, number];
   };
+  heatSpots?: Array<{ x: number; z: number; energy: number }>;
 }
 
 export function VoiceReactiveFloor({
@@ -145,14 +167,30 @@ export function VoiceReactiveFloor({
   energy = 0,
   smoothEnergy = 0,
   themeColors,
+  heatSpots = [],
 }: VoiceReactiveFloorProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const colors = themeColors ?? {
-    base: [0.03, 0.01, 0.08],    // Deep purple-black
-    active: [0.2, 0.05, 0.4],     // Violet
-    peak: [0.6, 0.1, 0.3],        // Fuchsia-red
+    base: [0.03, 0.01, 0.08],
+    active: [0.2, 0.05, 0.4],
+    peak: [0.6, 0.1, 0.3],
   };
+
+  // Build heatSpot uniform array (max 16)
+  const heatSpotVecs = useMemo(() => {
+    const arr: THREE.Vector3[] = [];
+    const sorted = [...heatSpots].sort((a, b) => b.energy - a.energy).slice(0, 16);
+    for (let i = 0; i < 16; i++) {
+      if (i < sorted.length) {
+        const maxE = sorted[0]?.energy ?? 1;
+        arr.push(new THREE.Vector3(sorted[i].x, sorted[i].z, Math.min(1, sorted[i].energy / Math.max(maxE, 0.01))));
+      } else {
+        arr.push(new THREE.Vector3(0, 0, 0));
+      }
+    }
+    return arr;
+  }, [heatSpots]);
 
   const uniforms = useMemo(
     () => ({
@@ -165,6 +203,8 @@ export function VoiceReactiveFloor({
       uBaseColor: { value: new THREE.Vector3(...colors.base) },
       uActiveColor: { value: new THREE.Vector3(...colors.active) },
       uPeakColor: { value: new THREE.Vector3(...colors.peak) },
+      uHeatSpots: { value: heatSpotVecs },
+      uHeatSpotCount: { value: Math.min(heatSpots.length, 16) },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -179,10 +219,15 @@ export function VoiceReactiveFloor({
     mat.uniforms.uTreble.value = treble;
     mat.uniforms.uEnergy.value = energy;
     mat.uniforms.uSmoothEnergy.value = smoothEnergy;
+
+    // Dynamic theme color update
+    mat.uniforms.uBaseColor.value.set(...colors.base);
+    mat.uniforms.uActiveColor.value.set(...colors.active);
+    mat.uniforms.uPeakColor.value.set(...colors.peak);
   });
 
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} frustumCulled={false}>
       <planeGeometry args={[12, 12, 128, 128]} />
       <shaderMaterial
         vertexShader={VERTEX_SHADER}

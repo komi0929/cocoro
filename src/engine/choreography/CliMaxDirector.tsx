@@ -1,29 +1,26 @@
 /**
- * cocoro — CliMax Director
- * 複数人の声量が閾値を超えた瞬間のシネマティック演出
+ * kokoro — CliMax Director
+ * 会話の最高潮を「映画のクライマックスシーン」として演出
  * 
- * 思想: 「盛り上がりモーメント」= 会話の最高潮が視覚的ご褒美になる
- * → 「また盛り上がりたい」= retention
- * 
- * 演出:
- *   - 全画面フラッシュ
- *   - カメラシェイク
- *   - パーティクル爆発
- *   - 環境色シフト
+ * 設計思想（手塚眞「映像の文法」に対抗）:
+ *   - 盛り上がりの「前兆」→「爆発」→「余韻」の3幕構成
+ *   - スクリーンショットを撮りたくなる視覚的ご褒美
+ *   - 光の爆発 + 放射状パルス + ビネット強化 + 色温度シフト
+ *   - 「また盛り上がりたい」= retention
  */
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useKokoroStore } from '@/store/useKokoroStore';
 
-const CLIMAX_THRESHOLD = 0.6; // density threshold
-const CLIMAX_COOLDOWN = 10000; // ms between climaxes
-const CLIMAX_DURATION = 2000; // ms
+const CLIMAX_THRESHOLD = 0.55;
+const CLIMAX_COOLDOWN = 12000;
+const CLIMAX_DURATION = 3500; // 3.5 seconds of spectacle
 
 export interface CliMaxState {
   active: boolean;
   intensity: number; // 0-1
-  phase: 'idle' | 'buildup' | 'peak' | 'fade';
+  phase: 'idle' | 'buildup' | 'peak' | 'afterglow';
 }
 
 export function useCliMaxDirector(): CliMaxState {
@@ -42,21 +39,22 @@ export function useCliMaxDirector(): CliMaxState {
     if (now - lastClimaxRef.current < CLIMAX_COOLDOWN) return;
     lastClimaxRef.current = now;
 
-    // Haptic burst
-    if (navigator.vibrate) navigator.vibrate([50, 30, 100, 30, 50]);
+    // Haptic: crescendo pattern
+    if (navigator.vibrate) navigator.vibrate([30, 20, 50, 20, 80, 30, 120]);
 
-    // Buildup
-    setState({ active: true, intensity: 0.3, phase: 'buildup' });
+    // Act 1: Buildup (前兆) — 600ms
+    setState({ active: true, intensity: 0.4, phase: 'buildup' });
 
-    // Peak
+    // Act 2: Peak (爆発) — at 600ms
     setTimeout(() => {
       setState({ active: true, intensity: 1, phase: 'peak' });
-    }, 300);
+      if (navigator.vibrate) navigator.vibrate([200]);
+    }, 600);
 
-    // Fade
+    // Act 3: Afterglow (余韻) — at 1800ms
     setTimeout(() => {
-      setState({ active: true, intensity: 0.5, phase: 'fade' });
-    }, 1000);
+      setState({ active: true, intensity: 0.3, phase: 'afterglow' });
+    }, 1800);
 
     // End
     setTimeout(() => {
@@ -65,14 +63,13 @@ export function useCliMaxDirector(): CliMaxState {
   }, []);
 
   useEffect(() => {
-    // Check climax conditions
     if (
       density >= CLIMAX_THRESHOLD &&
       activeSpeakers.length >= 2 &&
       !state.active
     ) {
       buildupRef.current += 1;
-      if (buildupRef.current >= 3) { // Sustained excitement
+      if (buildupRef.current >= 3) {
         triggerClimax();
         buildupRef.current = 0;
       }
@@ -84,40 +81,100 @@ export function useCliMaxDirector(): CliMaxState {
   return state;
 }
 
-/** CliMax visual overlay */
+/** CliMax visual overlay — 映画のクライマックスシーン */
 export function CliMaxOverlay({ state }: { state: CliMaxState }) {
   if (!state.active) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-55">
-      {/* Screen flash */}
-      <div
-        className="absolute inset-0 transition-opacity duration-300"
-        style={{
-          background: state.phase === 'peak'
-            ? 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.1) 50%, transparent 100%)'
-            : 'transparent',
-          opacity: state.intensity * 0.8,
-        }}
-      />
-
-      {/* Edge vignette enhancement */}
-      {state.phase === 'peak' && (
-        <div
-          className="absolute inset-0"
-          style={{
-            boxShadow: 'inset 0 0 100px 20px rgba(139,92,246,0.15)',
-          }}
-        />
+      {/* === Act 1: Buildup — 中心から拡がる微かな光 === */}
+      {state.phase === 'buildup' && (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(circle at 50% 60%, rgba(139,92,246,0.08) 0%, transparent 50%)',
+              animation: 'climax-pulse 0.6s ease-out',
+            }}
+          />
+          {/* Rising particles effect */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-1/3"
+            style={{
+              background: 'linear-gradient(to top, rgba(139,92,246,0.06), transparent)',
+              animation: 'climax-rise 0.8s ease-out forwards',
+            }}
+          />
+        </>
       )}
 
-      {/* "盛り上がってる！" indicator */}
+      {/* === Act 2: Peak — 光の爆発 + 放射状パルス === */}
       {state.phase === 'peak' && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-          animate-scale-in">
-          <div className="text-4xl filter drop-shadow-lg select-none">🔥</div>
-        </div>
+        <>
+          {/* Central light explosion */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at 50% 50%, 
+                rgba(255,255,255,${0.12 * state.intensity}) 0%, 
+                rgba(139,92,246,${0.1 * state.intensity}) 20%, 
+                rgba(236,72,153,${0.06 * state.intensity}) 40%, 
+                transparent 70%)`,
+              animation: 'climax-explode 1.2s ease-out forwards',
+            }}
+          />
+
+          {/* Radial pulse rings */}
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
+              style={{
+                width: '10px',
+                height: '10px',
+                borderColor: `rgba(139,92,246,${0.3 - i * 0.06})`,
+                animation: `climax-ring ${1.0 + i * 0.15}s ease-out ${i * 0.1}s forwards`,
+              }}
+            />
+          ))}
+
+          {/* Screen edge flash */}
+          <div
+            className="absolute inset-0"
+            style={{
+              boxShadow: `inset 0 0 150px 40px rgba(139,92,246,${0.15 * state.intensity}), 
+                           inset 0 0 60px 20px rgba(236,72,153,${0.08 * state.intensity})`,
+            }}
+          />
+
+          {/* Top and bottom cinematic bars (subtle) */}
+          <div className="absolute inset-x-0 top-0 h-8 bg-linear-to-b from-black/20 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-black/20 to-transparent" />
+        </>
       )}
+
+      {/* === Act 3: Afterglow — 温かい余韻 === */}
+      {state.phase === 'afterglow' && (
+        <>
+          {/* Warm vignette fade */}
+          <div
+            className="absolute inset-0 transition-opacity duration-1500"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(251,191,36,0.04) 0%, transparent 60%)',
+              opacity: state.intensity,
+            }}
+          />
+          {/* Subtle glow at center */}
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(139,92,246,0.06), transparent)',
+              animation: 'climax-afterglow 2s ease-out forwards',
+            }}
+          />
+        </>
+      )}
+
     </div>
   );
 }

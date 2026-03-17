@@ -27,6 +27,12 @@ export interface ServerToClientEvents {
   'error': (data: ErrorPayload) => void;
   /** ルーム一覧（自動ルーティング用） */
   'rooms:list': (data: RoomListPayload) => void;
+  /** WebRTC: Offer受信 */
+  'webrtc:offer': (data: { fromId: string; sdp: RTCSessionDescriptionInit }) => void;
+  /** WebRTC: Answer受信 */
+  'webrtc:answer': (data: { fromId: string; sdp: RTCSessionDescriptionInit }) => void;
+  /** WebRTC: ICE候補受信 */
+  'webrtc:ice-candidate': (data: { fromId: string; candidate: RTCIceCandidateInit }) => void;
 }
 
 // ============================================================
@@ -48,6 +54,12 @@ export interface ClientToServerEvents {
   'rooms:find-best': (ack: (response: FindBestRoomResponse) => void) => void;
   /** ルーム作成 */
   'room:create': (data: RoomCreateRequest, ack: (response: RoomCreateResponse) => void) => void;
+  /** WebRTC: Offer送信 */
+  'webrtc:offer': (data: { targetId: string; sdp: RTCSessionDescriptionInit }) => void;
+  /** WebRTC: Answer送信 */
+  'webrtc:answer': (data: { targetId: string; sdp: RTCSessionDescriptionInit }) => void;
+  /** WebRTC: ICE候補送信 */
+  'webrtc:ice-candidate': (data: { targetId: string; candidate: RTCIceCandidateInit }) => void;
 }
 
 // ============================================================

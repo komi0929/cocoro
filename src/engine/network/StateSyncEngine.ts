@@ -419,6 +419,10 @@ export class StateSyncEngine {
     return this.socket?.connected ?? false;
   }
 
+  getSocket(): TypedSocket | null {
+    return this.socket;
+  }
+
   getLocalParticipantId(): string | null {
     return this.localParticipantId;
   }

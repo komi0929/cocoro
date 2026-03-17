@@ -23,6 +23,8 @@ interface AttentionState {
   eyeYawVel: number;
   // Idle animation offset
   idlePhase: number;
+  // Cached lookAt target (reused each frame to avoid GC pressure)
+  lookTarget?: THREE.Object3D;
 }
 
 // Spring Constants
@@ -181,18 +183,20 @@ export class AttentionDirector {
 
     // Apply to VRM lookAt
     if (vrm.lookAt) {
-      // Use the VRM's built-in lookAt with computed target
       const lookDistance = 10;
       const combinedYaw = state.headYaw + state.eyeYaw * 0.3;
       const combinedPitch = state.headPitch + state.eyePitch * 0.3;
 
-      const lookTarget = new THREE.Object3D();
-      lookTarget.position.set(
+      // Reuse cached lookTarget per avatar (avoid new Object3D each frame)
+      if (!state.lookTarget) {
+        state.lookTarget = new THREE.Object3D();
+      }
+      state.lookTarget.position.set(
         avatarWorldPos.x + Math.sin(combinedYaw) * lookDistance,
         avatarWorldPos.y + 1.4 + Math.tan(combinedPitch) * lookDistance,
         avatarWorldPos.z + Math.cos(combinedYaw) * lookDistance
       );
-      vrm.lookAt.target = lookTarget;
+      vrm.lookAt.target = state.lookTarget;
     }
   }
 

@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:server": "npx tsx server.ts",
     "build": "next build",
     "start": "next start",
+    "server": "npx tsx server.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -14,6 +16,8 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.99.2",
     "next": "16.1.6",
     "postprocessing": "^6.38.3",
     "react": "19.2.3",

@@ -2,6 +2,8 @@
  * kokoro — VRM Avatar Entity Component
  * 生命感のあるVRMアバター：呼吸・揺れ・瞬き・リップシンク・IK視線追従
  * T-Poseを排除し、ロード直後から生きた動きを実現
+ * 
+ * P0修正: AttentionDirector統合 — アバターが話者を見る
  */
 'use client';
 
@@ -15,6 +17,8 @@ import { getAvatarById } from '@/data/avatarCatalog';
 import { AuraSystem } from './AuraSystem';
 import { EmotionParticles } from './EmotionParticles';
 import { useSpatialMemoryAvatar } from '@/hooks/useSpatialMemory';
+import { useKokoroStore } from '@/store/useKokoroStore';
+import { AttentionDirector } from '@/engine/choreography/AttentionDirector';
 
 interface AvatarEntityProps {
   participant: Participant;
@@ -93,6 +97,9 @@ function hashString(s: string): number {
   return (Math.abs(h) % 10000) / 10000;
 }
 
+// Shared AttentionDirector instance for all avatars
+const attentionDirector = new AttentionDirector();
+
 export function AvatarEntity({
   participant,
 }: AvatarEntityProps) {
@@ -100,6 +107,10 @@ export function AvatarEntity({
   const [vrm, setVrm] = useState<VRM | null>(null);
   const [loading, setLoading] = useState(true);
   const speechAccRef = useRef(0); // frame-level speech accumulator
+
+  // Store access for speaker centroid calculation
+  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const participants = useKokoroStore((s) => s.participants);
 
   // Load saved evolution data from IndexedDB
   const { avatarEvolution } = useSpatialMemoryAvatar(
@@ -130,6 +141,14 @@ export function AvatarEntity({
     headRotX: 0,
     headRotY: 0,
   });
+
+  // Entrance animation: spring scale 0→1
+  const entranceProgress = useRef(0);
+  const hasEnteredRef = useRef(false);
+
+  // Speaker glow ring
+  const glowRingRef = useRef<THREE.Mesh>(null);
+  const glowIntensity = useRef(0);
 
   // VRM Loader
   const loader = useMemo(() => {
@@ -169,6 +188,13 @@ export function AvatarEntity({
     groupRef.current.add(vrm.scene);
   }, [vrm]);
 
+  // Cleanup attention state on unmount
+  useEffect(() => {
+    return () => {
+      attentionDirector.removeAvatar(participant.id);
+    };
+  }, [participant.id]);
+
   // Main animation loop
   useFrame((_, delta) => {
     if (!vrm) return;
@@ -178,6 +204,31 @@ export function AvatarEntity({
 
     // Update VRM internal
     vrm.update(clampedDelta);
+
+    // === ENTRANCE ANIMATION: spring scale 0→1 ===
+    if (!hasEnteredRef.current) {
+      entranceProgress.current += (1 - entranceProgress.current) * 0.06; // Spring ease-out
+      if (entranceProgress.current > 0.99) {
+        entranceProgress.current = 1;
+        hasEnteredRef.current = true;
+      }
+      const s = entranceProgress.current;
+      // Overshoot spring: goes to 1.05 then settles
+      const springScale = s + Math.sin(s * Math.PI) * 0.05;
+      vrm.scene.scale.setScalar(springScale);
+      // Rise from below ground
+      vrm.scene.position.y = (1 - s) * -0.5;
+    }
+
+    // === SPEAKER GLOW RING ===
+    if (glowRingRef.current) {
+      const targetGlow = participant.speakingState.isSpeaking ? 0.6 + participant.speakingState.volume * 0.4 : 0;
+      glowIntensity.current += (targetGlow - glowIntensity.current) * 0.08;
+      const mat = glowRingRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = glowIntensity.current * 0.6;
+      const pulseScale = 1 + glowIntensity.current * 0.15 + Math.sin(time * 4) * glowIntensity.current * 0.05;
+      glowRingRef.current.scale.set(pulseScale, 1, pulseScale);
+    }
 
     // === BREATHING & IDLE SWAY ===
     applyIdleAnimation(vrm, time, avatarHash, participant.speakingState.isSpeaking, idleState.current);
@@ -190,6 +241,62 @@ export function AvatarEntity({
 
     // === EMOTION ===
     applyEmotion(vrm, participant.emotion, blendWeights.current, clampedDelta);
+
+    // === ATTENTION DIRECTOR (P0: アバターが話者を見る) ===
+    {
+      const avatarWorldPos = new THREE.Vector3(
+        participant.transform.position.x,
+        0,
+        participant.transform.position.z
+      );
+
+      // Calculate attention target: speaker centroid
+      let targetPos: THREE.Vector3 | null = null;
+      const isSpeaking = participant.speakingState.isSpeaking;
+
+      if (!isSpeaking && activeSpeakers.length > 0) {
+        // Listener: look at the centroid of all active speakers
+        let cx = 0, cy = 0, cz = 0, count = 0;
+        for (const spId of activeSpeakers) {
+          if (spId === participant.id) continue;
+          const sp = participants.get(spId);
+          if (sp) {
+            cx += sp.transform.position.x;
+            cy += 1.3; // Head height
+            cz += sp.transform.position.z;
+            count++;
+          }
+        }
+        if (count > 0) {
+          targetPos = new THREE.Vector3(cx / count, cy / count, cz / count);
+        }
+      } else if (isSpeaking && activeSpeakers.length > 1) {
+        // Speaker: look at the other speaker(s)
+        let cx = 0, cy = 0, cz = 0, count = 0;
+        for (const spId of activeSpeakers) {
+          if (spId === participant.id) continue;
+          const sp = participants.get(spId);
+          if (sp) {
+            cx += sp.transform.position.x;
+            cy += 1.3;
+            cz += sp.transform.position.z;
+            count++;
+          }
+        }
+        if (count > 0) {
+          targetPos = new THREE.Vector3(cx / count, cy / count, cz / count);
+        }
+      }
+
+      attentionDirector.update(
+        participant.id,
+        vrm,
+        avatarWorldPos,
+        targetPos,
+        clampedDelta,
+        isSpeaking
+      );
+    }
 
     // === SPEECH TIME ACCUMULATOR ===
     if (participant.speakingState.isSpeaking) {
@@ -221,13 +328,8 @@ export function AvatarEntity({
       );
     }
 
-    // === LOOKAT ===
-    if (vrm.lookAt && participant.transform.lookAtTarget) {
-      const target = participant.transform.lookAtTarget;
-      const lookObj = new THREE.Object3D();
-      lookObj.position.set(target.x, target.y, target.z);
-      vrm.lookAt.target = lookObj;
-    }
+    // === LOOKAT (now handled by AttentionDirector, fallback only) ===
+    // AttentionDirector handles VRM.lookAt internally
   });
 
   // Loading indicator (pulsing ethereal glow)
@@ -288,11 +390,12 @@ export function AvatarEntity({
         </mesh>
       )}
 
-      {/* Aura System (進化オーラ — IndexedDBから累積発話量を読み込み) */}
+      {/* Aura System (進化オーラ — IndexedDBから累積発話量を読み込み + 感情知能EQ) */}
       <AuraSystem
         speechSeconds={savedSpeechSeconds + speechAccRef.current}
         isSpeaking={participant.speakingState.isSpeaking}
         accentColor={savedSignatureColor}
+        emotion={participant.emotion}
       />
 
       {/* Emotion Particles (感情パーティクル放出) */}
@@ -361,7 +464,7 @@ function applyIdleAnimation(
     chest.rotation.x = chestBreath + speakLean;
   }
 
-  // Head idle micro-movement (when not looking at speaker)
+  // Head idle micro-movement (AttentionDirector adds on top of this)
   const head = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Head);
   if (head) {
     const headNodCycle = time * 0.25 + hash * 3;
