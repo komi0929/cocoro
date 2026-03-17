@@ -12,6 +12,7 @@ import { recordRoomVisit } from '@/data/roomHistory';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useRooms, type RoomWithCount } from '@/hooks/useRooms';
+import { RoomCreator, type RoomConfig } from '@/components/ui/RoomCreator';
 
 // Fallback demo rooms（Supabase未接続時）
 const FALLBACK_ROOMS: RoomWithCount[] = [
@@ -38,6 +39,7 @@ export default function LobbyPage() {
   const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [step, setStep] = useState<'avatar' | 'room'>('avatar');
   const [joinProgress, setJoinProgress] = useState(0);
+  const [showRoomCreator, setShowRoomCreator] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem('kokoro_display_name');
@@ -276,7 +278,7 @@ export default function LobbyPage() {
             {/* Quick-join hero */}
             <button
               onClick={handleAutoJoin}
-              className="w-full mb-6 py-5 rounded-2xl font-semibold text-lg
+              className="w-full mb-3 py-5 rounded-2xl font-semibold text-lg
                 bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500
                 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/40
                 transition-all duration-300 active:scale-95 touch-manipulation
@@ -286,6 +288,18 @@ export default function LobbyPage() {
               {/* Shimmer effect */}
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent
                 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            </button>
+
+            {/* Create Room Button */}
+            <button
+              onClick={() => setShowRoomCreator(true)}
+              className="w-full mb-6 py-3.5 rounded-2xl font-medium text-sm
+                bg-white/5 border border-white/10 text-white/50
+                hover:bg-white/8 hover:text-white/70
+                transition-all duration-300 active:scale-95 touch-manipulation
+                flex items-center justify-center gap-2"
+            >
+              ✨ ルームを作る
             </button>
 
             {/* Room cards */}
@@ -441,6 +455,17 @@ export default function LobbyPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Room Creator Overlay */}
+      {showRoomCreator && (
+        <RoomCreator
+          onCreateRoom={(_config: RoomConfig) => {
+            setShowRoomCreator(false);
+            handleJoinRoom('custom-' + Date.now());
+          }}
+          onClose={() => setShowRoomCreator(false)}
+        />
       )}
     </div>
   );

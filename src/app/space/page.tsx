@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useKokoroStore } from '@/store/useKokoroStore';
 import { SpaceHUD } from '@/components/ui/SpaceHUD';
 import { ReactionPanel } from '@/components/ui/ReactionPanel';
@@ -32,6 +33,15 @@ import { useSpaceEngines } from '@/hooks/useSpaceEngines';
 import { ConversationHUD } from '@/components/ui/ConversationHUD';
 import { LiveCaption } from '@/components/ui/LiveCaption';
 import { ConnectionQuality } from '@/components/ui/ConnectionQuality';
+import { GameOverlay } from '@/components/ui/GameOverlay';
+import { FriendPanel } from '@/components/ui/FriendPanel';
+import { SafetyPanel } from '@/components/ui/SafetyPanel';
+import { SessionEndSummary } from '@/components/ui/SessionEndSummary';
+import { TopicCard } from '@/components/ui/TopicCard';
+import { SpaceMoodIndicator } from '@/components/ui/SpaceMoodIndicator';
+import { ListenerGestureBar } from '@/components/ui/ListenerGestureBar';
+import { SessionSummary } from '@/components/ui/SessionSummary';
+import { HighlightReel } from '@/components/ui/HighlightReel';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
 const KokoroCanvas = dynamic(
@@ -59,11 +69,16 @@ export default function SpacePage() {
   const climaxState = useCliMaxDirector();
   const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
   const engines = useSpaceEngines();
+  const router = useRouter();
   const [showSafety, setShowSafety] = useState(false);
   const [captionEnabled, setCaptionEnabled] = useState(false);
   const [showSessionEnd, setShowSessionEnd] = useState(false);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [bondNotice, setBondNotice] = useState<string | null>(null);
+  const [showFriendPanel, setShowFriendPanel] = useState(false);
+  const [showGameOverlay, setShowGameOverlay] = useState(false);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [showHighlightReel, setShowHighlightReel] = useState(false);
 
   // Persistent instances for emotion + signature (no AI runtime)
   const emotionClassifier = useMemo(() => new VoiceEmotionClassifier(), []);
@@ -577,6 +592,141 @@ export default function SpacePage() {
       {/* Seasonal Background Tint */}
       <div className="fixed inset-0 pointer-events-none z-0"
         style={{ background: `radial-gradient(ellipse at 50% 80%, ${engines.seasonalTheme.bgColor.replace('from-', '').split(' ')[0]}10, transparent 70%)` }} />
+
+      {/* === P0統合: 未マウントだった主要UIコンポーネント === */}
+
+      {/* Game Overlay (ワードウルフ等の会話ゲーム) */}
+      {showGameOverlay && (
+        <GameOverlay
+          gameState={engines.gameEngine.getState()}
+          myId={store.getState().localParticipantId ?? 'local'}
+          onSelectGame={(type) => {
+            const pIds = Array.from(store.getState().participants.values()).map(p => ({ id: p.id, displayName: p.displayName }));
+            engines.gameEngine.createGame(type, pIds);
+            engines.gameEngine.start();
+          }}
+          onVote={(targetId) => engines.gameEngine.vote(store.getState().localParticipantId ?? 'local', targetId)}
+          onClose={() => setShowGameOverlay(false)}
+          remainingSeconds={engines.gameEngine.getRemainingSeconds()}
+        />
+      )}
+
+      {/* Friend Panel (フレンド一覧・管理) */}
+      {showFriendPanel && (
+        <FriendPanel
+          friends={engines.socialGraph.getAllFriends?.() ?? []}
+          pendingRequests={engines.socialGraph.getPendingRequests?.() ?? []}
+          onJoinRoom={() => {}}
+          onAcceptRequest={(fromId) => engines.socialGraph.acceptRequest?.(fromId, 'user', 'default')}
+          onClose={() => setShowFriendPanel(false)}
+        />
+      )}
+
+      {/* Safety Panel (安全管理・通報) */}
+      {showSafety && profileTarget && (() => {
+        const p = store.getState().participants.get(profileTarget);
+        return p ? (
+          <SafetyPanel
+            targetId={p.id}
+            targetName={p.displayName}
+            isBlocked={false}
+            isMuted={false}
+            isSafeZoneActive={false}
+            onBlock={() => {}}
+            onMute={() => {}}
+            onToggleSafeZone={() => {}}
+            onReport={() => {}}
+            onClose={() => setShowSafety(false)}
+          />
+        ) : null;
+      })()}
+
+      {/* Session End Summary (退出時振り返り) */}
+      {showSessionEnd && (
+        <SessionEndSummary
+          data={{
+            durationMinutes: Math.round(performance.now() / 60000),
+            totalSpeechSeconds: speechSecondsRef.current,
+            participantCount: store.getState().participants.size,
+            peakMoments: engines.peakDetector.getAllMoments?.() ?? [],
+            dominantEmotion: engines.emotionPulse.computeRoomMood()?.dominant ?? 'neutral',
+            roomName: 'kokoro space',
+          }}
+          onClose={() => { setShowSessionEnd(false); router.push('/lobby'); }}
+        />
+      )}
+
+      {/* Topic Card (トピック提案) */}
+      {engines.topicEngine && (() => {
+        const topic = engines.topicEngine.getCurrent?.();
+        return topic ? (
+          <div className="fixed top-36 right-4 z-30 animate-fade-in-up">
+            <TopicCard
+              topic={topic}
+              onNext={() => {}}
+              onChoose={() => {}}
+              isVoiceActive={isMicActive}
+              volume={0}
+            />
+          </div>
+        ) : null;
+      })()}
+
+      {/* Space Mood Indicator */}
+      {engines.roomMood && engines.roomMood.intensity > 0.1 && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-20">
+          <SpaceMoodIndicator
+            flowLevel={engines.roomMood.intensity > 0.7 ? 'zone' : engines.roomMood.intensity > 0.4 ? 'flowing' : 'warming'}
+            flowScore={engines.roomMood.intensity}
+            streakSeconds={0}
+            turnsPerMinute={0}
+          />
+        </div>
+      )}
+
+      {/* Listener Gesture Bar (リスナー向けジェスチャーバー) */}
+      {!isMicActive && isLoaded && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40">
+          <ListenerGestureBar
+            system={engines.listenerEngagement}
+            visible={true}
+          />
+        </div>
+      )}
+
+      {/* Session Summary (セッション統計) */}
+      {showSessionSummary && (
+        <SessionSummary
+          data={{
+            durationMinutes: Math.round(performance.now() / 60000),
+            participantCount: store.getState().participants.size,
+            topKeywords: [],
+            myTalkTimePercent: 30,
+            reactionsReceived: 0,
+            levelBefore: 1,
+            levelAfter: 1,
+            xpGained: 0,
+            moodSummary: 'neutral',
+            bestMoment: null,
+            streakDays: 0,
+          }}
+          onClose={() => setShowSessionSummary(false)}
+          onShare={() => {}}
+        />
+      )}
+
+      {/* Highlight Reel (ハイライト再生) */}
+      {showHighlightReel && (
+        <HighlightReel
+          sessionDuration={Math.round(performance.now() / 60000)}
+          moments={[]}
+          participants={[]}
+          flowPeakMinute={0}
+          roomName="kokoro space"
+          onClose={() => setShowHighlightReel(false)}
+          onShare={() => {}}
+        />
+      )}
 
       {/* Bubble Button (bottom-left) */}
       <div className="fixed bottom-6 left-4 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
