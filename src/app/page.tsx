@@ -1,6 +1,6 @@
 /**
  * cocoro — ランディングページ
- * 小学生が見て「やりたい！」と思うUI
+ * 小学校中〜高学年(10-12歳)向けUI
  */
 'use client';
 
@@ -18,20 +18,19 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#e8f4fd] via-[#f0f7ff] to-[#fef3f2] relative overflow-hidden">
-      {/* --- 背景デコレーション --- */}
+      {/* 背景デコレーション */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-10 left-10 w-20 h-20 bg-purple-300/20 rounded-full blur-2xl" />
         <div className="absolute top-32 right-8 w-16 h-16 bg-pink-300/20 rounded-full blur-2xl" />
-        <div className="absolute bottom-40 left-6 w-24 h-24 bg-mint-300/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 left-6 w-24 h-24 bg-emerald-300/15 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-12 w-20 h-20 bg-sky-300/20 rounded-full blur-2xl" />
-        {/* 浮かぶ絵文字 */}
         <div className="absolute top-20 right-16 text-3xl animate-float-particle" style={{ animationDelay: '0s' }}>⭐</div>
         <div className="absolute top-48 left-12 text-2xl animate-float-particle" style={{ animationDelay: '1s' }}>🌈</div>
         <div className="absolute bottom-60 right-20 text-3xl animate-float-particle" style={{ animationDelay: '2s' }}>🫧</div>
         <div className="absolute bottom-32 left-16 text-2xl animate-float-particle" style={{ animationDelay: '3s' }}>✨</div>
       </div>
 
-      {/* --- メインコンテンツ --- */}
+      {/* メインコンテンツ */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12">
         {/* ロゴ */}
         <div className="animate-bounce-in mb-6">
@@ -49,16 +48,15 @@ export default function LandingPage() {
 
         {/* サブタイトル */}
         <p className="animate-fade-in-up-delay text-center text-base md:text-lg text-gray-500 mt-3 max-w-xs">
-          ともだちと<br />
-          アバターでおはなししよう！
+          アバターで友だちと通話しよう
         </p>
 
-        {/* かわいいイラスト的な説明 */}
+        {/* 特徴カード */}
         <div className="animate-fade-in-up-delay-2 mt-8 flex gap-4 md:gap-6">
           {[
-            { emoji: '🎤', label: 'こえで\nはなす' },
-            { emoji: '🧸', label: 'アバターが\nうごく' },
-            { emoji: '🛡️', label: 'あんしん\nあんぜん' },
+            { emoji: '🎤', label: '声で通話' },
+            { emoji: '🧸', label: 'アバターが\n動く' },
+            { emoji: '🛡️', label: '安心設計' },
           ].map((item) => (
             <div key={item.label} className="flex flex-col items-center gap-2">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/80 backdrop-blur-sm shadow-md flex items-center justify-center text-3xl md:text-4xl
@@ -91,10 +89,10 @@ export default function LandingPage() {
             {isEntering ? (
               <span className="flex items-center gap-2">
                 <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                つなげているよ...
+                接続中...
               </span>
             ) : (
-              'ともだちとおはなしする 🎤'
+              '通話をはじめる 🎤'
             )}
           </button>
         </div>
@@ -105,10 +103,9 @@ export default function LandingPage() {
             <div className="flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">🔒</span>
               <div>
-                <p className="text-sm font-bold text-gray-600">おうちのかたへ</p>
+                <p className="text-sm font-bold text-gray-600">保護者のかたへ</p>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  カメラは使いません。おこさまのお顔は映りません。
-                  声とアバターだけで安心しておはなしできます。
+                  カメラは使用しません。声とアバターだけで安心して通話できるアプリです。
                 </p>
               </div>
             </div>
@@ -121,9 +118,7 @@ export default function LandingPage() {
         <div className="fixed inset-0 z-50 bg-white/90 backdrop-blur-xl animate-warp-in flex items-center justify-center">
           <div className="text-center">
             <div className="text-5xl mb-4 animate-bounce-in">🫧</div>
-            <p className="text-gray-400 text-sm font-medium">
-              おへやを さがしているよ...
-            </p>
+            <p className="text-gray-400 text-sm font-medium">接続しています...</p>
           </div>
         </div>
       )}

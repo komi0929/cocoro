@@ -1,20 +1,17 @@
 /**
  * cocoro — SafetyGuard
- * 小学生向け安全機能:
- * - 利用時間トラッカー（○分たったよ！通知）
- * - 「にげる🏃」ボタン（即退出）
- * - 保護者パスコード（設定変更時）
+ * 安全機能:
+ * - 利用時間トラッカー
+ * - 「ぬける」ボタン（退出）
+ * - 保護者パスコード
  */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface SafetyGuardProps {
-  /** 利用時間上限(分) 0=無制限 */
   timeLimitMinutes?: number;
-  /** 退出時コールバック */
   onEscape?: () => void;
-  /** 子要素 */
   children: React.ReactNode;
 }
 
@@ -28,24 +25,21 @@ export function SafetyGuard({
   const [showTimeUp, setShowTimeUp] = useState(false);
   const startTimeRef = useRef(Date.now());
 
-  // 利用時間トラッカー
   useEffect(() => {
     const interval = setInterval(() => {
       const mins = Math.floor((Date.now() - startTimeRef.current) / 60000);
       setElapsedMinutes(mins);
 
       if (timeLimitMinutes > 0) {
-        // 残り5分で警告
         if (mins === timeLimitMinutes - 5 && !showTimeWarning) {
           setShowTimeWarning(true);
           setTimeout(() => setShowTimeWarning(false), 5000);
         }
-        // 時間切れ
         if (mins >= timeLimitMinutes) {
           setShowTimeUp(true);
         }
       }
-    }, 30000); // 30秒ごとにチェック
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [timeLimitMinutes, showTimeWarning]);
@@ -62,71 +56,68 @@ export function SafetyGuard({
     <div className="relative w-full h-full">
       {children}
 
-      {/* === にげる🏃ボタン（常時表示） === */}
+      {/* ぬけるボタン */}
       <button
         onClick={handleEscape}
-        className="fixed top-4 right-4 z-[100] px-4 py-2.5 rounded-full
-          bg-red-100 hover:bg-red-200 active:scale-90
-          border border-red-200 shadow-md
-          text-red-600 text-sm font-bold
+        className="fixed top-4 right-4 z-100 px-4 py-2.5 rounded-full
+          bg-white/80 hover:bg-white active:scale-90
+          border border-gray-200 shadow-md
+          text-gray-500 text-sm font-bold
           transition-all touch-manipulation
-          flex items-center gap-1.5"
+          flex items-center gap-1.5 backdrop-blur-sm"
         aria-label="退出"
       >
-        <span className="text-lg">🏃</span>
-        にげる
+        ← ぬける
       </button>
 
-      {/* === 利用時間表示（5分ごとに表示） === */}
+      {/* 利用時間（5分ごと） */}
       {elapsedMinutes > 0 && elapsedMinutes % 5 === 0 && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[90]
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-90
           px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-md
-          text-sm text-gray-500 font-medium
-          animate-fade-in-up">
-          ⏰ {elapsedMinutes}ぷん たったよ
+          text-sm text-gray-500 font-medium animate-fade-in-up">
+          ⏰ {elapsedMinutes}分経過
         </div>
       )}
 
-      {/* === 残り5分警告 === */}
+      {/* 残り5分 */}
       {showTimeWarning && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 backdrop-blur-sm animate-scale-in">
+        <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-scale-in">
           <div className="bg-white rounded-3xl p-8 mx-6 shadow-2xl max-w-sm text-center">
             <div className="text-5xl mb-4">⏰</div>
             <p className="text-lg font-bold text-gray-700 mb-2">
-              あと5ふんだよ！
+              あと5分だよ
             </p>
             <p className="text-sm text-gray-400 mb-4">
-              もうすこしでじかんだよ
+              もうすぐ利用時間の上限です
             </p>
             <button
               onClick={() => setShowTimeWarning(false)}
               className="px-6 py-2.5 rounded-xl bg-purple-500 text-white font-bold
                 hover:bg-purple-600 active:scale-95 transition-all"
             >
-              わかった！
+              OK
             </button>
           </div>
         </div>
       )}
 
-      {/* === 時間切れ === */}
+      {/* 時間切れ */}
       {showTimeUp && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 mx-6 shadow-2xl max-w-sm text-center animate-bounce-in">
             <div className="text-5xl mb-4">🌙</div>
             <p className="text-lg font-bold text-gray-700 mb-2">
-              おしまいのじかんだよ！
+              利用時間の上限だよ
             </p>
             <p className="text-sm text-gray-400 mb-4">
-              きょうもたのしかったね。<br />
-              またあそぼうね！
+              今日も楽しかったね！またね 👋
             </p>
             <button
               onClick={handleEscape}
               className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold
                 hover:opacity-90 active:scale-95 transition-all shadow-lg"
             >
-              バイバイ 👋
+              おわる
             </button>
           </div>
         </div>
@@ -136,7 +127,7 @@ export function SafetyGuard({
 }
 
 /**
- * 保護者パスコード入力ダイアログ
+ * 保護者パスコード
  */
 interface ParentalPasscodeProps {
   onUnlock: () => void;
@@ -159,14 +150,14 @@ export function ParentalPasscode({ onUnlock, onCancel }: ParentalPasscodeProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-3xl p-8 mx-6 shadow-2xl max-w-sm w-full text-center animate-scale-in">
         <div className="text-4xl mb-3">🔒</div>
         <p className="text-base font-bold text-gray-700 mb-1">
-          おうちのかた よう
+          保護者用設定
         </p>
         <p className="text-xs text-gray-400 mb-4">
-          パスコードをいれてください
+          パスコードを入力してください
         </p>
         <input
           type="password"
@@ -182,18 +173,18 @@ export function ParentalPasscode({ onUnlock, onCancel }: ParentalPasscodeProps) 
           autoFocus
         />
         {error && (
-          <p className="text-red-400 text-xs mt-2 font-medium">ちがうよ！もういちど</p>
+          <p className="text-red-400 text-xs mt-2 font-medium">パスコードが違います</p>
         )}
         <div className="flex gap-3 mt-5 justify-center">
           <button onClick={onCancel}
             className="px-5 py-2 rounded-xl text-gray-400 text-sm font-medium hover:bg-gray-100 transition-colors">
-            やめる
+            キャンセル
           </button>
           <button onClick={handleSubmit}
             disabled={code.length < 4}
             className="px-5 py-2 rounded-xl bg-purple-500 text-white text-sm font-bold
               hover:bg-purple-600 disabled:opacity-40 transition-all">
-            ひらく
+            解除
           </button>
         </div>
       </div>

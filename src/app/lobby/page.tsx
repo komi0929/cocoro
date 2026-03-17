@@ -1,7 +1,7 @@
 /**
  * cocoro — ロビー
- * 「へやをつくる」「へやにはいる」の2択
- * 小学生がまよわず使える シンプルUI
+ * 「部屋をつくる」「部屋に入る」の2択
+ * 小学校中〜高学年(10-12歳)向けUI
  */
 'use client';
 
@@ -17,7 +17,6 @@ export default function LobbyPage() {
   const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR_ID);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // 4桁のルームコード生成
   const generateCode = useCallback(() => {
     return String(Math.floor(1000 + Math.random() * 9000));
   }, []);
@@ -45,46 +44,41 @@ export default function LobbyPage() {
   if (mode === 'menu') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#e8f4fd] via-[#f0f7ff] to-[#fef3f2] flex flex-col items-center justify-center px-6 py-12">
-        {/* 戻るボタン */}
         <button onClick={() => router.push('/')}
           className="absolute top-6 left-6 text-gray-400 hover:text-gray-600 text-sm flex items-center gap-1">
           ← もどる
         </button>
 
         <div className="text-5xl mb-6 animate-bounce-in">🫧</div>
-        <h1 className="text-2xl font-bold text-gray-700 mb-2">なにする？</h1>
-        <p className="text-sm text-gray-400 mb-10">ともだちとおはなしするほうほうをえらんでね</p>
+        <h1 className="text-2xl font-bold text-gray-700 mb-2">何する？</h1>
+        <p className="text-sm text-gray-400 mb-10">友だちとの通話方法を選んでね</p>
 
         <div className="flex flex-col gap-4 w-full max-w-xs">
-          {/* へやをつくる */}
           <button
             onClick={() => setMode('create')}
             className="w-full py-5 px-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-md
-              hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
-              flex items-center gap-4"
+              hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-4"
           >
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-2xl shadow-sm">
               🏠
             </div>
             <div className="text-left">
-              <p className="font-bold text-gray-700 text-base">へやをつくる</p>
-              <p className="text-xs text-gray-400 mt-0.5">あいことばをともだちにおしえよう</p>
+              <p className="font-bold text-gray-700 text-base">部屋をつくる</p>
+              <p className="text-xs text-gray-400 mt-0.5">合言葉を友だちに教えよう</p>
             </div>
           </button>
 
-          {/* へやにはいる */}
           <button
             onClick={() => setMode('join')}
             className="w-full py-5 px-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-md
-              hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
-              flex items-center gap-4"
+              hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-4"
           >
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-400 to-cyan-400 flex items-center justify-center text-2xl shadow-sm">
               🚪
             </div>
             <div className="text-left">
-              <p className="font-bold text-gray-700 text-base">へやにはいる</p>
-              <p className="text-xs text-gray-400 mt-0.5">ともだちのあいことばをいれよう</p>
+              <p className="font-bold text-gray-700 text-base">部屋に入る</p>
+              <p className="text-xs text-gray-400 mt-0.5">友だちの合言葉を入力</p>
             </div>
           </button>
         </div>
@@ -92,10 +86,9 @@ export default function LobbyPage() {
     );
   }
 
-  // --- へやをつくる / へやにはいる ---
+  // --- 部屋をつくる / 部屋に入る ---
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#e8f4fd] via-[#f0f7ff] to-[#fef3f2] flex flex-col items-center px-6 py-12">
-      {/* 戻る */}
       <button onClick={() => setMode('menu')}
         className="absolute top-6 left-6 text-gray-400 hover:text-gray-600 text-sm flex items-center gap-1">
         ← もどる
@@ -103,28 +96,27 @@ export default function LobbyPage() {
 
       <div className="w-full max-w-sm mt-12">
         <h2 className="text-xl font-bold text-gray-700 text-center mb-8">
-          {mode === 'create' ? '🏠 へやをつくる' : '🚪 へやにはいる'}
+          {mode === 'create' ? '🏠 部屋をつくる' : '🚪 部屋に入る'}
         </h2>
 
-        {/* ニックネーム入力 */}
+        {/* ニックネーム */}
         <div className="mb-5">
-          <label className="text-sm font-medium text-gray-500 mb-2 block">なまえ</label>
+          <label className="text-sm font-medium text-gray-500 mb-2 block">ニックネーム</label>
           <input
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            placeholder="ニックネームをいれてね"
+            placeholder="名前を入力"
             maxLength={10}
             className="w-full px-4 py-3.5 rounded-xl bg-white/80 border border-gray-200 text-gray-700
-              placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent
-              text-base"
+              placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-base"
           />
         </div>
 
-        {/* ルームコード入力（参加時のみ） */}
+        {/* 合言葉（参加時のみ） */}
         {mode === 'join' && (
           <div className="mb-5">
-            <label className="text-sm font-medium text-gray-500 mb-2 block">あいことば（4けた）</label>
+            <label className="text-sm font-medium text-gray-500 mb-2 block">合言葉（4ケタ）</label>
             <input
               type="text"
               value={roomCode}
@@ -142,22 +134,23 @@ export default function LobbyPage() {
         {/* アバター選択 */}
         <div className="mb-6">
           <label className="text-sm font-medium text-gray-500 mb-3 block">アバター</label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {AVATAR_CATALOG.map((avatar) => (
               <button
                 key={avatar.id}
                 onClick={() => setSelectedAvatar(avatar.id)}
-                className={`p-3 rounded-xl border-2 transition-all text-center
+                className={`p-4 rounded-xl border-2 transition-all text-center
                   ${selectedAvatar === avatar.id
                     ? 'border-purple-400 bg-purple-50/50 shadow-md scale-105'
                     : 'border-gray-100 bg-white/60 hover:border-gray-200'
                   }`}
               >
-                <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-lg mb-1.5"
+                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-lg mb-2"
                   style={{ background: `linear-gradient(135deg, ${avatar.gradient[0]}, ${avatar.gradient[1]})` }}>
                   {avatar.name.charAt(0)}
                 </div>
-                <span className="text-[10px] text-gray-500 font-medium">{avatar.name}</span>
+                <span className="text-xs text-gray-600 font-bold">{avatar.name}</span>
+                <span className="block text-[10px] text-gray-400 mt-0.5">{avatar.description}</span>
               </button>
             ))}
           </div>
@@ -178,12 +171,12 @@ export default function LobbyPage() {
           {isConnecting ? (
             <span className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              つなげているよ...
+              接続中...
             </span>
           ) : mode === 'create' ? (
-            'へやをつくる 🎉'
+            '部屋をつくる 🎉'
           ) : (
-            'はいる 🚪'
+            '入る 🚪'
           )}
         </button>
       </div>
@@ -194,7 +187,7 @@ export default function LobbyPage() {
           <div className="text-center">
             <div className="text-5xl mb-4 animate-bounce-in">🫧</div>
             <p className="text-gray-400 text-sm font-medium">
-              {mode === 'create' ? 'へやをつくっているよ...' : 'へやをさがしているよ...'}
+              {mode === 'create' ? '部屋を作成中...' : '部屋に接続中...'}
             </p>
           </div>
         </div>
