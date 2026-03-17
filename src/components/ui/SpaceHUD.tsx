@@ -41,6 +41,11 @@ interface SpaceHUDProps {
   onLeave: () => void;
   onShowProfile?: (participantId: string) => void;
   onShareRoom?: () => void;
+  onShowGame?: () => void;
+  onShowFriends?: () => void;
+  onShowSafety?: () => void;
+  onShowSession?: () => void;
+  onShowHighlight?: () => void;
 }
 
 export function SpaceHUD({
@@ -49,6 +54,11 @@ export function SpaceHUD({
   onLeave,
   onShowProfile,
   onShareRoom,
+  onShowGame,
+  onShowFriends,
+  onShowSafety,
+  onShowSession,
+  onShowHighlight,
 }: SpaceHUDProps) {
   const phase = useKokoroStore((s) => s.phase);
   const density = useKokoroStore((s) => s.density);
@@ -258,6 +268,45 @@ export function SpaceHUD({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Quick Action Bar — bottom right */}
+      <div className="fixed bottom-8 right-4 z-50 flex flex-col gap-2">
+        {onShowGame && (
+          <button onClick={onShowGame} title="ゲーム"
+            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
+              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
+            🎲
+          </button>
+        )}
+        {onShowFriends && (
+          <button onClick={onShowFriends} title="フレンド"
+            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
+              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
+            👥
+          </button>
+        )}
+        {onShowSafety && (
+          <button onClick={onShowSafety} title="安全管理"
+            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
+              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
+            🛡️
+          </button>
+        )}
+        {onShowSession && (
+          <button onClick={onShowSession} title="セッション"
+            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
+              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
+            📊
+          </button>
+        )}
+        {onShowHighlight && (
+          <button onClick={onShowHighlight} title="ハイライト"
+            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
+              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
+            ✨
+          </button>
+        )}
       </div>
 
       {/* Active speakers overlay — shows who's talking */}

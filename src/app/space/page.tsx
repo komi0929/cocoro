@@ -42,6 +42,10 @@ import { SpaceMoodIndicator } from '@/components/ui/SpaceMoodIndicator';
 import { ListenerGestureBar } from '@/components/ui/ListenerGestureBar';
 import { SessionSummary } from '@/components/ui/SessionSummary';
 import { HighlightReel } from '@/components/ui/HighlightReel';
+import { AudienceQuestionCardPanel } from '@/components/ui/AudienceQuestionCard';
+import { ConnectionGraph } from '@/components/ui/ConnectionGraph';
+import { LivePoll } from '@/components/ui/LivePoll';
+import { WarpTransition } from '@/components/ui/WarpTransition';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
 const KokoroCanvas = dynamic(
@@ -79,6 +83,9 @@ export default function SpacePage() {
   const [showGameOverlay, setShowGameOverlay] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
   const [showHighlightReel, setShowHighlightReel] = useState(false);
+  const [showConnectionGraph, setShowConnectionGraph] = useState(false);
+  const [showLivePoll, setShowLivePoll] = useState(false);
+  const [isWarping, setIsWarping] = useState(false);
 
   // Persistent instances for emotion + signature (no AI runtime)
   const emotionClassifier = useMemo(() => new VoiceEmotionClassifier(), []);
@@ -422,10 +429,8 @@ export default function SpacePage() {
       participantCount: store.getState().participants.size,
     }).catch(() => {});
 
-    // 3秒フェードアウト後にリダイレクト
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 2000);
+    // Session End Summary表示 → その後リダイレクト
+    setShowSessionEnd(true);
   }, [store, voiceSignature, engines.gentleExit]);
 
   const handleLeaveCancel = useCallback(() => {
@@ -451,6 +456,11 @@ export default function SpacePage() {
         onLeave={handleLeaveRequest}
         onShowProfile={handleShowProfile}
         onShareRoom={() => setShowShareRoom((s) => !s)}
+        onShowGame={() => setShowGameOverlay(true)}
+        onShowFriends={() => setShowFriendPanel(true)}
+        onShowSafety={() => setShowSafety(true)}
+        onShowSession={() => setShowSessionSummary(true)}
+        onShowHighlight={() => setShowHighlightReel(true)}
       />
 
       {/* Mic Onboarding Hint (反復10: 初回体験ガイド) */}
@@ -727,6 +737,57 @@ export default function SpacePage() {
           onShare={() => {}}
         />
       )}
+
+      {/* === P1統合: 追加UIコンポーネント === */}
+
+      {/* Audience Question Card (聴衆質問カード) */}
+      <AudienceQuestionCardPanel
+        visible={!isMicActive && isLoaded}
+        onSendQuestion={() => {}}
+      />
+
+      {/* Connection Graph (ソーシャルグラフ視覚化) */}
+      {showConnectionGraph && (
+        <ConnectionGraph
+          nodes={Array.from(store.getState().participants.values()).map(p => ({
+            id: p.id,
+            name: p.displayName,
+            avatar: p.avatarId ?? '',
+            isSelf: p.id === store.getState().localParticipantId,
+            speechMinutes: 0,
+          }))}
+          edges={[]}
+          onClose={() => setShowConnectionGraph(false)}
+        />
+      )}
+
+      {/* Live Poll (リアルタイム投票) */}
+      {showLivePoll && (
+        <LivePoll
+          poll={{
+            question: '今日のトピックは？',
+            options: [
+              { id: 'a', text: '趣味の話', votes: 0, emoji: '🎮' },
+              { id: 'b', text: '最近のニュース', votes: 0, emoji: '📰' },
+              { id: 'c', text: 'おすすめの音楽', votes: 0, emoji: '🎵' },
+            ],
+            totalVotes: 0,
+            myVote: null,
+            isOpen: true,
+            createdAt: Date.now(),
+          }}
+          onVote={() => {}}
+          onClose={() => setShowLivePoll(false)}
+        />
+      )}
+
+      {/* Warp Transition (ルーム間ワープエフェクト) */}
+      <WarpTransition
+        type="enter"
+        active={isWarping}
+        onComplete={() => setIsWarping(false)}
+        roomName="kokoro space"
+      />
 
       {/* Bubble Button (bottom-left) */}
       <div className="fixed bottom-6 left-4 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
