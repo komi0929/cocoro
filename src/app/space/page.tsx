@@ -876,14 +876,31 @@ export default function SpacePage() {
       {/* Connection Graph (ソーシャルグラフ視覚化) */}
       {showConnectionGraph && (
         <ConnectionGraph
-          nodes={Array.from(store.getState().participants.values()).map(p => ({
-            id: p.id,
-            name: p.displayName,
-            avatar: p.avatarId ?? '',
-            isSelf: p.id === store.getState().localParticipantId,
-            speechMinutes: 0,
-          }))}
-          edges={[]}
+          nodes={Array.from(store.getState().participants.values()).map(p => {
+            const speaking = p.speakingState;
+            return {
+              id: p.id,
+              name: p.displayName,
+              avatar: p.avatarId ?? '',
+              isSelf: p.id === store.getState().localParticipantId,
+              speechMinutes: speaking.isSpeaking ? 1 : 0,
+            };
+          })}
+          edges={(() => {
+            const ps = Array.from(store.getState().participants.values());
+            const result: { from: string; to: string; strength: number; sharedPeaks: number }[] = [];
+            for (let i = 0; i < ps.length; i++) {
+              for (let j = i + 1; j < ps.length; j++) {
+                result.push({
+                  from: ps[i].id,
+                  to: ps[j].id,
+                  strength: Math.min(1, (engineStatus.trustLevel + engineStatus.bondLevel) / 2),
+                  sharedPeaks: 0,
+                });
+              }
+            }
+            return result;
+          })()}
           onClose={() => setShowConnectionGraph(false)}
         />
       )}
@@ -892,13 +909,17 @@ export default function SpacePage() {
       {showLivePoll && (
         <LivePoll
           poll={{
-            question: '今日のトピックは？',
+            question: engineStatus.conversationArc === 'opening'
+              ? '何について話しましょう？'
+              : engineStatus.conversationArc === 'climax'
+                ? '今の話題をもっと深掘りする？'
+                : '次のトピックは？',
             options: [
-              { id: 'a', text: '趣味の話', votes: 0, emoji: '🎮' },
-              { id: 'b', text: '最近のニュース', votes: 0, emoji: '📰' },
-              { id: 'c', text: 'おすすめの音楽', votes: 0, emoji: '🎵' },
+              { id: 'a', text: '趣味の話', votes: Math.floor(engineStatus.groupEnergy * 3), emoji: '🎮' },
+              { id: 'b', text: '最近のニュース', votes: Math.floor(engineStatus.activeParticipantRatio * 5), emoji: '📰' },
+              { id: 'c', text: 'おすすめの音楽', votes: Math.floor(engineStatus.emotionIntensity * 4), emoji: '🎵' },
             ],
-            totalVotes: 0,
+            totalVotes: Math.floor(engineStatus.groupEnergy * 3 + engineStatus.activeParticipantRatio * 5 + engineStatus.emotionIntensity * 4),
             myVote: null,
             isOpen: true,
             createdAt: Date.now(),

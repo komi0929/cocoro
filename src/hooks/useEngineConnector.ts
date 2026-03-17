@@ -136,14 +136,16 @@ export function useEngineConnector(engines: SpaceEngines): EngineStatus {
     if (arc) statusRef.current.conversationArc = typeof arc === 'string' ? arc : arc.phase ?? 'opening';
 
     // heatmap
-    const heatData = safeCall(engines.heatmap, 'getData') ?? safeCall(engines.heatmap, 'getHeatmap');
+    // heatmap → safeCall only (no UI binding needed)
+    safeCall(engines.heatmap, 'getData') ?? safeCall(engines.heatmap, 'getHeatmap');
 
     // silenceDirector
     const silence = safeCall(engines.silenceDirector, 'getSilenceDuration') ?? safeCall(engines.silenceDirector, 'getDuration') ?? safeProp(engines.silenceDirector, 'duration');
     if (typeof silence === 'number') statusRef.current.silenceDuration = silence;
 
     // speechRhythm
-    const rhythm = safeCall(engines.speechRhythm, 'getState') ?? safeCall(engines.speechRhythm, 'analyze');
+    // speechRhythm → tick/analyze
+    safeCall(engines.speechRhythm, 'getState') ?? safeCall(engines.speechRhythm, 'analyze');
 
     // attention → store
     const focus = safeCall(engines.attention, 'getFocusTarget') ?? safeCall(engines.attention, 'getTarget');
@@ -169,7 +171,8 @@ export function useEngineConnector(engines: SpaceEngines): EngineStatus {
     if (phase !== undefined) store.setState({ phase });
 
     // emotionContagion
-    const contagion = safeCall(engines.emotionContagion, 'getContagionLevel') ?? safeCall(engines.emotionContagion, 'getLevel') ?? safeProp(engines.emotionContagion, 'level');
+    // emotionContagion → tick
+    safeCall(engines.emotionContagion, 'getContagionLevel') ?? safeCall(engines.emotionContagion, 'getLevel') ?? safeProp(engines.emotionContagion, 'level');
 
     // emotionTimeline → store
     const timeline = safeCall(engines.emotionTimeline, 'getTimeline') ?? safeCall(engines.emotionTimeline, 'getData');
@@ -255,7 +258,8 @@ export function useEngineConnector(engines: SpaceEngines): EngineStatus {
     statusRef.current.activeParticipantRatio = participantCount > 0 ? speakingCount / participantCount : 0;
 
     // antiChurn
-    const churnRisk = safeCall(engines.antiChurn, 'getRiskLevel') ?? safeCall(engines.antiChurn, 'getRisk') ?? safeProp(engines.antiChurn, 'riskLevel');
+    // antiChurn → tick
+    safeCall(engines.antiChurn, 'getRiskLevel') ?? safeCall(engines.antiChurn, 'getRisk') ?? safeProp(engines.antiChurn, 'riskLevel');
 
     // socialGraph → store (already connected)
 

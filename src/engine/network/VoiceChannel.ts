@@ -15,6 +15,22 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
+  // Free TURN relay for NAT traversal
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ];
 
 interface PeerConnection {
@@ -164,7 +180,7 @@ export class VoiceChannel {
   /**
    * PeerConnection作成
    */
-  private createPeerConnection(peerId: string): PeerConnection {
+  createPeerConnection(peerId: string): PeerConnection {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     const remoteStream = new MediaStream();
     const audioElement = new Audio();
