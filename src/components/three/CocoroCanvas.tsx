@@ -1,44 +1,100 @@
 /**
  * cocoro — CocoroCanvas
- * React Three Fiber のルート Canvas ラッパー
- * シネマティックカメラ + 3D空間描画
- * ※ EffectComposer(post-processing)は本番WebGL安定性のため意図的に除外
+ * React Three Fiber のルートCanvas
+ * 子ども向け: 明るいパステル空間 + ネームプレート + 発話リング
  */
 'use client';
 
 import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Preload } from '@react-three/drei';
+import { Preload, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { SpatialStage } from './SpatialStage';
 import { AvatarEntity } from './AvatarEntity';
 import { CinematicCamera } from './CinematicCamera';
 import { useCocoroStore } from '@/store/useCocoroStore';
-import { getThemeForRoom, DEFAULT_THEME } from '@/data/roomThemes';
 import { getPerformanceProfile } from '@/engine/performance/PerformanceConfig';
-import { CollectiveResonance } from './CollectiveResonance';
-import { EmotionalBurstParticles } from './EmotionalBurstParticles';
-import { FlowStateVisualizer } from './FlowStateVisualizer';
-import { VocalEnergyField } from './VocalEnergyField';
-import { GravityWaves } from './GravityWaves';
-import { SpectralAurora } from './SpectralAurora';
-import { AuraSystem } from './AuraSystem';
 import { AuroraFloor } from './AuroraFloor';
-import { EmotionParticles } from './EmotionParticles';
-import { PresenceAura } from './PresenceAura';
+import type { Participant } from '@/types/cocoro';
 
 interface CocoroCanvasProps {
   className?: string;
 }
 
+/**
+ * アバター上のネームプレート + 発話インジケーター
+ * HTML overlayで3D空間上に表示
+ */
+function AvatarLabel({ participant }: { participant: Participant }) {
+  const isSpeaking = participant.speakingState?.isSpeaking ?? false;
+  const pos = participant.transform?.position ?? { x: 0, y: 0, z: 0 };
+
+  return (
+    <group position={[pos.x, 2.8, pos.z]}>
+      <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
+        <div className="flex flex-col items-center gap-1">
+          {/* 発話インジケーター */}
+          {isSpeaking && (
+            <div className="flex gap-0.5 mb-0.5">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-1 bg-green-400 rounded-full"
+                  style={{
+                    height: `${6 + Math.sin(Date.now() / 200 + i * 1.2) * 4}px`,
+                    animation: 'none',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          {/* ネームプレート */}
+          <div className={`
+            px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap
+            backdrop-blur-md shadow-sm border
+            ${isSpeaking
+              ? 'bg-green-100/90 text-green-700 border-green-200/50'
+              : 'bg-white/80 text-gray-500 border-white/50'
+            }
+          `}>
+            {participant.displayName}
+          </div>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+/**
+ * アバター足元のスピーキングリング（3Dメッシュ）
+ */
+function SpeakingRing({ participant }: { participant: Participant }) {
+  const isSpeaking = participant.speakingState?.isSpeaking ?? false;
+  const volume = participant.speakingState?.volume ?? 0;
+  const pos = participant.transform?.position ?? { x: 0, y: 0, z: 0 };
+
+  if (!isSpeaking) return null;
+
+  const scale = 1.0 + volume * 0.5;
+  const opacity = 0.3 + volume * 0.3;
+
+  return (
+    <mesh position={[pos.x, 0.02, pos.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.8 * scale, 1.0 * scale, 32]} />
+      <meshBasicMaterial
+        color="#86efac"
+        transparent
+        opacity={opacity}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
 export function CocoroCanvas({ className }: CocoroCanvasProps) {
   const participants = useCocoroStore((s) => s.participants);
   const localId = useCocoroStore((s) => s.localParticipantId);
-  const roomId = useCocoroStore((s) => s.roomId);
-  const theme = useMemo(() => roomId ? getThemeForRoom(roomId) : DEFAULT_THEME, [roomId]);
   const perfProfile = useMemo(() => getPerformanceProfile(), []);
 
-  // Limit avatars rendered based on performance tier
   const avatarsToRender = useMemo(() => {
     const all = Array.from(participants.values());
     if (all.length <= perfProfile.maxAvatars) return all;
@@ -71,66 +127,32 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 1.4,
           outputColorSpace: THREE.SRGBColorSpace,
         }}
-        style={{ background: theme.bgColor }}
+        style={{ background: 'linear-gradient(180deg, #dbeafe 0%, #ede9fe 50%, #fce7f3 100%)' }}
       >
         <Suspense fallback={null}>
           <CinematicCamera enableEntrance />
-          <SpatialStage roomId={roomId ?? undefined} />
 
+          {/* 明るい環境光 */}
+          <ambientLight intensity={1.2} color="#f8f0ff" />
+          <directionalLight position={[5, 10, 5]} intensity={0.8} color="#fff5ee" />
+
+          {/* アバター + ネームプレート + 発話リング */}
           {avatarsToRender.map((participant) => (
-            <AvatarEntity
-              key={participant.id}
-              participant={participant}
-              isLocal={participant.id === localId}
-            />
+            <group key={participant.id}>
+              <AvatarEntity
+                participant={participant}
+                isLocal={participant.id === localId}
+              />
+              <AvatarLabel participant={participant} />
+              <SpeakingRing participant={participant} />
+            </group>
           ))}
 
-          <CollectiveResonance />
-          <EmotionalBurstParticles />
-          <FlowStateVisualizer />
-          <VocalEnergyField />
-          <GravityWaves />
-          <SpectralAurora />
-
-          {(() => {
-            const lp = localId ? participants.get(localId) : undefined;
-            const speaking = lp?.speakingState;
-            return (
-              <AuraSystem
-                speechSeconds={speaking?.isSpeaking ? 1 : 0}
-                isSpeaking={speaking?.isSpeaking ?? false}
-              />
-            );
-          })()}
-
+          {/* パステルオーロラ床 */}
           <AuroraFloor />
-
-          {(() => {
-            const lp = localId ? participants.get(localId) : undefined;
-            return (
-              <EmotionParticles
-                joy={lp?.emotion?.joy ?? 0}
-                surprise={lp?.emotion?.surprise ?? 0}
-                isSpeaking={lp?.speakingState?.isSpeaking ?? false}
-                volume={lp?.speakingState?.volume ?? 0}
-              />
-            );
-          })()}
-
-          {(() => {
-            const lp = localId ? participants.get(localId) : undefined;
-            const pos = lp?.transform?.position;
-            return (
-              <PresenceAura
-                position={pos ? [pos.x, pos.y, pos.z] : [0, 0, 0]}
-                isSpeaking={lp?.speakingState?.isSpeaking ?? false}
-                volume={lp?.speakingState?.volume ?? 0}
-              />
-            );
-          })()}
 
           <Preload all />
         </Suspense>

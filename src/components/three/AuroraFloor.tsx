@@ -1,7 +1,7 @@
 /**
- * cocoro — Aurora Floor
- * カスタムGLSLシェーダーによるオーロラ波紋フロア
- * 発話者の足元から声の波形に連動した波紋が広がる
+ * cocoro — Aurora Floor (パステル版)
+ * 明るくやさしいグラデーション床
+ * 話している人の足元からパステルカラーの波紋が広がる
  */
 'use client';
 
@@ -9,9 +9,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useCocoroStore } from '@/store/useCocoroStore';
-import { SpacePhase } from '@/types/cocoro';
 
-// Simplex Noise GLSL (embedded)
 const SIMPLEX_NOISE_GLSL = /* glsl */ `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -59,8 +57,6 @@ const fragmentShader = /* glsl */ `
   ${SIMPLEX_NOISE_GLSL}
 
   uniform float uTime;
-  uniform float uDensity;
-  uniform int   uPhase; // 0=SILENCE, 1=TRIGGER, 2=GRAVITY
   uniform vec3  uSpeakerPositions[8];
   uniform float uSpeakerVolumes[8];
   uniform int   uSpeakerCount;
@@ -68,42 +64,36 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   varying vec3 vWorldPosition;
 
-  // Phase-based color palettes
-  vec3 getSilenceColor(float n) {
-    vec3 deep = vec3(0.06, 0.02, 0.12);     // deep indigo
-    vec3 accent = vec3(0.15, 0.05, 0.25);   // purple
-    return mix(deep, accent, n * 0.5 + 0.5);
-  }
-
-  vec3 getTriggerColor(float n) {
-    vec3 warm = vec3(0.18, 0.08, 0.02);     // dark amber
-    vec3 gold = vec3(0.4, 0.2, 0.05);       // gold
-    return mix(warm, gold, n * 0.5 + 0.5);
-  }
-
-  vec3 getGravityColor(float n, float density) {
-    vec3 hot = vec3(0.1, 0.05, 0.2);         // violet base
-    vec3 plasma = vec3(0.4, 0.1, 0.35);      // magenta
-    vec3 white = vec3(0.5, 0.4, 0.6);        // white heat
-    vec3 base = mix(hot, plasma, n * 0.5 + 0.5);
-    return mix(base, white, density * 0.4);
-  }
-
   void main() {
     vec2 pos = vWorldPosition.xz;
     float dist = length(pos);
 
-    // Multi-octave noise for aurora
-    float n1 = snoise(pos * 0.15 + uTime * 0.08);
-    float n2 = snoise(pos * 0.3 - uTime * 0.12);
-    float n3 = snoise(pos * 0.6 + vec2(uTime * 0.05, -uTime * 0.1));
+    // ゆらめくパステルノイズ
+    float n1 = snoise(pos * 0.12 + uTime * 0.06);
+    float n2 = snoise(pos * 0.25 - uTime * 0.08);
+    float n3 = snoise(pos * 0.5 + vec2(uTime * 0.04, -uTime * 0.07));
     float aurora = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
 
-    // Radial fade (central glow)
-    float radialFade = 1.0 - smoothstep(0.0, 12.0, dist);
-    float centralGlow = exp(-dist * 0.15) * 0.3;
+    // パステルカラー（ラベンダー / ミント / ピーチ）
+    vec3 lavender = vec3(0.78, 0.72, 0.95);
+    vec3 mint     = vec3(0.65, 0.92, 0.82);
+    vec3 peach    = vec3(0.98, 0.82, 0.78);
+    vec3 sky      = vec3(0.72, 0.85, 0.98);
 
-    // Speaker ripple effects
+    // ノイズでカラーをブレンド
+    float blend1 = aurora * 0.5 + 0.5;
+    float blend2 = snoise(pos * 0.08 + uTime * 0.03) * 0.5 + 0.5;
+    vec3 color = mix(
+      mix(lavender, mint, blend1),
+      mix(sky, peach, blend1),
+      blend2
+    );
+
+    // 中心グロー
+    float radialFade = 1.0 - smoothstep(0.0, 14.0, dist);
+    float centralGlow = exp(-dist * 0.12) * 0.2;
+
+    // 話している人の波紋
     float ripple = 0.0;
     for (int i = 0; i < 8; i++) {
       if (i >= uSpeakerCount) break;
@@ -111,42 +101,30 @@ const fragmentShader = /* glsl */ `
       float speakerDist = length(pos - speakerPos);
       float vol = uSpeakerVolumes[i];
 
-      // Expanding ring
-      float ringPhase = fract(uTime * 0.5 + float(i) * 0.17);
-      float ringRadius = ringPhase * 6.0;
-      float ring = exp(-pow(speakerDist - ringRadius, 2.0) * 2.0) * (1.0 - ringPhase);
-      ripple += ring * vol * 1.5;
+      // やさしく広がるリング
+      float ringPhase = fract(uTime * 0.3 + float(i) * 0.17);
+      float ringRadius = ringPhase * 5.0;
+      float ring = exp(-pow(speakerDist - ringRadius, 2.0) * 3.0) * (1.0 - ringPhase);
+      ripple += ring * vol * 1.0;
 
-      // Static glow at speaker position
-      float speakerGlow = exp(-speakerDist * 0.8) * vol;
-      ripple += speakerGlow * 0.5;
+      // 話し手の足元のグロー
+      float speakerGlow = exp(-speakerDist * 1.0) * vol;
+      ripple += speakerGlow * 0.3;
     }
 
-    // Phase-based coloring
-    vec3 color;
-    if (uPhase == 0) {
-      color = getSilenceColor(aurora);
-    } else if (uPhase == 1) {
-      color = mix(getSilenceColor(aurora), getTriggerColor(aurora), 0.6);
-    } else {
-      color = getGravityColor(aurora, uDensity);
-    }
-
-    // Add ripple glow (cyan-tinted)
-    vec3 rippleColor = vec3(0.1, 0.6, 0.8) * ripple;
+    // 波紋はやさしいゴールデン
+    vec3 rippleColor = vec3(1.0, 0.9, 0.7) * ripple * 0.5;
     color += rippleColor;
+    color += vec3(0.9, 0.85, 0.95) * centralGlow;
 
-    // Add central glow
-    color += vec3(0.2, 0.1, 0.3) * centralGlow;
+    // フェードアウト
+    float alpha = radialFade * (0.25 + aurora * 0.08 + ripple * 0.2 + centralGlow);
+    alpha = clamp(alpha, 0.0, 0.6);
 
-    // Apply radial fade
-    float alpha = radialFade * (0.3 + aurora * 0.15 + ripple * 0.3 + centralGlow);
-    alpha = clamp(alpha, 0.0, 0.85);
-
-    // Edge shimmer
-    float edgeNoise = snoise(pos * 0.8 + uTime * 0.2) * 0.5 + 0.5;
-    float edgeFade = smoothstep(8.0, 12.0, dist);
-    alpha *= (1.0 - edgeFade * 0.7 * edgeNoise);
+    // エッジ
+    float edgeNoise = snoise(pos * 0.6 + uTime * 0.15) * 0.5 + 0.5;
+    float edgeFade = smoothstep(10.0, 14.0, dist);
+    alpha *= (1.0 - edgeFade * 0.8 * edgeNoise);
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -154,16 +132,12 @@ const fragmentShader = /* glsl */ `
 
 export function AuroraFloor() {
   const meshRef = useRef<THREE.Mesh>(null);
-  const phase = useCocoroStore((s) => s.phase);
-  const density = useCocoroStore((s) => s.density);
   const participants = useCocoroStore((s) => s.participants);
   const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uDensity: { value: 0 },
-      uPhase: { value: 0 },
       uSpeakerPositions: {
         value: Array.from({ length: 8 }, () => new THREE.Vector3()),
       },
@@ -174,53 +148,28 @@ export function AuroraFloor() {
   );
 
   useFrame((state) => {
-    const time = state.clock.getElapsedTime();
-    uniforms.uTime.value = time;
-    uniforms.uDensity.value = density;
+    uniforms.uTime.value = state.clock.getElapsedTime();
 
-    // Phase mapping
-    switch (phase) {
-      case SpacePhase.SILENCE:
-        uniforms.uPhase.value = 0;
-        break;
-      case SpacePhase.TRIGGER:
-        uniforms.uPhase.value = 1;
-        break;
-      case SpacePhase.GRAVITY:
-        uniforms.uPhase.value = 2;
-        break;
-    }
-
-    // Speaker positions and volumes
     let speakerIdx = 0;
     activeSpeakers.forEach((id) => {
       if (speakerIdx >= 8) return;
       const p = participants.get(id);
       if (p) {
         uniforms.uSpeakerPositions.value[speakerIdx].set(
-          p.transform.position.x,
-          0,
-          p.transform.position.z
+          p.transform.position.x, 0, p.transform.position.z
         );
-        uniforms.uSpeakerVolumes.value[speakerIdx] =
-          p.speakingState.volume;
+        uniforms.uSpeakerVolumes.value[speakerIdx] = p.speakingState.volume;
         speakerIdx++;
       }
     });
     uniforms.uSpeakerCount.value = speakerIdx;
-
-    // Clear unused slots
     for (let i = speakerIdx; i < 8; i++) {
       uniforms.uSpeakerVolumes.value[i] = 0;
     }
   });
 
   return (
-    <mesh
-      ref={meshRef}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -0.02, 0]}
-    >
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
       <planeGeometry args={[30, 30, 128, 128]} />
       <shaderMaterial
         vertexShader={vertexShader}
