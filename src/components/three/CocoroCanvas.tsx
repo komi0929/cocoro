@@ -48,16 +48,30 @@ function DeferredPostProcessing() {
   const lighting = useCocoroStore((s) => s.lighting);
 
   useEffect(() => {
-    if (gl && gl.getContext()) {
-      setReady(true);
-    } else {
-      const id = requestAnimationFrame(() => {
-        if (gl && gl.getContext()) {
+    let cancelled = false;
+    let retries = 0;
+    const maxRetries = 30; // ~500ms total
+
+    const check = () => {
+      if (cancelled) return;
+      try {
+        const ctx = gl?.getContext?.();
+        // Ensure both the context AND its properties exist (alpha, etc.)
+        if (ctx && typeof ctx.getParameter === 'function') {
           setReady(true);
+          return;
         }
-      });
-      return () => cancelAnimationFrame(id);
-    }
+      } catch { /* context not ready */ }
+
+      retries++;
+      if (retries < maxRetries) {
+        requestAnimationFrame(check);
+      }
+    };
+
+    // Delay first check to let Canvas fully initialize
+    const timeoutId = setTimeout(() => check(), 100);
+    return () => { cancelled = true; clearTimeout(timeoutId); };
   }, [gl]);
 
   if (!ready) return null;
