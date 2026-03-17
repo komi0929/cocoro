@@ -1,20 +1,14 @@
 /**
  * cocoro — CocoroCanvas
  * React Three Fiber のルート Canvas ラッパー
- * シネマティックカメラ + プレミアムポストプロセス
+ * シネマティックカメラ + 3D空間描画
+ * ※ EffectComposer(post-processing)は本番WebGL安定性のため意図的に除外
  */
 'use client';
 
-import { Suspense, useMemo, useState, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Suspense, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { Preload } from '@react-three/drei';
-import {
-  EffectComposer,
-  Bloom,
-  Vignette,
-  ChromaticAberration,
-} from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 import { SpatialStage } from './SpatialStage';
 import { AvatarEntity } from './AvatarEntity';
@@ -37,74 +31,6 @@ interface CocoroCanvasProps {
   className?: string;
 }
 
-/**
- * Deferred post-processing wrapper.
- * Waits for GL context to be ready before initializing EffectComposer.
- */
-function DeferredPostProcessing() {
-  const { gl } = useThree();
-  const [ready, setReady] = useState(false);
-  const density = useCocoroStore((s) => s.density);
-  const lighting = useCocoroStore((s) => s.lighting);
-
-  useEffect(() => {
-    let cancelled = false;
-    let retries = 0;
-    const maxRetries = 30; // ~500ms total
-
-    const check = () => {
-      if (cancelled) return;
-      try {
-        const ctx = gl?.getContext?.();
-        // Ensure both the context AND its properties exist (alpha, etc.)
-        if (ctx && typeof ctx.getParameter === 'function') {
-          setReady(true);
-          return;
-        }
-      } catch { /* context not ready */ }
-
-      retries++;
-      if (retries < maxRetries) {
-        requestAnimationFrame(check);
-      }
-    };
-
-    // Delay first check to let Canvas fully initialize
-    const timeoutId = setTimeout(() => check(), 100);
-    return () => { cancelled = true; clearTimeout(timeoutId); };
-  }, [gl]);
-
-  if (!ready) return null;
-
-  // Dynamic bloom threshold: lower in heated phases for more glow
-  const bloomThreshold = Math.max(0.3, 0.6 - density * 0.3);
-
-  return (
-    <EffectComposer>
-      <Bloom
-        intensity={lighting.bloomStrength * 1.5}
-        luminanceThreshold={bloomThreshold}
-        luminanceSmoothing={0.85}
-        mipmapBlur
-      />
-      <Vignette
-        offset={0.25}
-        darkness={0.85}
-        blendFunction={BlendFunction.NORMAL}
-      />
-      <ChromaticAberration
-        offset={
-          new THREE.Vector2(
-            density * 0.0015 + 0.0003,
-            density * 0.0015 + 0.0003
-          )
-        }
-        blendFunction={BlendFunction.NORMAL}
-      />
-    </EffectComposer>
-  );
-}
-
 export function CocoroCanvas({ className }: CocoroCanvasProps) {
   const participants = useCocoroStore((s) => s.participants);
   const localId = useCocoroStore((s) => s.localParticipantId);
@@ -116,7 +42,6 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
   const avatarsToRender = useMemo(() => {
     const all = Array.from(participants.values());
     if (all.length <= perfProfile.maxAvatars) return all;
-    // Prioritize: local avatar first, then closest to center
     const sorted = all.sort((a, b) => {
       if (a.id === localId) return -1;
       if (b.id === localId) return 1;
@@ -127,7 +52,6 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
     return sorted.slice(0, perfProfile.maxAvatars);
   }, [participants, localId, perfProfile.maxAvatars]);
 
-  // Camera settings (initial; CinematicCamera overrides this)
   const cameraConfig = useMemo(
     () => ({
       position: [0, 25, 30] as [number, number, number],
@@ -153,13 +77,9 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
         style={{ background: theme.bgColor }}
       >
         <Suspense fallback={null}>
-          {/* Cinematic Camera (entrancedive + phase-dynamic) */}
           <CinematicCamera enableEntrance />
-
-          {/* Spatial Stage (floor shader, particles, lights — themed) */}
           <SpatialStage roomId={roomId ?? undefined} />
 
-          {/* Render all avatars */}
           {avatarsToRender.map((participant) => (
             <AvatarEntity
               key={participant.id}
@@ -168,25 +88,13 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
             />
           ))}
 
-          {/* Collective Emotion Resonance */}
           <CollectiveResonance />
-
-          {/* Peak Moment Burst Particles */}
           <EmotionalBurstParticles />
-
-          {/* Flow State Visualizer (orb + ring) */}
           <FlowStateVisualizer />
-
-          {/* Vocal Energy Field (GLSL speaker fields) */}
           <VocalEnergyField />
-
-          {/* Gravity Waves (voice ripples) */}
           <GravityWaves />
-
-          {/* Spectral Aurora (ceiling) */}
           <SpectralAurora />
 
-          {/* Aura System (cognitive color mapping) */}
           {(() => {
             const lp = localId ? participants.get(localId) : undefined;
             const speaking = lp?.speakingState;
@@ -198,10 +106,8 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
             );
           })()}
 
-          {/* Aurora Floor (room floor effect) */}
           <AuroraFloor />
 
-          {/* Emotion Particles (ambient emotion) */}
           {(() => {
             const lp = localId ? participants.get(localId) : undefined;
             return (
@@ -214,7 +120,6 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
             );
           })()}
 
-          {/* Presence Aura (user presence) */}
           {(() => {
             const lp = localId ? participants.get(localId) : undefined;
             const pos = lp?.transform?.position;
@@ -226,9 +131,6 @@ export function CocoroCanvas({ className }: CocoroCanvasProps) {
               />
             );
           })()}
-
-          {/* Post-processing (deferred) */}
-          <DeferredPostProcessing />
 
           <Preload all />
         </Suspense>
