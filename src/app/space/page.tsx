@@ -28,6 +28,7 @@ import { PerformanceOverlay } from '@/components/ui/PerformanceMonitor';
 import { WelcomeToast } from '@/components/ui/WelcomeToast';
 import { StateSyncEngine, type StateSyncCallbacks } from '@/engine/network/StateSyncEngine';
 import { VoiceChannel } from '@/engine/network/VoiceChannel';
+import { SupabaseRealtimeAdapter } from '@/engine/network/SupabaseRealtimeAdapter';
 import { v4 as uuidv4 } from 'uuid';
 import { useSpaceEngines } from '@/hooks/useSpaceEngines';
 import { useEngineConnector } from '@/hooks/useEngineConnector';
@@ -71,6 +72,7 @@ export default function SpacePage() {
   const voiceAnalyzerRef = useRef<VoiceAnalyzer | null>(null);
   const syncEngineRef = useRef<StateSyncEngine | null>(null);
   const voiceChannelRef = useRef<VoiceChannel | null>(null);
+  const realtimeRef = useRef<SupabaseRealtimeAdapter | null>(null);
   const store = useKokoroStore;
   const climaxState = useCliMaxDirector();
   const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
@@ -126,7 +128,102 @@ export default function SpacePage() {
 
     store.getState().setRoomId(roomId);
 
-    // --- Dual Mode: Online (real multi-user) or Demo (NPC simulation) ---
+    // --- Supabase Realtime Mode (no separate server required) ---
+    const initSupabaseRealtime = async () => {
+      try {
+        const adapter = new SupabaseRealtimeAdapter(
+          roomId,
+          localId,
+          {
+            onParticipantJoined: (p) => store.getState().addParticipant(p),
+            onParticipantLeft: (id) => store.getState().removeParticipant(id),
+            onAvatarStateUpdate: (id, partial) => store.getState().updateParticipant(id, partial),
+            onPhaseChange: (phase, speakers, density) => {
+              store.getState().setPhase(phase);
+              store.getState().setActiveSpeakers(speakers);
+              store.getState().setDensity(density);
+            },
+            onReaction: (pid, type, ts) => {
+              store.getState().addReaction({ participantId: pid, type: type as ReactionType, timestamp: ts });
+            },
+            // WebRTC signaling via Supabase Realtime
+            onWebRTCOffer: async (fromId, sdp) => {
+              const vc = voiceChannelRef.current;
+              if (!vc) return;
+              // Auto-create peer and answer
+              const pc = (vc as unknown as { createPeerConnection: (id: string) => { pc: RTCPeerConnection } }).createPeerConnection?.(fromId);
+              if (pc) {
+                await pc.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+                const answer = await pc.pc.createAnswer();
+                await pc.pc.setLocalDescription(answer);
+                adapter.sendAnswer(fromId, pc.pc.localDescription!);
+              }
+            },
+            onWebRTCAnswer: async (fromId, sdp) => {
+              const vc = voiceChannelRef.current;
+              if (!vc) return;
+              const peers = (vc as unknown as { peers: Map<string, { pc: RTCPeerConnection }> }).peers;
+              const peer = peers?.get(fromId);
+              if (peer) {
+                await peer.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+              }
+            },
+            onWebRTCIceCandidate: async (fromId, candidate) => {
+              const vc = voiceChannelRef.current;
+              if (!vc) return;
+              const peers = (vc as unknown as { peers: Map<string, { pc: RTCPeerConnection }> }).peers;
+              const peer = peers?.get(fromId);
+              if (peer) {
+                try {
+                  await peer.pc.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                  console.warn('[WebRTC] Failed to add ICE candidate:', e);
+                }
+              }
+            },
+          }
+        );
+
+        await adapter.join(
+          displayName,
+          localStorage.getItem('kokoro_avatar_id') ?? 'seed-san'
+        );
+
+        realtimeRef.current = adapter;
+
+        // Setup VoiceChannel for P2P audio (using adapter for signaling)
+        const vc = new VoiceChannel({
+          onPeerSpeaking: (peerId, volume) => {
+            const p = store.getState().participants.get(peerId);
+            if (p) {
+              store.getState().updateParticipant(peerId, {
+                speakingState: {
+                  ...p.speakingState,
+                  isSpeaking: volume > 0.02,
+                  volume,
+                },
+              });
+            }
+          },
+          onPeerConnected: (peerId) => {
+            console.log(`[VoiceChannel] Peer connected: ${peerId}`);
+          },
+          onPeerDisconnected: (peerId) => {
+            console.log(`[VoiceChannel] Peer disconnected: ${peerId}`);
+          },
+        });
+        vc.setLocalParticipantId(localId);
+        voiceChannelRef.current = vc;
+
+        console.log(`[SpacePage] Supabase Realtime mode: room ${roomId}`);
+        return true;
+      } catch (e) {
+        console.warn('[SpacePage] Supabase Realtime unavailable, falling back to demo:', e);
+        return false;
+      }
+    };
+
+    // --- Socket.IO Mode (legacy, requires separate server) ---
     const initOnline = async () => {
       if (!serverUrl) return false;
       try {
@@ -159,7 +256,6 @@ export default function SpacePage() {
         store.getState().setLocalParticipantId(result.participantId);
         result.participants.forEach((p) => store.getState().addParticipant(p));
 
-        // Setup VoiceChannel for WebRTC P2P audio
         const vc = new VoiceChannel({
           onPeerSpeaking: (peerId, volume) => {
             const p = store.getState().participants.get(peerId);
@@ -182,21 +278,15 @@ export default function SpacePage() {
         });
         vc.setSocket(syncEngine.getSocket()!);
         vc.setLocalParticipantId(result.participantId);
-
-        // Connect to all existing participants
         result.participants.forEach((p) => {
-          if (p.id !== result.participantId) {
-            vc.connectToPeer(p.id);
-          }
+          if (p.id !== result.participantId) vc.connectToPeer(p.id);
         });
 
         syncEngineRef.current = syncEngine;
         voiceChannelRef.current = vc;
-
-        console.log(`[SpacePage] Online mode: connected to ${serverUrl}, room ${result.roomId}`);
         return true;
       } catch (e) {
-        console.warn('[SpacePage] Server unavailable, falling back to demo mode:', e);
+        console.warn('[SpacePage] Server unavailable:', e);
         return false;
       }
     };
@@ -223,10 +313,16 @@ export default function SpacePage() {
       demoRef.current = demo;
     };
 
-    // Try online first, fallback to demo
-    initOnline().then((online) => {
-      if (!online) initDemo();
-      setIsLoaded(true);
+    // Try Supabase Realtime first, then Socket.IO, then demo
+    initSupabaseRealtime().then((connected) => {
+      if (connected) {
+        setIsLoaded(true);
+        return;
+      }
+      return initOnline().then((online) => {
+        if (!online) initDemo();
+        setIsLoaded(true);
+      });
     });
 
     // Load cognitive context
@@ -259,6 +355,7 @@ export default function SpacePage() {
       voiceAnalyzerRef.current?.stop();
       syncEngineRef.current?.disconnect();
       voiceChannelRef.current?.dispose();
+      realtimeRef.current?.leave();
       unsafeHaven();
       unBond();
     };
@@ -292,6 +389,10 @@ export default function SpacePage() {
         undefined,
         { isSpeaking: false, volume: 0, pitch: 0, currentViseme: 'sil', visemeWeight: 0 },
       );
+      realtimeRef.current?.bufferLocalState(
+        undefined,
+        { isSpeaking: false, volume: 0, pitch: 0, currentViseme: 'sil', visemeWeight: 0 },
+      );
     } else {
       try {
         const analyzer = new VoiceAnalyzer();
@@ -310,8 +411,12 @@ export default function SpacePage() {
           // === 1. Update speaking state in store ===
           store.getState().updateParticipant(currentLocalId, { speakingState });
 
-          // === 2. Buffer to network (StateSyncEngine sends at 30fps) ===
+          // === 2. Buffer to network (StateSyncEngine or SupabaseRealtime sends at 30fps) ===
           syncEngineRef.current?.bufferLocalState(
+            store.getState().participants.get(currentLocalId)?.transform,
+            speakingState,
+          );
+          realtimeRef.current?.bufferLocalState(
             store.getState().participants.get(currentLocalId)?.transform,
             speakingState,
           );
@@ -337,6 +442,7 @@ export default function SpacePage() {
             // Write emotion to store + network
             store.getState().updateParticipant(currentLocalId, { emotion: emotionState });
             syncEngineRef.current?.bufferLocalState(undefined, undefined, emotionState);
+            realtimeRef.current?.bufferLocalState(undefined, undefined, emotionState);
 
             // === 4. Anger auto-bubble (safety mechanism) ===
             if (emotion.anger > 0.6) {

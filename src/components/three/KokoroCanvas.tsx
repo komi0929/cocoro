@@ -173,16 +173,45 @@ export function KokoroCanvas({ className }: KokoroCanvasProps) {
           <SpectralAurora />
 
           {/* Aura System (cognitive color mapping) */}
-          <AuraSystem speechSeconds={0} isSpeaking={false} />
+          {(() => {
+            const lp = localId ? participants.get(localId) : undefined;
+            const speaking = lp?.speakingState;
+            return (
+              <AuraSystem
+                speechSeconds={speaking?.isSpeaking ? 1 : 0}
+                isSpeaking={speaking?.isSpeaking ?? false}
+              />
+            );
+          })()}
 
           {/* Aurora Floor (room floor effect) */}
           <AuroraFloor />
 
           {/* Emotion Particles (ambient emotion) */}
-          <EmotionParticles joy={0} surprise={0} isSpeaking={false} volume={0} />
+          {(() => {
+            const lp = localId ? participants.get(localId) : undefined;
+            return (
+              <EmotionParticles
+                joy={lp?.emotion?.joy ?? 0}
+                surprise={lp?.emotion?.surprise ?? 0}
+                isSpeaking={lp?.speakingState?.isSpeaking ?? false}
+                volume={lp?.speakingState?.volume ?? 0}
+              />
+            );
+          })()}
 
           {/* Presence Aura (user presence) */}
-          <PresenceAura position={[0, 0, 0]} isSpeaking={false} volume={0} />
+          {(() => {
+            const lp = localId ? participants.get(localId) : undefined;
+            const pos = lp?.transform?.position;
+            return (
+              <PresenceAura
+                position={pos ? [pos.x, pos.y, pos.z] : [0, 0, 0]}
+                isSpeaking={lp?.speakingState?.isSpeaking ?? false}
+                volume={lp?.speakingState?.volume ?? 0}
+              />
+            );
+          })()}
 
           {/* Post-processing (deferred) */}
           <DeferredPostProcessing />
