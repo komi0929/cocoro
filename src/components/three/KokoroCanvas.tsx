@@ -28,6 +28,10 @@ import { FlowStateVisualizer } from './FlowStateVisualizer';
 import { VocalEnergyField } from './VocalEnergyField';
 import { GravityWaves } from './GravityWaves';
 import { SpectralAurora } from './SpectralAurora';
+import { AuraSystem } from './AuraSystem';
+import { AuroraFloor } from './AuroraFloor';
+import { EmotionParticles } from './EmotionParticles';
+import { PresenceAura } from './PresenceAura';
 
 interface KokoroCanvasProps {
   className?: string;
@@ -167,6 +171,18 @@ export function KokoroCanvas({ className }: KokoroCanvasProps) {
 
           {/* Spectral Aurora (ceiling) */}
           <SpectralAurora />
+
+          {/* Aura System (cognitive color mapping) */}
+          <AuraSystem speechSeconds={0} isSpeaking={false} />
+
+          {/* Aurora Floor (room floor effect) */}
+          <AuroraFloor />
+
+          {/* Emotion Particles (ambient emotion) */}
+          <EmotionParticles joy={0} surprise={0} isSpeaking={false} volume={0} />
+
+          {/* Presence Aura (user presence) */}
+          <PresenceAura position={[0, 0, 0]} isSpeaking={false} volume={0} />
 
           {/* Post-processing (deferred) */}
           <DeferredPostProcessing />

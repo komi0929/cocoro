@@ -46,6 +46,7 @@ import { AudienceQuestionCardPanel } from '@/components/ui/AudienceQuestionCard'
 import { ConnectionGraph } from '@/components/ui/ConnectionGraph';
 import { LivePoll } from '@/components/ui/LivePoll';
 import { WarpTransition } from '@/components/ui/WarpTransition';
+import { FriendRequestButton } from '@/components/ui/FriendRequestButton';
 
 // Dynamic import for KokoroCanvas (SSR disabled for Three.js)
 const KokoroCanvas = dynamic(
@@ -631,6 +632,23 @@ export default function SpacePage() {
           onClose={() => setShowFriendPanel(false)}
         />
       )}
+
+      {/* Friend Request Button (プロフィール表示時) */}
+      {profileTarget && (() => {
+        const p = store.getState().participants.get(profileTarget);
+        const friends = engines.socialGraph.getAllFriends?.() ?? [];
+        const isFriend = friends.some((f: { id: string }) => f.id === profileTarget);
+        return p ? (
+          <div className="fixed bottom-24 right-4 z-50">
+            <FriendRequestButton
+              targetId={p.id}
+              targetName={p.displayName}
+              isFriend={isFriend}
+              onSendRequest={() => {}}
+            />
+          </div>
+        ) : null;
+      })()}
 
       {/* Safety Panel (安全管理・通報) */}
       {showSafety && profileTarget && (() => {

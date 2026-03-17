@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useRooms, type RoomWithCount } from '@/hooks/useRooms';
 import { RoomCreator, type RoomConfig } from '@/components/ui/RoomCreator';
+import { OnboardingFlow } from '@/components/ui/OnboardingFlow';
 
 // Fallback demo rooms（Supabase未接続時）
 const FALLBACK_ROOMS: RoomWithCount[] = [
@@ -40,6 +41,14 @@ export default function LobbyPage() {
   const [step, setStep] = useState<'avatar' | 'room'>('avatar');
   const [joinProgress, setJoinProgress] = useState(0);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding on first visit
+  useEffect(() => {
+    if (!localStorage.getItem('kokoro_onboarded')) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   useEffect(() => {
     const savedName = localStorage.getItem('kokoro_display_name');
@@ -465,6 +474,24 @@ export default function LobbyPage() {
             handleJoinRoom('custom-' + Date.now());
           }}
           onClose={() => setShowRoomCreator(false)}
+        />
+      )}
+
+      {/* Onboarding Flow (初回訪問時) */}
+      {showOnboarding && (
+        <OnboardingFlow
+          onComplete={(avatarId) => {
+            localStorage.setItem('kokoro_onboarded', 'true');
+            setSelectedAvatarId(avatarId);
+            localStorage.setItem('kokoro_avatar_id', avatarId);
+            setShowOnboarding(false);
+          }}
+          onSkip={() => {
+            localStorage.setItem('kokoro_onboarded', 'true');
+            setShowOnboarding(false);
+          }}
+          isVoiceActive={false}
+          volume={0}
         />
       )}
     </div>
