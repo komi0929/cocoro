@@ -49,6 +49,7 @@ import { ConnectionGraph } from '@/components/ui/ConnectionGraph';
 import { LivePoll } from '@/components/ui/LivePoll';
 import { WarpTransition } from '@/components/ui/WarpTransition';
 import { FriendRequestButton } from '@/components/ui/FriendRequestButton';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 // Dynamic import for CocoroCanvas (SSR disabled for Three.js)
 const CocoroCanvas = dynamic(
@@ -313,17 +314,18 @@ export default function SpacePage() {
       demoRef.current = demo;
     };
 
-    // Try Supabase Realtime first, then Socket.IO, then demo
-    initSupabaseRealtime().then((connected) => {
-      if (connected) {
-        setIsLoaded(true);
-        return;
+    // Try Supabase Realtime first (only if configured), then Socket.IO, then demo
+    const tryConnect = async () => {
+      // Skip Supabase if env vars are not configured (placeholder mode)
+      if (isSupabaseConfigured()) {
+        const connected = await initSupabaseRealtime();
+        if (connected) { setIsLoaded(true); return; }
       }
-      return initOnline().then((online) => {
-        if (!online) initDemo();
-        setIsLoaded(true);
-      });
-    });
+      const online = await initOnline();
+      if (!online) initDemo();
+      setIsLoaded(true);
+    };
+    tryConnect();
 
     // Load cognitive context
     const avatarId = localStorage.getItem('cocoro_avatar_id') ?? 'seed-san';

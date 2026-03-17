@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createSupabaseBrowser } from '@/lib/supabase';
+import { createSupabaseBrowser, isSupabaseConfigured } from '@/lib/supabase';
 
 // Room type (manual definition to avoid Supabase type inference issues)
 export interface RoomRow {
@@ -30,9 +30,11 @@ export function useRooms() {
   const [rooms, setRooms] = useState<RoomWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createSupabaseBrowser();
+  const configured = isSupabaseConfigured();
+  const supabase = configured ? createSupabaseBrowser() : null;
 
   const fetchRooms = useCallback(async () => {
+    if (!supabase) { setLoading(false); return; }
     try {
       const { data, error } = await supabase
         .from('rooms')
@@ -52,6 +54,8 @@ export function useRooms() {
   useEffect(() => {
     fetchRooms();
 
+    if (!supabase) return;
+
     // Realtime subscription
     const channel = supabase
       .channel('rooms-changes')
@@ -67,6 +71,7 @@ export function useRooms() {
   }, []);
 
   const createRoom = useCallback(async (name: string, emoji?: string, theme?: string) => {
+    if (!supabase) return { data: null, error: { message: 'Supabase not configured' } };
     const { data, error } = await supabase
       .from('rooms')
       .insert({ name, emoji: emoji ?? '☕', theme: theme ?? 'cosmos' } as never)
