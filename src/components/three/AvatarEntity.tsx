@@ -25,9 +25,9 @@ interface AvatarEntityProps {
   isLocal?: boolean;
 }
 
-// Default VRM URL (Three VRM sample)
+// Default VRM URL (VRoid公式サンプル — full blendshapes)
 const DEFAULT_VRM_URL =
-  'https://pixiv.github.io/three-vrm/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm';
+  'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/AvatarSample_B.vrm';
 
 /**
  * Safe VRM loader with MToon fallback for three@0.183 compatibility
@@ -430,12 +430,12 @@ function applyIdleAnimation(
 
   // Breathing: spine subtle up/down rotation
   const breathCycle = time * 1.3 + hash * Math.PI * 2;
-  const breathIntensity = isSpeaking ? 0.025 : 0.012;
+  const breathIntensity = isSpeaking ? 0.06 : 0.035;
   const targetSpineX = Math.sin(breathCycle) * breathIntensity;
 
   // Weight shifting (重心移動): slow left-right weight transfer
   const weightCycle = time * 0.15 + hash * 7;
-  const weightShift = Math.sin(weightCycle) * (isSpeaking ? 0.012 : 0.018);
+  const weightShift = Math.sin(weightCycle) * (isSpeaking ? 0.03 : 0.045);
   const targetSpineZ = weightShift;
 
   // Smooth interpolation
@@ -459,8 +459,8 @@ function applyIdleAnimation(
   // Chest (breathing + speaking forward lean)
   const chest = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Chest);
   if (chest) {
-    const chestBreath = Math.sin(breathCycle * 0.8) * breathIntensity * 0.5;
-    const speakLean = isSpeaking ? 0.04 : 0;
+    const chestBreath = Math.sin(breathCycle * 0.8) * breathIntensity * 0.7;
+    const speakLean = isSpeaking ? 0.08 : 0;
     chest.rotation.x = chestBreath + speakLean;
   }
 
@@ -468,10 +468,10 @@ function applyIdleAnimation(
   const head = humanoid.getNormalizedBoneNode(VRMHumanBoneName.Head);
   if (head) {
     const headNodCycle = time * 0.25 + hash * 3;
-    const nodBase = isSpeaking ? 0.025 : 0.015;
+    const nodBase = isSpeaking ? 0.06 : 0.035;
     const targetHeadX = Math.sin(headNodCycle) * nodBase;
-    const speakNod = isSpeaking ? Math.sin(time * 2.5) * 0.015 : 0;
-    const targetHeadY = Math.cos(headNodCycle * 0.7) * 0.02;
+    const speakNod = isSpeaking ? Math.sin(time * 2.5) * 0.04 : 0;
+    const targetHeadY = Math.cos(headNodCycle * 0.7) * 0.04;
 
     state.headRotX += (targetHeadX + speakNod - state.headRotX) * 0.06;
     state.headRotY += (targetHeadY - state.headRotY) * 0.04;
@@ -483,7 +483,7 @@ function applyIdleAnimation(
   // Shoulder micro-motion
   const leftShoulder = humanoid.getNormalizedBoneNode(VRMHumanBoneName.LeftShoulder);
   const rightShoulder = humanoid.getNormalizedBoneNode(VRMHumanBoneName.RightShoulder);
-  const shoulderBreath = Math.sin(breathCycle + 0.5) * (isSpeaking ? 0.01 : 0.005);
+  const shoulderBreath = Math.sin(breathCycle + 0.5) * (isSpeaking ? 0.025 : 0.015);
   if (leftShoulder) {
     leftShoulder.rotation.z = shoulderBreath;
   }
@@ -510,14 +510,14 @@ function applyIdleAnimation(
   const leftLowerArm = humanoid.getNormalizedBoneNode(VRMHumanBoneName.LeftLowerArm);
   const rightLowerArm = humanoid.getNormalizedBoneNode(VRMHumanBoneName.RightLowerArm);
   if (leftLowerArm) {
-    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash) * 0.06 : 0;
+    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash) * 0.12 : 0;
     leftLowerArm.rotation.z = 0.15 + Math.sin(time * 0.4 + hash * 2) * 0.02 + gesture;
-    leftLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.2) * 0.04 : 0;
+    leftLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.2) * 0.08 : 0;
   }
   if (rightLowerArm) {
-    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash + 2) * 0.06 : 0;
+    const gesture = isSpeaking ? Math.sin(time * 1.8 + hash + 2) * 0.12 : 0;
     rightLowerArm.rotation.z = -0.15 - Math.sin(time * 0.4 + hash * 2 + 0.5) * 0.02 - gesture;
-    rightLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.0 + 1) * 0.04 : 0;
+    rightLowerArm.rotation.x = isSpeaking ? Math.sin(time * 2.0 + 1) * 0.08 : 0;
   }
 }
 

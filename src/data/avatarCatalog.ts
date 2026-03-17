@@ -6,10 +6,7 @@
  * 各アバターに個性・雰囲気・カラーパレットを定義
  * メタバースで「全員同じ顔」を根本から排除する
  *
- * モデルソース:
- * - pixiv/three-vrm 公式サンプル (VRM1.0)
- * - ToxSam/open-source-avatars CC0コレクション (Arweave永続URL)
- * - mrxz/vrm-sample-models (CC0, VRM1.0-beta)
+ * 本番用: VRoid公式サンプル(blendshape完備) + CC0モデル
  */
 
 export interface AvatarDefinition {
@@ -31,22 +28,35 @@ export interface AvatarDefinition {
 }
 
 /**
- * 6体すべてユニークなVRMモデルを使用
- * 全モデルCC0またはパブリックドメイン
+ * 本番品質VRMモデル — リップシンク/表情ブレンドシェイプ完備
+ * VRoid公式サンプル: aa/ih/ou/ee/oh viseme + happy/angry/sad/surprised + blink 全対応
  */
 export const AVATAR_CATALOG: AvatarDefinition[] = [
   {
     id: 'seed-san',
     name: 'Seed-san',
     description: '穏やかで親しみやすい雰囲気',
-    // Source: pixiv/three-vrm official sample (VRM1.0)
+    // VRoid公式サンプルモデルB (VRM0.0 — full blendshapes)
     vrmUrl:
-      'https://pixiv.github.io/three-vrm/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm',
+      'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/AvatarSample_B.vrm',
     accentColor: '#8b5cf6',
     gradient: ['#8b5cf6', '#a78bfa'],
     tags: ['ナチュラル', '親しみやすい'],
     bgColor: '#1a1025',
     personality: '🌿 穏やか',
+  },
+  {
+    id: 'avatar-a',
+    name: 'アリサ',
+    description: 'キュートでポジティブ',
+    // VRoid公式サンプルモデルA (VRM0.0 — full blendshapes)
+    vrmUrl:
+      'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/AvatarSample_A.vrm',
+    accentColor: '#ec4899',
+    gradient: ['#ec4899', '#f472b6'],
+    tags: ['キュート', 'ポジティブ'],
+    bgColor: '#1a0f18',
+    personality: '🌸 キュート',
   },
   {
     id: 'devil',
@@ -99,19 +109,6 @@ export const AVATAR_CATALOG: AvatarDefinition[] = [
     tags: ['リーダー', '堅実'],
     bgColor: '#1a1508',
     personality: '☀️ 堅実',
-  },
-  {
-    id: 'human-basic',
-    name: 'ヒューマン',
-    description: 'シンプルで万能なスタンダード',
-    // Source: mrxz/vrm-sample-models CC0 (VRM1.0-beta)
-    vrmUrl:
-      'https://raw.githubusercontent.com/mrxz/vrm-sample-models/master/human_male/human_male.vrm',
-    accentColor: '#10b981',
-    gradient: ['#10b981', '#34d399'],
-    tags: ['スタンダード', '万能'],
-    bgColor: '#0a1a12',
-    personality: '🌐 万能',
   },
 ];
 
