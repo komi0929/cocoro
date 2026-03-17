@@ -10,6 +10,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useKokoroStore } from '@/store/useKokoroStore';
 import { SpacePhase } from '@/types/kokoro';
+import type { EngineStatus } from '@/hooks/useEngineConnector';
 
 const PHASE_LABELS: Record<
   SpacePhase,
@@ -46,6 +47,7 @@ interface SpaceHUDProps {
   onShowSafety?: () => void;
   onShowSession?: () => void;
   onShowHighlight?: () => void;
+  engineStatus?: EngineStatus;
 }
 
 export function SpaceHUD({
@@ -59,6 +61,7 @@ export function SpaceHUD({
   onShowSafety,
   onShowSession,
   onShowHighlight,
+  engineStatus,
 }: SpaceHUDProps) {
   const phase = useKokoroStore((s) => s.phase);
   const density = useKokoroStore((s) => s.density);
@@ -308,6 +311,55 @@ export function SpaceHUD({
           </button>
         )}
       </div>
+
+      {/* Engine Status Mini Panel */}
+      {engineStatus && (
+        <div className="fixed top-4 left-4 z-40 flex flex-col gap-1 pointer-events-none"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+          <div className="bg-black/30 backdrop-blur-xl rounded-lg px-3 py-2 border border-white/5">
+            <div className="flex items-center gap-3 text-[10px]">
+              {/* Flow */}
+              <span className={`${engineStatus.flowLevel === 'zone' ? 'text-amber-400' : engineStatus.flowLevel === 'flowing' ? 'text-green-400' : 'text-white/30'}`}>
+                🌊 {engineStatus.flowLevel}
+              </span>
+              {/* Emotion */}
+              <span className="text-white/40">
+                💜 {engineStatus.dominantEmotion}
+              </span>
+              {/* Trust */}
+              <span className="text-white/30">
+                🤝 {Math.round(engineStatus.trustLevel * 100)}%
+              </span>
+              {/* Safety */}
+              <span className={`${engineStatus.safetyLevel === 'green' ? 'text-green-400/50' : 'text-red-400'}`}>
+                🛡 {engineStatus.safetyLevel}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] mt-0.5">
+              {/* BGM */}
+              <span className="text-white/25">
+                🎵 {engineStatus.bgmGenre}
+              </span>
+              {/* Game */}
+              {engineStatus.activeGame && (
+                <span className="text-amber-300/60">
+                  🎮 {engineStatus.activeGame}
+                </span>
+              )}
+              {/* Performance */}
+              <span className="text-white/20">
+                ⚡ {engineStatus.fps}fps
+              </span>
+              {/* Coins */}
+              {engineStatus.coinBalance > 0 && (
+                <span className="text-yellow-300/50">
+                  🪙 {engineStatus.coinBalance}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active speakers overlay — shows who's talking */}
       {activeSpeakers.length > 0 && (

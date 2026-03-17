@@ -30,6 +30,7 @@ import { StateSyncEngine, type StateSyncCallbacks } from '@/engine/network/State
 import { VoiceChannel } from '@/engine/network/VoiceChannel';
 import { v4 as uuidv4 } from 'uuid';
 import { useSpaceEngines } from '@/hooks/useSpaceEngines';
+import { useEngineConnector } from '@/hooks/useEngineConnector';
 import { ConversationHUD } from '@/components/ui/ConversationHUD';
 import { LiveCaption } from '@/components/ui/LiveCaption';
 import { ConnectionQuality } from '@/components/ui/ConnectionQuality';
@@ -74,6 +75,7 @@ export default function SpacePage() {
   const climaxState = useCliMaxDirector();
   const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
   const engines = useSpaceEngines();
+  const engineStatus = useEngineConnector(engines);
   const router = useRouter();
   const [showSafety, setShowSafety] = useState(false);
   const [captionEnabled, setCaptionEnabled] = useState(false);
@@ -462,6 +464,7 @@ export default function SpacePage() {
         onShowSafety={() => setShowSafety(true)}
         onShowSession={() => setShowSessionSummary(true)}
         onShowHighlight={() => setShowHighlightReel(true)}
+        engineStatus={engineStatus}
       />
 
       {/* Mic Onboarding Hint (反復10: 初回体験ガイド) */}
