@@ -52,7 +52,7 @@ export interface VoiceChannelCallbacks {
 export class VoiceChannel {
   private socket: Socket | null = null;
   private localStream: MediaStream | null = null;
-  private peers = new Map<string, PeerConnection>();
+  peers = new Map<string, PeerConnection>();
   private callbacks: VoiceChannelCallbacks;
   private localParticipantId: string | null = null;
   private analyserNodes = new Map<string, { analyser: AnalyserNode; audioCtx: AudioContext }>();
