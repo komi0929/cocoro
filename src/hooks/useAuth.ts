@@ -1,5 +1,5 @@
 /**
- * kokoro — useAuth フック
+ * cocoro — useAuth フック
  * Supabase Authセッション管理
  */
 'use client';

@@ -1,5 +1,5 @@
 /**
- * kokoro — Audience Question Card
+ * cocoro — Audience Question Card
  * リスナーが話者に「お題」を投げる — ラジオのお便り文化
  *
  * サイクル4: 聞いてる人が会話に「参加」する第2の方法

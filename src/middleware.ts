@@ -1,5 +1,5 @@
 /**
- * kokoro — Auth Middleware
+ * cocoro — Auth Middleware
  * 未認証ユーザーを/authにリダイレクト
  * /auth と / と public assets はスキップ
  */

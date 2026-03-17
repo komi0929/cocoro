@@ -1,5 +1,5 @@
 /**
- * kokoro — Live Caption (STT)
+ * cocoro — Live Caption (STT)
  * リアルタイム字幕 — アクセシビリティの核
  *
  * サイクル62: 声が聞こえない/聞きにくい人のための字幕

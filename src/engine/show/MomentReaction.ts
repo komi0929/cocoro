@@ -1,5 +1,5 @@
 /**
- * kokoro — MomentReaction
+ * cocoro — MomentReaction
  * 画面全体にリアクションが降り注ぐ**拡張リアクションシステム**
  *
  * TikTok Liveから学ぶ: 視覚的快感=エンゲージメント

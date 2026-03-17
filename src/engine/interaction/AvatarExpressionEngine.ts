@@ -1,5 +1,5 @@
 /**
- * kokoro — Avatar Expression Engine
+ * cocoro — Avatar Expression Engine
  * 声の感情・抑揚・テンポからアバターの表情パラメータを生成
  * 
  * 反復136-140:

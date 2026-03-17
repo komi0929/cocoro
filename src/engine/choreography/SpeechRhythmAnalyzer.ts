@@ -1,5 +1,5 @@
 /**
- * kokoro — Speech Rhythm Analyzer
+ * cocoro — Speech Rhythm Analyzer
  * 会話のリズムパターンを分析
  * 
  * 反復131-135:

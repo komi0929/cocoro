@@ -1,5 +1,5 @@
 /**
- * kokoro — Performance Config
+ * cocoro — Performance Config
  * モバイル/デスクトップ判定と品質設定の一元管理
  * 
  * スマホでも60fps安定動作を実現するための動的品質調整

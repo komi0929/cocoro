@@ -1,11 +1,11 @@
 /**
- * kokoro — Aha Moment Engine
+ * cocoro — Aha Moment Engine
  * 最初の30秒でユーザーを掴む — オンボーディング心理学
  *
  * リサーチ結果:
  * - 30秒以内に「何ができるか」「なぜ自分に価値があるか」「操作方法」を伝える
  * - Facebook: 10日以内に7人フレンド → Aha Moment
- * - kokoro: 「声を出したらアバターが動いた」がAha Moment
+ * - cocoro: 「声を出したらアバターが動いた」がAha Moment
  * - Progressive Onboarding: 一度に全部教えない
  */
 
@@ -36,7 +36,7 @@ const AHA_DESCRIPTIONS: Record<AhaMomentType, { label: string; emoji: string; re
   room_discovered:     { label: '面白い部屋を見つけた！', emoji: '🏠', reward: 10 },
 };
 
-const STORAGE_KEY = 'kokoro_aha';
+const STORAGE_KEY = 'cocoro_aha';
 
 export class AhaMomentEngine {
   private progress: AhaProgress;

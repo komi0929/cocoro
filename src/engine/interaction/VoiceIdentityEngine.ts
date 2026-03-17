@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Identity
+ * cocoro — Voice Identity
  * 声紋から自動でアバターカラー/オーラを生成
  *
  * サイクル22: アバターの個性を声から自動生成

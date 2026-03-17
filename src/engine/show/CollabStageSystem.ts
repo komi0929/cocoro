@@ -1,10 +1,10 @@
 /**
- * kokoro — CollabStageSystem
+ * cocoro — CollabStageSystem
  * 2-4人の発話者を**ステージ上**に配置する演出システム
  *
  * X Spacesから学ぶ: スピーカー/リスナーの明確な分離
  * VTuberから学ぶ: コラボ配信のレイアウト
- * kokoro独自: 3D空間でステージと客席を物理的に分離
+ * cocoro独自: 3D空間でステージと客席を物理的に分離
  *
  * 機能:
  * 1. ステージ定員管理(2-4人)

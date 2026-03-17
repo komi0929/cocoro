@@ -1,5 +1,5 @@
 /**
- * kokoro — Cosmic Particles
+ * cocoro — Cosmic Particles
  * GLSLシェーダーベースの宇宙パーティクルシステム
  * Simplex Noiseで浮遊軌道を計算、密度と発話に連動
  */
@@ -8,7 +8,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 const PARTICLE_COUNT = 500;
 
@@ -114,7 +114,7 @@ const particleFragmentShader = /* glsl */ `
 
 export function CosmicParticles() {
   const pointsRef = useRef<THREE.Points>(null);
-  const density = useKokoroStore((s) => s.density);
+  const density = useCocoroStore((s) => s.density);
 
   const { positions, sizes, offsets, colors } = useMemo(() => {
     // Seeded PRNG for deterministic particle generation (lint-safe)
@@ -181,7 +181,7 @@ export function CosmicParticles() {
     uniforms.uDensity.value = density;
 
     // Read local participant's emotion for spatial color shift
-    const store = useKokoroStore.getState();
+    const store = useCocoroStore.getState();
     const localId = store.localParticipantId;
     if (localId) {
       const p = store.participants.get(localId);

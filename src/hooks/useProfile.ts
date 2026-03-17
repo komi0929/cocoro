@@ -1,5 +1,5 @@
 /**
- * kokoro — useProfile フック
+ * cocoro — useProfile フック
  * Supabase profilesテーブルとの連携
  */
 'use client';

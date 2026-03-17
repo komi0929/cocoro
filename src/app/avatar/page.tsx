@@ -1,5 +1,5 @@
 /**
- * kokoro — Avatar Page
+ * cocoro — Avatar Page
  * アバター管理・カスタマイズ画面
  * 所持アバターの確認、選択、進化データの表示
  */
@@ -26,7 +26,7 @@ export default function AvatarPage() {
   const [evolutionData, setEvolutionData] = useState<Record<string, AvatarEvolution>>({});
 
   useEffect(() => {
-    const saved = localStorage.getItem('kokoro_avatar_id');
+    const saved = localStorage.getItem('cocoro_avatar_id');
     if (saved) setSelectedId(saved);
     // Load evolution data for all avatars
     (async () => {
@@ -46,7 +46,7 @@ export default function AvatarPage() {
 
   const handleSelect = useCallback((avatar: AvatarDefinition) => {
     setSelectedId(avatar.id);
-    localStorage.setItem('kokoro_avatar_id', avatar.id);
+    localStorage.setItem('cocoro_avatar_id', avatar.id);
     if (navigator.vibrate) navigator.vibrate(30);
   }, []);
 

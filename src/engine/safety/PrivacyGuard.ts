@@ -1,5 +1,5 @@
 /**
- * kokoro — Privacy Guard
+ * cocoro — Privacy Guard
  * プライバシーバイデザイン — GDPR/個人情報保護
  *
  * - データ最小化原則
@@ -46,7 +46,7 @@ const DATA_INVENTORY: DataInventory[] = [
   { category: '連絡先', description: '収集しません', stored: false, canDelete: false, retentionDays: 0 },
 ];
 
-const STORAGE_KEY = 'kokoro_privacy';
+const STORAGE_KEY = 'cocoro_privacy';
 
 export class PrivacyGuard {
   private settings: PrivacySettings;
@@ -98,9 +98,9 @@ export class PrivacyGuard {
 
     // 実際のデータ削除
     const keysToDelete = [
-      'kokoro_guest', 'kokoro_coins', 'kokoro_gifts',
-      'kokoro_trust', 'kokoro_habit', 'kokoro_engagement',
-      'kokoro_preferences', 'kokoro_aha', 'kokoro_invites',
+      'cocoro_guest', 'cocoro_coins', 'cocoro_gifts',
+      'cocoro_trust', 'cocoro_habit', 'cocoro_engagement',
+      'cocoro_preferences', 'cocoro_aha', 'cocoro_invites',
     ];
     for (const key of keysToDelete) {
       try { localStorage.removeItem(key); } catch { /* ignore */ }
@@ -114,7 +114,7 @@ export class PrivacyGuard {
    */
   static getPrivacySummary(): string {
     return [
-      '🔒 kokoroのプライバシー',
+      '🔒 cocoroのプライバシー',
       '• 音声はリアルタイム処理のみ、録音しません',
       '• 位置情報・連絡先にアクセスしません',
       '• アカウントなしでも参加できます',

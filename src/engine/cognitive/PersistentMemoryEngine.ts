@@ -1,14 +1,14 @@
 /**
- * kokoro — PersistentMemoryEngine
+ * cocoro — PersistentMemoryEngine
  * Google Titans / Inworld AI相当の永続記憶 — IndexedDB実装(運用コスト¥0)
  *
  * 2026年メタバースレポート:
  * - Google Titans: 200万トークン超のコンテキスト保持
  * - Inworld AI: NPCの行動記憶 + 状況認識
- * - kokoro: IndexedDBでユーザー間関係/会話記憶/嗜好を永続保存
+ * - cocoro: IndexedDBでユーザー間関係/会話記憶/嗜好を永続保存
  *
  * Clubhouseの教訓: ライブ限定→記憶なし→関係が浅い
- * kokoro: 「前回の続き」が可能=深い関係構築
+ * cocoro: 「前回の続き」が可能=深い関係構築
  */
 
 export type RelationshipLevel = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'best_friend';
@@ -54,7 +54,7 @@ export interface UserPreference {
   introExtroScore: number;     // 0=intro 1=extro
 }
 
-const DB_NAME = 'kokoro_memory';
+const DB_NAME = 'cocoro_memory';
 const DB_VERSION = 1;
 
 export class PersistentMemoryEngine {

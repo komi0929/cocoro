@@ -1,5 +1,5 @@
 /**
- * kokoro — Guest Mode
+ * cocoro — Guest Mode
  * アカウント不要で即参加 — コールドスタート対策の核
  *
  * サイクル21: 3タップで会話開始
@@ -22,7 +22,7 @@ export interface GuestProfile {
 const NAMES_PREFIX = ['ふわふわ', 'キラキラ', 'もこもこ', 'ぽかぽか', 'にこにこ', 'わくわく', 'そよそよ', 'ひらひら'];
 const NAMES_SUFFIX = ['うさぎ', 'ねこ', 'くま', 'ペンギン', '星', '月', '雲', '風'];
 
-const STORAGE_KEY = 'kokoro_guest';
+const STORAGE_KEY = 'cocoro_guest';
 
 export class GuestMode {
   private profile: GuestProfile | null = null;

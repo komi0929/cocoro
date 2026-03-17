@@ -1,5 +1,5 @@
 /**
- * kokoro — Social Graph Engine
+ * cocoro — Social Graph Engine
  * フレンド/つながり管理 — 次来る理由を作る
  *
  * 反復346-355:
@@ -34,8 +34,8 @@ export interface FriendRequest {
   status: FriendRequestStatus;
 }
 
-const FRIENDS_STORAGE_KEY = 'kokoro_friends';
-const REQUESTS_STORAGE_KEY = 'kokoro_friend_requests';
+const FRIENDS_STORAGE_KEY = 'cocoro_friends';
+const REQUESTS_STORAGE_KEY = 'cocoro_friend_requests';
 
 export class SocialGraph {
   private friends: Map<string, Friend> = new Map();

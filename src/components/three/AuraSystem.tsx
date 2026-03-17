@@ -1,5 +1,5 @@
 /**
- * kokoro — Aura System v2 (Emotion Intelligence)
+ * cocoro — Aura System v2 (Emotion Intelligence)
  * 感情知能(EQ)オーラシステム
  * 
  * 2026メタバース動向「感情知能アバター」(Hume AI EVI, Nuance Labs) を反映

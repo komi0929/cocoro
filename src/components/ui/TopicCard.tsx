@@ -1,5 +1,5 @@
 /**
- * kokoro — Topic Card UI
+ * cocoro — Topic Card UI
  * 会話トピックを美しいカードとして画面中央に表示
  *
  * 反復321-325:

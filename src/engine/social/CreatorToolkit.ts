@@ -1,5 +1,5 @@
 /**
- * kokoro — Creator Tools
+ * cocoro — Creator Tools
  * ルームホストのための支援ツール — クリエイター動機の研究結果
  *
  * リサーチ結果:
@@ -38,7 +38,7 @@ const HOST_TITLES: Array<{ minLevel: number; title: string; emoji: string }> = [
   { minLevel: 20, title: '伝説のホスト', emoji: '👑' },
 ];
 
-const STORAGE_KEY = 'kokoro_creator';
+const STORAGE_KEY = 'cocoro_creator';
 
 export class CreatorToolkit {
   private stats: CreatorStats;

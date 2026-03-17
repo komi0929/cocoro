@@ -1,5 +1,5 @@
 /**
- * kokoro — Anti-Churn System
+ * cocoro — Anti-Churn System
  * 離脱予兆の検知と介入 — リテンションの最後の砦
  *
  * - 離脱パターンの学習(訪問頻度低下/セッション短縮/リアクション減少)
@@ -26,7 +26,7 @@ export interface ChurnAnalysis {
   urgency: number;     // 1-5
 }
 
-const STORAGE_KEY = 'kokoro_engagement';
+const STORAGE_KEY = 'cocoro_engagement';
 
 export class AntiChurnSystem {
   private engagement: UserEngagement;

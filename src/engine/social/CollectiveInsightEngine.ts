@@ -1,5 +1,5 @@
 /**
- * kokoro — Collective Insight
+ * cocoro — Collective Insight
  * みんなの発言から自動要約 — popopoにない「集合知」
  *
  * サイクル26: 「会話が消えない」価値の創出
@@ -30,7 +30,7 @@ export interface SessionInsight {
   highlightQuotes: string[];  // AI抽出されたハイライト的なフレーズ
 }
 
-const STORAGE_KEY = 'kokoro_insights';
+const STORAGE_KEY = 'cocoro_insights';
 
 export class CollectiveInsightEngine {
   private entries: Map<string, InsightEntry> = new Map();

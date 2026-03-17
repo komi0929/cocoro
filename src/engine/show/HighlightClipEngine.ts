@@ -1,11 +1,11 @@
 /**
- * kokoro — HighlightClipEngine
+ * cocoro — HighlightClipEngine
  * 会話の盛り上がりを**自動検出して切り抜きクリップ化**
  *
  * Clubhouseの教訓: ライブ限定=コンテンツが死蔵
  * X Spacesから学ぶ: 録音→再利用→ポッドキャスト化
  * TikTokから学ぶ: 短尺動画の拡散力
- * kokoro独自: 3D空間ごとキャプチャ→SNS共有
+ * cocoro独自: 3D空間ごとキャプチャ→SNS共有
  *
  * 自動検出ロジック:
  * - 笑いピーク(感情joy複数人同時)

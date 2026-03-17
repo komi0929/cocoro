@@ -1,5 +1,5 @@
 /**
- * kokoro — Group Dynamics Manager
+ * cocoro — Group Dynamics Manager
  * 最適会話人数を自動管理 — グループ心理学の知見
  *
  * リサーチ結果: 

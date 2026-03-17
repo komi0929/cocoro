@@ -1,5 +1,5 @@
 /**
- * kokoro — Session Achievements
+ * cocoro — Session Achievements
  * セッション中の達成事項をゲーミフィケーション的に表示
  *
  * 反復271-280:
@@ -82,7 +82,7 @@ const ACHIEVEMENT_DEFS: Array<{
   },
 ];
 
-const STORAGE_KEY = 'kokoro_achievements';
+const STORAGE_KEY = 'cocoro_achievements';
 
 export class SessionAchievements {
   private tracker: AchievementTracker = {

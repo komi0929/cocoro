@@ -1,5 +1,5 @@
 /**
- * kokoro — Game Overlay UI
+ * cocoro — Game Overlay UI
  * 会話ゲームの進行をオーバーレイで表示
  *
  * 反復356-365 (UI部分):

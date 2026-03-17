@@ -1,5 +1,5 @@
 /**
- * kokoro — State Sync Engine (Client-side)
+ * cocoro — State Sync Engine (Client-side)
  * 30fps 固定レートでの差分状態送信 + リモート状態受信
  * 帯域最適化: 量子化 + 差分検出 + 不要データの間引き
  */
@@ -20,8 +20,8 @@ import type {
   ReactionBroadcastPayload,
 } from './SyncProtocol';
 import { SYNC_CONFIG, visemeToIndex, indexToViseme } from './SyncProtocol';
-import type { Participant, AvatarTransform, SpeakingState, EmotionState } from '@/types/kokoro';
-import { SpacePhase } from '@/types/kokoro';
+import type { Participant, AvatarTransform, SpeakingState, EmotionState } from '@/types/cocoro';
+import { SpacePhase } from '@/types/cocoro';
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 

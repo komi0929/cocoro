@@ -1,5 +1,5 @@
 /**
- * kokoro — Live Poll
+ * cocoro — Live Poll
  * 全員参加型リアルタイム投票
  *
  * サイクル53: 会話中に全員が参加できるインタラクション

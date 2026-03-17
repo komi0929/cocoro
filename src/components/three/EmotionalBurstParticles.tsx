@@ -1,5 +1,5 @@
 /**
- * kokoro — Emotional Burst Particles (3D)
+ * cocoro — Emotional Burst Particles (3D)
  * ピークモーメント検出時に画面全体にパーティクルが爆発
  * 
  * silence_break → 青い光の粒子が中心から放射
@@ -70,7 +70,7 @@ export function EmotionalBurstParticles() {
   // Expose trigger function via global
   const setupGlobal = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__kokoro_burst = (type: BurstType) => {
+    (window as any).__cocoro_burst = (type: BurstType) => {
       triggerBurst(type);
     };
   }, [triggerBurst]);

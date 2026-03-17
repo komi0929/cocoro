@@ -1,5 +1,5 @@
 /**
- * kokoro — Safety Boundary System
+ * cocoro — Safety Boundary System
  * ハラスメント防止の根幹 — Personal Boundary + Safe Zone
  *
  * サイクル6: メタバースセキュリティの最重要課題
@@ -25,7 +25,7 @@ export interface SafetyEvent {
   details: string;
 }
 
-const STORAGE_KEY = 'kokoro_safety';
+const STORAGE_KEY = 'cocoro_safety';
 
 export class SafetyBoundarySystem {
   private config: SafetyConfig;

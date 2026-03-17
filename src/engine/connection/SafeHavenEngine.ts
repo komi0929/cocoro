@@ -1,5 +1,5 @@
 /**
- * kokoro — SafeHavenAtmosphere + SocialCueReader + GentleExitFlow
+ * cocoro — SafeHavenAtmosphere + SocialCueReader + GentleExitFlow
  * 居場所の安全感 / 空気読み / 穏やかな離脱
  *
  * ❌ 禁止: ソーシャルプレッシャー / 離脱妨害 / 「もう行くの？」演出

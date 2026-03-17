@@ -1,5 +1,5 @@
 /**
- * kokoro — Presence Aura (3D)
+ * cocoro — Presence Aura (3D)
  * 各参加者の存在感をオーラとして可視化
  *
  * 反復251-260:

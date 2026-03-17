@@ -1,5 +1,5 @@
 /**
- * kokoro — Listener Engagement System
+ * cocoro — Listener Engagement System
  * ROM専(声を出さない参加者)が100%参加できるシステム
  *
  * 反復326-335:

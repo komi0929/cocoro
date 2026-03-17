@@ -1,5 +1,5 @@
 /**
- * kokoro — Profile API
+ * cocoro — Profile API
  * GET: 自分のプロフィール取得
  * PUT: プロフィール更新
  */

@@ -1,5 +1,5 @@
 /**
- * kokoro — Mood Lighting Engine
+ * cocoro — Mood Lighting Engine
  * 会話の雰囲気に連動するリアルタイム照明制御
  * 
  * 反復141-145:

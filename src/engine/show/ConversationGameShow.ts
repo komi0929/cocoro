@@ -1,5 +1,5 @@
 /**
- * kokoro — ConversationGameShow
+ * cocoro — ConversationGameShow
  * 音声ベースの**本格ゲームショー**モード
  *
  * SharedActivitiesの上位版 — ボイスで遊べる本格ゲーム

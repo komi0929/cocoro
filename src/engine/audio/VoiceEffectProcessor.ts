@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Effects
+ * cocoro — Voice Effects
  * ボイスエフェクト — 会話のエンタメ化をさらに加速
  *
  * - リバーブ(エコー)

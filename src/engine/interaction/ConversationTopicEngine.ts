@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Topic Engine
+ * cocoro — Conversation Topic Engine
  * 「何を話せばいいかわからない」を完全排除する
  *
  * 反復311-320:

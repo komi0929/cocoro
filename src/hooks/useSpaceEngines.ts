@@ -1,6 +1,6 @@
 'use client';
 /**
- * kokoro — useSpaceEngines
+ * cocoro — useSpaceEngines
  * 全113エンジン統合フック
  *
  * 全エンジンを以下のループで分類して接続:
@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 // ===== social (11) =====
 import { GroupDynamicsManager } from '@/engine/social/GroupDynamicsManager';
@@ -295,7 +295,7 @@ export interface SpaceEngines {
 // Hook
 // --------------------------------------------------------------------------
 export function useSpaceEngines(): SpaceEngines {
-  const store = useKokoroStore;
+  const store = useCocoroStore;
 
   // ===== Instantiate all engines =====
 

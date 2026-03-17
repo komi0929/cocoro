@@ -1,5 +1,5 @@
 /**
- * kokoro — Cognitive Context Engine
+ * cocoro — Cognitive Context Engine
  * 空間の「認知的記憶」を統合するエンジン
  *
  * 2026メタバース動向:

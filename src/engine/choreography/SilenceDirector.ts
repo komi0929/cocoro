@@ -1,5 +1,5 @@
 /**
- * kokoro — Silence Director
+ * cocoro — Silence Director
  * 沈黙を「気まずさ」から「演出」に変換する
  *
  * サイクル2: ラジオの「間」を再現

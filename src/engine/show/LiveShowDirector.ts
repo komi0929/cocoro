@@ -1,11 +1,11 @@
 /**
- * kokoro — LiveShowDirector
+ * cocoro — LiveShowDirector
  * 会話を**テレビ番組のように演出**するエンジン
  *
  * 競合分析:
- * - X Spaces: 音声のみ→視覚演出なし → kokoro: 3D VFX+カメラワークで圧倒
- * - POPOPO: 空間が追従 → kokoro: 空間+演出+BGM+SE=完全番組化
- * - TikTok Live: 配信者1人→全員参加型 → kokoro: 全員が番組の出演者
+ * - X Spaces: 音声のみ→視覚演出なし → cocoro: 3D VFX+カメラワークで圧倒
+ * - POPOPO: 空間が追従 → cocoro: 空間+演出+BGM+SE=完全番組化
+ * - TikTok Live: 配信者1人→全員参加型 → cocoro: 全員が番組の出演者
  *
  * 機能:
  * 1. 発話者自動スポットライト(フォーカスカメラ)

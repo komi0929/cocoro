@@ -1,15 +1,15 @@
 /**
- * kokoro — Demo Orchestrator  
+ * cocoro — Demo Orchestrator  
  * ローカルデモ用のシミュレーション  
  * NPCアバターが自動で会話をシミュレートし、3フェーズの遷移をデモする
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { type Participant, type SpeakingState, type EmotionState } from '@/types/kokoro';
+import { type Participant, type SpeakingState, type EmotionState } from '@/types/cocoro';
 import { PhaseStateMachine } from '@/engine/choreography/PhaseStateMachine';
 import { GravityFormation } from '@/engine/choreography/GravityFormation';
 import { getRandomAvatarId, getAvatarById } from '@/data/avatarCatalog';
-import type { useKokoroStore } from '@/store/useKokoroStore';
+import type { useCocoroStore } from '@/store/useCocoroStore';
 
 
 
@@ -36,7 +36,7 @@ const DEFAULT_EMOTION: EmotionState = {
  * NPCアバターを生成し、自動で発話・感情変化をシミュレート
  */
 export class DemoOrchestrator {
-  private store: typeof useKokoroStore;
+  private store: typeof useCocoroStore;
   private phaseStateMachine: PhaseStateMachine;
   private gravityFormation: GravityFormation;
   private npcIds: string[] = [];
@@ -48,7 +48,7 @@ export class DemoOrchestrator {
   // Conversation simulation state
   private conversationPhase = 0; // cycles through: silence -> one talks -> conversation -> heated
 
-  constructor(store: typeof useKokoroStore) {
+  constructor(store: typeof useCocoroStore) {
     this.store = store;
     this.phaseStateMachine = new PhaseStateMachine();
     this.gravityFormation = new GravityFormation();

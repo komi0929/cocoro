@@ -1,5 +1,5 @@
 /**
- * kokoro — Analytics Dashboard (Internal)
+ * cocoro — Analytics Dashboard (Internal)
  * 内部分析 — データ駆動の改善
  *
  * - ユーザー行動の匿名集計
@@ -30,7 +30,7 @@ export interface FeatureUsage {
   lastUsed: number;
 }
 
-const STORAGE_KEY = 'kokoro_analytics';
+const STORAGE_KEY = 'cocoro_analytics';
 
 export class AnalyticsEngine {
   private events: AnalyticsEvent[] = [];

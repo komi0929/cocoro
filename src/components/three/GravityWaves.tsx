@@ -1,5 +1,5 @@
 /**
- * kokoro — Gravity Waves (3D)
+ * cocoro — Gravity Waves (3D)
  * 声のエネルギーが波紋として空間を伝播する視覚効果
  *
  * 反復231-240:
@@ -14,7 +14,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 const WAVE_VERTEX = /* glsl */ `
   uniform float uTime;
@@ -83,8 +83,8 @@ interface WaveSource {
 }
 
 export function GravityWaves() {
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
-  const participants = useKokoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
   const meshRef = useRef<THREE.Mesh>(null);
   const wavesRef = useRef<WaveSource[]>([]);
   const lastSpawnRef = useRef<Map<string, number>>(new Map());

@@ -1,5 +1,5 @@
 /**
- * kokoro — Collective Resonance Effect
+ * cocoro — Collective Resonance Effect
  * 全員の感情が一致した時の「共鳴」演出
  * 
  * 会話のピークで全員が笑っている → 空間が虹色に脈動
@@ -11,7 +11,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 // 共鳴の閾値: この割合以上の参加者が同じ感情なら発動
 const RESONANCE_THRESHOLD = 0.6;
@@ -27,8 +27,8 @@ const RESONANCE_COLORS: Record<EmotionKey, THREE.Color> = {
 };
 
 export function CollectiveResonance() {
-  const participants = useKokoroStore((s) => s.participants);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
   
   const resonanceLightRef = useRef<THREE.PointLight>(null);
   const resonanceRingRef = useRef<THREE.Mesh>(null);

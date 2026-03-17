@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Flow Analyzer
+ * cocoro — Conversation Flow Analyzer
  * 「良い会話」の条件を分析し、フロー状態を検出
  * 
  * 反復146-150:

@@ -1,18 +1,18 @@
 /**
- * kokoro — Zustand Global Store
+ * cocoro — Zustand Global Store
  * アバター状態、フェーズ、ライティングを一元管理
  */
 
 import { create } from 'zustand';
 import {
   SpacePhase,
-  type KokoroStore,
+  type CocoroStore,
   type Participant,
   type ReactionEvent,
   type LightingState,
-} from '@/types/kokoro';
+} from '@/types/cocoro';
 
-export const useKokoroStore = create<KokoroStore>((set) => ({
+export const useCocoroStore = create<CocoroStore>((set) => ({
   // --- Initial State ---
   roomId: null,
   phase: SpacePhase.SILENCE,

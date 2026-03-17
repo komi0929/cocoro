@@ -1,5 +1,5 @@
 /**
- * kokoro — MemoryPoolManager + FrameBudgetController
+ * cocoro — MemoryPoolManager + FrameBudgetController
  * メモリプール + フレーム予算制御
  *
  * コミュニケーション = GCスパイクによるカクつき = 信頼喪失

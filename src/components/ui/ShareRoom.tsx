@@ -1,5 +1,5 @@
 /**
- * kokoro — Share Room Link
+ * cocoro — Share Room Link
  * ルーム共有機能
  * URLコピー or Web Share API でルームリンクを共有
  */
@@ -24,7 +24,7 @@ export function ShareRoom({ roomId, roomName }: ShareRoomProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `kokoro — ${roomName}`,
+          title: `cocoro — ${roomName}`,
           text: `「${roomName}」に来ない？\nアバターで話そう 🫧`,
           url: shareUrl,
         });

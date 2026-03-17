@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Memory AI
+ * cocoro — Conversation Memory AI
  * 会話の文脈を理解して「共有記憶」を作る
  *
  * 反復241-250:
@@ -31,8 +31,8 @@ export interface ConnectionRecord {
   connectionStrength: number;  // 0-1: based on frequency + recency + peaks
 }
 
-const MEMORY_STORAGE_KEY = 'kokoro_shared_memories';
-const CONNECTION_STORAGE_KEY = 'kokoro_connections';
+const MEMORY_STORAGE_KEY = 'cocoro_shared_memories';
+const CONNECTION_STORAGE_KEY = 'cocoro_connections';
 
 export class ConversationMemoryAI {
   private memories: SharedMemory[] = [];

@@ -1,5 +1,5 @@
 /**
- * kokoro — Smart Join
+ * cocoro — Smart Join
  * AIが最適な部屋を選ぶ — 「おまかせ入室」
  *
  * サイクル55: ルーム選択のフリクションをゼロに
@@ -35,7 +35,7 @@ interface RoomInfo {
   tags: string[];
 }
 
-const STORAGE_KEY = 'kokoro_preferences';
+const STORAGE_KEY = 'cocoro_preferences';
 
 export class SmartJoinEngine {
   private preferences: UserPreferences;

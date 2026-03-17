@@ -1,9 +1,9 @@
 /**
- * kokoro — Landing Page
+ * cocoro — Landing Page
  * 
  * 思想:
  *   popopoが「人間がアプリを作る最後の時代」なら、
- *   kokoroは「AIが心を理解する最初の空間」。
+ *   cocoroは「AIが心を理解する最初の空間」。
  * 
  *   テクノロジーではなく、「思想」で勝つ。
  *   洗練されたタイポグラフィ、贅沢な余白、明確なビジョン表明。
@@ -55,7 +55,7 @@ export default function LandingPage() {
                 <span className="text-lg">🫧</span>
               </div>
               <span className="text-lg font-light tracking-[0.3em] text-white/40" style={{ fontFamily: 'var(--font-noto)' }}>
-                KOKORO
+                cocoro
               </span>
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function LandingPage() {
           </blockquote>
           <p className="mt-8 text-sm text-white/20 leading-relaxed max-w-sm mx-auto" style={{ fontFamily: 'var(--font-noto)' }}>
             従来のメタバースは「人が集まった場所で会話が生まれる」。
-            kokoroは逆転する。声が引力を生み、空間が人を引き寄せる。
+            cocoroは逆転する。声が引力を生み、空間が人を引き寄せる。
           </p>
         </div>
       </section>
@@ -197,7 +197,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== SECTION 4: 差別化 — What makes kokoro different ===== */}
+      {/* ===== SECTION 4: 差別化 — What makes cocoro different ===== */}
       <section className="relative z-10 py-24 md:py-40 px-6">
         <div className="max-w-2xl mx-auto"
           style={{
@@ -284,7 +284,7 @@ export default function LandingPage() {
             <div className="w-5 h-5 rounded-md bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
               <span className="text-[8px]">🫧</span>
             </div>
-            <span className="text-[10px] text-white/20 tracking-wider">kokoro</span>
+            <span className="text-[10px] text-white/20 tracking-wider">cocoro</span>
           </div>
           <p className="text-[10px] text-white/10">
             AIランタイムゼロ — すべてブラウザ内で完結

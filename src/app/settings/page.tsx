@@ -1,5 +1,5 @@
 /**
- * kokoro — Settings Page
+ * cocoro — Settings Page
  * ユーザー設定画面
  * 表示名変更、音声設定、データ管理
  */
@@ -18,22 +18,22 @@ export default function SettingsPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
-    setDisplayName(localStorage.getItem('kokoro_display_name') ?? '');
+    setDisplayName(localStorage.getItem('cocoro_display_name') ?? '');
     setVisitCount(getRoomHistory().reduce((sum, h) => sum + h.visitCount, 0));
-    setHasAvatar(!!localStorage.getItem('kokoro_avatar_id'));
+    setHasAvatar(!!localStorage.getItem('cocoro_avatar_id'));
   }, []);
 
   const handleSaveName = useCallback(() => {
     if (!displayName.trim()) return;
-    localStorage.setItem('kokoro_display_name', displayName.trim());
+    localStorage.setItem('cocoro_display_name', displayName.trim());
     setSavedToast(true);
     if (navigator.vibrate) navigator.vibrate(30);
     setTimeout(() => setSavedToast(false), 2000);
   }, [displayName]);
 
   const handleClearData = useCallback(() => {
-    localStorage.removeItem('kokoro_display_name');
-    localStorage.removeItem('kokoro_avatar_id');
+    localStorage.removeItem('cocoro_display_name');
+    localStorage.removeItem('cocoro_avatar_id');
     // Clear IndexedDB
     try {
       indexedDB.deleteDatabase('cocoro_spatial_memory');
@@ -117,7 +117,7 @@ export default function SettingsPage() {
         <section className="p-5 rounded-2xl bg-white/3 border border-white/5">
           <h2 className="text-sm font-medium text-white/70 mb-3">このアプリについて</h2>
           <div className="space-y-2 text-[12px] text-white/40 leading-relaxed">
-            <p><span className="text-white/60 font-medium">kokoro</span> — カメラのいらないテレビ電話</p>
+            <p><span className="text-white/60 font-medium">cocoro</span> — カメラのいらないテレビ電話</p>
             <p>声とアバターだけで繋がる、プライバシーファーストの空間SNS。</p>
             <p className="text-white/25">v0.1.0 • Built with Next.js + Three.js + WebRTC</p>
           </div>

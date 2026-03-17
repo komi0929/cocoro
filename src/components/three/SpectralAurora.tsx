@@ -1,5 +1,5 @@
 /**
- * kokoro — Spectral Aurora (3D)
+ * cocoro — Spectral Aurora (3D)
  * 会話のエネルギーがオーロラとして天井に表示される
  *
  * 反復301-310:
@@ -14,7 +14,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 const AURORA_VERTEX = /* glsl */ `
   varying vec2 vUv;
@@ -105,7 +105,7 @@ const AURORA_FRAGMENT = /* glsl */ `
 `;
 
 export function SpectralAurora() {
-  const density = useKokoroStore((s) => s.density);
+  const density = useCocoroStore((s) => s.density);
   const meshRef = useRef<THREE.Mesh>(null);
 
   const uniforms = useMemo(() => ({

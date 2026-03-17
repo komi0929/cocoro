@@ -1,5 +1,5 @@
 /**
- * kokoro — Whisper Mode
+ * cocoro — Whisper Mode
  * 空間内で2人だけの声 — 親密さの演出
  *
  * サイクル28: 1対1の親密コミュニケーション

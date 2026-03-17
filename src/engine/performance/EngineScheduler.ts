@@ -1,5 +1,5 @@
 /**
- * kokoro — EngineScheduler
+ * cocoro — EngineScheduler
  * 48+エンジンの**優先度ベース実行管理**
  *
  * コミュニケーション用アプリ = 遅延は一発アウト

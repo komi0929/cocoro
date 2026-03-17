@@ -1,5 +1,5 @@
 /**
- * kokoro — 認証ページ
+ * cocoro — 認証ページ
  * Supabase Auth: 匿名(ゲスト) + Magic Link + Google OAuth
  */
 'use client';
@@ -74,7 +74,7 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="text-6xl mb-4">🫧</div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">kokoro</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">cocoro</h1>
           <p className="text-gray-400 mt-2 text-sm">アバターで繋がる、緩い空間SNS</p>
         </div>
 

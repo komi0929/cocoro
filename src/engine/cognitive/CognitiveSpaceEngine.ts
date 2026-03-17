@@ -1,11 +1,11 @@
 /**
- * kokoro — CognitiveSpaceEngine + RegenerativeConversation
+ * cocoro — CognitiveSpaceEngine + RegenerativeConversation
  * NEOM XVRS相当の認知的空間適応 + 再生型AI
  *
  * 2026年メタバースレポート:
  * - NEOM XVRS: 環境データをリアルタイムに仮想空間へ反映
  * - 再生型AI: フィードバック→修復→記憶→ループ
- * - kokoro: 会話キーワード→空間テーマ変更 + 品質自動修復
+ * - cocoro: 会話キーワード→空間テーマ変更 + 品質自動修復
  *
  * 運用コスト: ¥0 (全てクライアントサイド)
  */

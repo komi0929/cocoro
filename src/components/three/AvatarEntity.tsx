@@ -1,5 +1,5 @@
 /**
- * kokoro — VRM Avatar Entity Component
+ * cocoro — VRM Avatar Entity Component
  * 生命感のあるVRMアバター：呼吸・揺れ・瞬き・リップシンク・IK視線追従
  * T-Poseを排除し、ロード直後から生きた動きを実現
  * 
@@ -12,12 +12,12 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils, VRM, VRMHumanBoneName } from '@pixiv/three-vrm';
-import type { Participant, SpeakingState, EmotionState } from '@/types/kokoro';
+import type { Participant, SpeakingState, EmotionState } from '@/types/cocoro';
 import { getAvatarById } from '@/data/avatarCatalog';
 import { AuraSystem } from './AuraSystem';
 import { EmotionParticles } from './EmotionParticles';
 import { useSpatialMemoryAvatar } from '@/hooks/useSpatialMemory';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 import { AttentionDirector } from '@/engine/choreography/AttentionDirector';
 
 interface AvatarEntityProps {
@@ -109,8 +109,8 @@ export function AvatarEntity({
   const speechAccRef = useRef(0); // frame-level speech accumulator
 
   // Store access for speaker centroid calculation
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
-  const participants = useKokoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
 
   // Load saved evolution data from IndexedDB
   const { avatarEvolution } = useSpatialMemoryAvatar(

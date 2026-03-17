@@ -1,5 +1,5 @@
 /**
- * kokoro — Space HUD (Head-Up Display)
+ * cocoro — Space HUD (Head-Up Display)
  * 空間に溶け込むGlassmorphism UI — 究極版
  * 
  * 反復11-20: 声量ビジュアライザー、話者名リアルタイム表示、
@@ -8,8 +8,8 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { SpacePhase } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { SpacePhase } from '@/types/cocoro';
 import type { EngineStatus } from '@/hooks/useEngineConnector';
 
 const PHASE_LABELS: Record<
@@ -63,11 +63,11 @@ export function SpaceHUD({
   onShowHighlight,
   engineStatus,
 }: SpaceHUDProps) {
-  const phase = useKokoroStore((s) => s.phase);
-  const density = useKokoroStore((s) => s.density);
-  const participants = useKokoroStore((s) => s.participants);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
-  const localId = useKokoroStore((s) => s.localParticipantId);
+  const phase = useCocoroStore((s) => s.phase);
+  const density = useCocoroStore((s) => s.density);
+  const participants = useCocoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const localId = useCocoroStore((s) => s.localParticipantId);
   const [showParticipants, setShowParticipants] = useState(false);
   const micButtonRef = useRef<HTMLButtonElement>(null);
 

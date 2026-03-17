@@ -1,5 +1,5 @@
 /**
- * kokoro — Coin Economy
+ * cocoro — Coin Economy
  * コイン/ポイント経済 — マネタイズの基盤通貨
  *
  * サイクル43: 仮想通貨制度
@@ -27,7 +27,7 @@ export interface CoinState {
   transactions: CoinTransaction[];
 }
 
-const STORAGE_KEY = 'kokoro_coins';
+const STORAGE_KEY = 'cocoro_coins';
 
 // 無料で獲得できるコインの設定
 const FREE_COIN_REWARDS = {

@@ -1,5 +1,5 @@
 /**
- * kokoro — Avatar Catalog
+ * cocoro — Avatar Catalog
  * 公開VRMモデルのカタログ
  * ユーザーが自分の「顔」を選べるアイデンティティシステムの基盤
  *

@@ -1,5 +1,5 @@
 /**
- * kokoro — Adaptive UI Engine
+ * cocoro — Adaptive UI Engine
  * 会話の状態に応じてUI要素の表示/非表示を最適化
  * 
  * 反復201-210:
@@ -31,7 +31,7 @@ export class AdaptiveUIEngine {
   private isFirstVisit: boolean;
 
   constructor() {
-    this.isFirstVisit = typeof window !== 'undefined' ? !localStorage.getItem('kokoro_has_visited') : false;
+    this.isFirstVisit = typeof window !== 'undefined' ? !localStorage.getItem('cocoro_has_visited') : false;
     if (this.isFirstVisit) {
       this.mode = 'onboarding';
     }
@@ -54,7 +54,7 @@ export class AdaptiveUIEngine {
       this.lastSpeechTime = now;
       this.hasEverSpoken = true;
       if (this.isFirstVisit) {
-        localStorage.setItem('kokoro_has_visited', 'true');
+        localStorage.setItem('cocoro_has_visited', 'true');
         this.isFirstVisit = false;
       }
     }

@@ -1,5 +1,5 @@
 /**
- * kokoro — Flow State Visualizer (3D)
+ * cocoro — Flow State Visualizer (3D)
  * ConversationFlowAnalyzerのフロー状態を3D空間で視覚化
  * 
  * 反復161-170:
@@ -14,7 +14,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 type FlowLevel = 'idle' | 'warming' | 'flowing' | 'zone';
 
@@ -26,8 +26,8 @@ const FLOW_COLORS: Record<FlowLevel, { color: string; emissive: string; intensit
 };
 
 export function FlowStateVisualizer() {
-  const density = useKokoroStore((s) => s.density);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const density = useCocoroStore((s) => s.density);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
 
   const orbRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);

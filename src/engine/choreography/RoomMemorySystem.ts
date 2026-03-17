@@ -1,5 +1,5 @@
 /**
- * kokoro — Room Memory System
+ * cocoro — Room Memory System
  * 各ルームの思い出を記録し、再訪問時に振り返れる
  * 
  * 反復151-155: 
@@ -38,7 +38,7 @@ export interface RoomMemoryStats {
   favoriteEmotion: string;
 }
 
-const STORAGE_KEY = 'kokoro_room_memories';
+const STORAGE_KEY = 'cocoro_room_memories';
 
 export class RoomMemorySystem {
   private records: RoomSessionRecord[] = [];

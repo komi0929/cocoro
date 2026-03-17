@@ -1,5 +1,5 @@
 /**
- * kokoro — ComfortDistanceEngine
+ * cocoro — ComfortDistanceEngine
  * 安心距離感制御 — パーソナルスペースの概念を3D空間に実装
  *
  * 設計思想: 「近すぎず、遠すぎず、ちょうどいい距離感」

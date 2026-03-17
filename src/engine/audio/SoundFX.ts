@@ -1,5 +1,5 @@
 /**
- * kokoro — UI Sound Effects System
+ * cocoro — UI Sound Effects System
  * マイクロインタラクションの気持ちよさを音で演出
  * 
  * 反復71-80: ボタン操作、マイクON/OFF、入退室にSEを紐付け

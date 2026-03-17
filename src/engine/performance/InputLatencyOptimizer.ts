@@ -1,5 +1,5 @@
 /**
- * kokoro — InputLatencyOptimizer + NetworkQualityPredictor
+ * cocoro — InputLatencyOptimizer + NetworkQualityPredictor
  * 入力遅延最適化 + ネットワーク品質予測
  *
  * コミュニケーションアプリ = 遅延は一発アウト

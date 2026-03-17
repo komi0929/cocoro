@@ -1,5 +1,5 @@
 /**
- * kokoro — Auto Moderator (強化版)
+ * cocoro — Auto Moderator (強化版)
  * 音声ベースの自動モデレーション
  *
  * サイクル10: 荒らし対策の自動化

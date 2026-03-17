@@ -1,5 +1,5 @@
 /**
- * kokoro — Emotion Contagion Engine
+ * cocoro — Emotion Contagion Engine
  * 感情の伝染シミュレーション
  *
  * 反復216-220:

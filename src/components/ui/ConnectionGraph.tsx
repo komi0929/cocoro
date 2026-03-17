@@ -1,5 +1,5 @@
 /**
- * kokoro — Connection Graph UI
+ * cocoro — Connection Graph UI
  * 参加者間のつながりを視覚化するUIコンポーネント
  *
  * 反復291-300:

@@ -1,5 +1,5 @@
 /**
- * kokoro — Friend Panel
+ * cocoro — Friend Panel
  * フレンド一覧 + オンライン状態表示
  *
  * 反復346-355 (UI部分):

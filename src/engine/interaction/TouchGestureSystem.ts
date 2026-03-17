@@ -1,5 +1,5 @@
 /**
- * kokoro — Touch Gesture Recognition System
+ * cocoro — Touch Gesture Recognition System
  * スマホのタッチジェスチャーでリアクションを発動
  * 
  * 反復156-160:

@@ -1,5 +1,5 @@
 /**
- * kokoro — Listener Gesture Bar UI
+ * cocoro — Listener Gesture Bar UI
  * ROM専がワンタップで参加できるジェスチャーバー
  *
  * 反復326-335 (UI部分):

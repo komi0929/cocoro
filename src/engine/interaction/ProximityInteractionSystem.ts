@@ -1,5 +1,5 @@
 /**
- * kokoro — Proximity Interaction System
+ * cocoro — Proximity Interaction System
  * アバター間の距離に応じたインタラクション
  * 
  * 反復101-110:

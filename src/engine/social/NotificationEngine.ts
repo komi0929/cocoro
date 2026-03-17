@@ -1,5 +1,5 @@
 /**
- * kokoro — Notification Engine
+ * cocoro — Notification Engine
  * 次来る理由を作る通知システム
  *
  * 反復386-395:
@@ -18,7 +18,7 @@ export type NotificationType =
   | 'session_reminder'
   | 'connection_milestone';
 
-export interface KokoroNotification {
+export interface cocoroNotification {
   id: string;
   type: NotificationType;
   title: string;
@@ -30,12 +30,12 @@ export interface KokoroNotification {
   priority: 'low' | 'medium' | 'high';
 }
 
-const STORAGE_KEY = 'kokoro_notifications';
+const STORAGE_KEY = 'cocoro_notifications';
 
 export class NotificationEngine {
-  private notifications: KokoroNotification[] = [];
+  private notifications: cocoroNotification[] = [];
   private isQuietMode = false;
-  private onNotifyCallbacks: Array<(n: KokoroNotification) => void> = [];
+  private onNotifyCallbacks: Array<(n: cocoroNotification) => void> = [];
 
   constructor() {
     this.loadFromStorage();
@@ -70,13 +70,13 @@ export class NotificationEngine {
     emoji: string;
     priority?: 'low' | 'medium' | 'high';
     actionUrl?: string;
-  }): KokoroNotification | null {
+  }): cocoroNotification | null {
     this.updateQuietMode();
 
     // 深夜モード: lowはブロック
     if (this.isQuietMode && (params.priority ?? 'medium') === 'low') return null;
 
-    const notification: KokoroNotification = {
+    const notification: cocoroNotification = {
       id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       type: params.type,
       title: params.title,
@@ -103,7 +103,7 @@ export class NotificationEngine {
   /**
    * 便利メソッド: フレンドがオンライン
    */
-  notifyFriendOnline(friendName: string): KokoroNotification | null {
+  notifyFriendOnline(friendName: string): cocoroNotification | null {
     return this.emit({
       type: 'friend_online',
       title: `${friendName}がオンライン`,
@@ -116,7 +116,7 @@ export class NotificationEngine {
   /**
    * 便利メソッド: フレンドが部屋にいる
    */
-  notifyFriendInRoom(friendName: string, roomName: string, roomId: string): KokoroNotification | null {
+  notifyFriendInRoom(friendName: string, roomName: string, roomId: string): cocoroNotification | null {
     return this.emit({
       type: 'friend_in_room',
       title: `${friendName}が「${roomName}」にいます`,
@@ -130,7 +130,7 @@ export class NotificationEngine {
   /**
    * 便利メソッド: ルームが盛り上がっている
    */
-  notifyRoomTrending(roomName: string, participantCount: number): KokoroNotification | null {
+  notifyRoomTrending(roomName: string, participantCount: number): cocoroNotification | null {
     return this.emit({
       type: 'room_trending',
       title: `「${roomName}」が盛り上がり中`,
@@ -143,7 +143,7 @@ export class NotificationEngine {
   /**
    * ブラウザ通知
    */
-  private async sendBrowserNotification(n: KokoroNotification): Promise<void> {
+  private async sendBrowserNotification(n: cocoroNotification): Promise<void> {
     if (typeof Notification === 'undefined') return;
     if (Notification.permission !== 'granted') {
       if (Notification.permission !== 'denied') {
@@ -172,14 +172,14 @@ export class NotificationEngine {
   /**
    * 最近の通知
    */
-  getRecent(limit: number = 10): KokoroNotification[] {
+  getRecent(limit: number = 10): cocoroNotification[] {
     return this.notifications.slice(-limit).reverse();
   }
 
   /**
    * 通知コールバック
    */
-  onNotify(fn: (n: KokoroNotification) => void): () => void {
+  onNotify(fn: (n: cocoroNotification) => void): () => void {
     this.onNotifyCallbacks.push(fn);
     return () => { this.onNotifyCallbacks = this.onNotifyCallbacks.filter(f => f !== fn); };
   }

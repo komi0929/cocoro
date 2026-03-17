@@ -1,5 +1,5 @@
 /**
- * kokoro — ReputationFederation
+ * cocoro — ReputationFederation
  * ルーム間で評判を**共有する連邦制**システム
  *
  * TrustScoreSystemの上位版
@@ -77,7 +77,7 @@ const BADGE_CRITERIA: { badge: string; condition: (rep: FederatedReputation) => 
 export class ReputationFederation {
   private records: Map<string, Map<string, ReputationRecord>> = new Map(); // participantId → (roomId → record)
   private federalBanList: Set<string> = new Set();
-  private STORAGE_KEY = 'kokoro_reputation_federation';
+  private STORAGE_KEY = 'cocoro_reputation_federation';
 
   constructor() {
     this.loadFromStorage();

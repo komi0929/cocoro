@@ -1,5 +1,5 @@
 /**
- * kokoro — Phase State Machine
+ * cocoro — Phase State Machine
  * 空間の3フェーズ自動遷移エンジン
  * 
  * Phase 01 / 静寂 (Silence): 誰も喋っていない
@@ -7,7 +7,7 @@
  * Phase 03 / 引力 (Gravity): 会話ラリーが始まる
  */
 
-import { SpacePhase } from '@/types/kokoro';
+import { SpacePhase } from '@/types/cocoro';
 
 export interface PhaseTransitionEvent {
   from: SpacePhase;

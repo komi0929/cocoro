@@ -1,12 +1,12 @@
 /**
- * kokoro — Voice Effects Engine
+ * cocoro — Voice Effects Engine
  * 空間に合わせた音声エフェクト（リバーブ・ディレイ）
  * 
  * 反復41-50: 空間の広がりを声で感じる
  * ルームの密度が低い → 広いリバーブ（広い空間にいる感覚）
  * ルームの密度が高い → ショートリバーブ（近い距離の親密感）
  * 
- * PopopoにはないKokoro独自の「声が空間を生む」体験
+ * Popopoにはないcocoro独自の「声が空間を生む」体験
  */
 
 export interface VoiceEffectPreset {

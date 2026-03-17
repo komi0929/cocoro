@@ -1,5 +1,5 @@
 /**
- * kokoro — Event Scheduler
+ * cocoro — Event Scheduler
  * 定期イベント — 「金曜深夜のお題トーク」のような文化を作る
  *
  * サイクル29: イベント性の創出

@@ -1,5 +1,5 @@
 /**
- * kokoro — Debate Battle
+ * cocoro — Debate Battle
  * 会話に「対立構造」を作る — ラジオバラエティの核心
  *
  * サイクル1: 2択バトルモード

@@ -1,5 +1,5 @@
 /**
- * kokoro — Socket.IO Signaling Server
+ * cocoro — Socket.IO Signaling Server
  * Next.js API Route ベースのリアルタイムサーバー
  * ルーム管理、状態ブロードキャスト、フェーズ同期を担当
  */

@@ -1,5 +1,5 @@
 /**
- * kokoro — Emotion Pulse
+ * cocoro — Emotion Pulse
  * 会話中の感情をリアルタイムで可視化
  *
  * 声のトーン/テンポ/音量から感情を推定し、

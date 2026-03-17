@@ -1,5 +1,5 @@
 /**
- * kokoro — Report System
+ * cocoro — Report System
  * ワンタップ通報 + 自動証拠保存
  *
  * サイクル7: 安全対策の第2層
@@ -29,7 +29,7 @@ export interface Report {
   };
 }
 
-const STORAGE_KEY = 'kokoro_reports';
+const STORAGE_KEY = 'cocoro_reports';
 
 export class ReportSystem {
   private reports: Report[] = [];

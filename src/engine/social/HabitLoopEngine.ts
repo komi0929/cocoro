@@ -1,5 +1,5 @@
 /**
- * kokoro — Habit Loop Engine
+ * cocoro — Habit Loop Engine
  * 習慣形成ループ — Trigger → Action → Variable Reward → Investment
  *
  * リサーチ結果(Nir Eyal's Hooked Model):
@@ -37,7 +37,7 @@ const VARIABLE_REWARDS = [
   '限定アクセサリーが24時間だけ登場',
 ];
 
-const STORAGE_KEY = 'kokoro_habit';
+const STORAGE_KEY = 'cocoro_habit';
 
 export class HabitLoopEngine {
   private state: HabitState;

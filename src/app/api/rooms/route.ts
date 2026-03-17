@@ -1,5 +1,5 @@
 /**
- * kokoro — Rooms API
+ * cocoro — Rooms API
  * GET: アクティブルーム一覧取得
  * POST: 新規ルーム作成
  */

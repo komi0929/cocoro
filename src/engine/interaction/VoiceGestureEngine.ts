@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Gesture Engine
+ * cocoro — Voice Gesture Engine
  * 声で自動的にジェスチャーする — アバターに命を吹き込む
  *
  * サイクル21: 声のトーン/リズムからアバターのジェスチャーを自動生成

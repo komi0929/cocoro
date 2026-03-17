@@ -1,5 +1,5 @@
 /**
- * kokoro — Room Manager (Server-side logic)
+ * cocoro — Room Manager (Server-side logic)
  * ルーム管理・自動ルーティングアルゴリズム
  * 
  * PRD要件: 「誰もいない」状態を防ぐため、

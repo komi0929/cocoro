@@ -1,5 +1,5 @@
 /**
- * kokoro — Cinematic Camera Controller
+ * cocoro — Cinematic Camera Controller
  * 入室時のダイブトランジション + フェーズ連動カメラワーク + 話者追従
  * 
  * P0修正: カメラが会話の中心（話者のcentroid）を追う
@@ -10,8 +10,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { SpacePhase } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { SpacePhase } from '@/types/cocoro';
 
 interface CinematicCameraProps {
   /** Whether the entrance dive animation is enabled */
@@ -22,10 +22,10 @@ export function CinematicCamera({
   enableEntrance = true,
 }: CinematicCameraProps) {
   const { camera } = useThree();
-  const phase = useKokoroStore((s) => s.phase);
-  const density = useKokoroStore((s) => s.density);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
-  const participants = useKokoroStore((s) => s.participants);
+  const phase = useCocoroStore((s) => s.phase);
+  const density = useCocoroStore((s) => s.density);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
 
   const [diveComplete, setDiveComplete] = useState(!enableEntrance);
   const diveProgress = useRef(0);

@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Signature Engine
+ * cocoro — Voice Signature Engine
  * 声の周波数特性から固有の「声紋カラー」を生成
  * 
  * 反復126-130:

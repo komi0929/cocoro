@@ -1,5 +1,5 @@
 /**
- * kokoro — Database Types (Supabase auto-generated style)
+ * cocoro — Database Types (Supabase auto-generated style)
  * Supabase CLI `supabase gen types` の出力を模倣
  */
 

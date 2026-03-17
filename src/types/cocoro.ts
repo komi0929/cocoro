@@ -1,5 +1,5 @@
 /**
- * kokoro — Core Type Definitions
+ * cocoro — Core Type Definitions
  * スマホのメタバース 音声SNS
  */
 
@@ -180,7 +180,7 @@ export interface LightingState {
 // Store (Zustand)
 // ============================================================
 
-export interface KokoroStore {
+export interface CocoroStore {
   // --- Room ---
   roomId: string | null;
   phase: SpacePhase;

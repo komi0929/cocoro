@@ -1,5 +1,5 @@
 /**
- * kokoro — Touch Interaction Engine
+ * cocoro — Touch Interaction Engine
  * ROM専ユーザー向けタッチインタラクション
  * タップ位置にパーティクルバースト（物理演算: 重力+ドラグ+バウンス）
  */

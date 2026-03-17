@@ -1,11 +1,11 @@
 /**
- * kokoro — CreatorEconomy2 + DigitalProvenance + AdaptivePrivacyShield
+ * cocoro — CreatorEconomy2 + DigitalProvenance + AdaptivePrivacyShield
  * クリエイターエコノミー2.0 / デジタル来歴 / 適応型プライバシー
  *
  * 2026年メタバースレポート:
  * - Roblox: シーズンパス/クリエイター収益$10億/yr
  * - ガートナー: デジタル・プロベナンス(来歴管理)
- * - GDPR/APRA: 生体データ保護 → kokoro: 全てクライアントサイド管理
+ * - GDPR/APRA: 生体データ保護 → cocoro: 全てクライアントサイド管理
  *
  * 運用コスト: ¥0
  */
@@ -152,7 +152,7 @@ export interface ProvenanceRecord {
 
 export class DigitalProvenanceSystem {
   private records: ProvenanceRecord[] = [];
-  private readonly STORAGE_KEY = 'kokoro_provenance';
+  private readonly STORAGE_KEY = 'cocoro_provenance';
 
   constructor() {
     this.loadFromStorage();
@@ -254,7 +254,7 @@ export interface DataRetentionRecord {
 export class AdaptivePrivacyShield {
   private policies: Map<DataCategory, PrivacyPolicy> = new Map();
   private retentionRecords: DataRetentionRecord[] = [];
-  private readonly POLICY_KEY = 'kokoro_privacy_policies';
+  private readonly POLICY_KEY = 'cocoro_privacy_policies';
 
   constructor() {
     // Default: conservative privacy
@@ -352,7 +352,7 @@ export class AdaptivePrivacyShield {
       try { localStorage.removeItem(r.storageKey); } catch { /* */ }
     });
     this.retentionRecords = [];
-    try { indexedDB.deleteDatabase('kokoro_memory'); } catch { /* */ }
+    try { indexedDB.deleteDatabase('cocoro_memory'); } catch { /* */ }
   }
 
   getPolicies(): PrivacyPolicy[] { return Array.from(this.policies.values()); }

@@ -1,5 +1,5 @@
 /**
- * kokoro — Adaptive Renderer
+ * cocoro — Adaptive Renderer
  * フレームレート適応制御 + 省電力モード
  *
  * サイクル3+5: モバイルパフォーマンスの要

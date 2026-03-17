@@ -1,5 +1,5 @@
 /**
- * kokoro — Lobby Page — 究極版
+ * cocoro — Lobby Page — 究極版
  * 「究極メタバース空間SNSの入口」
  * Supabase永続化対応
  */
@@ -45,14 +45,14 @@ export default function LobbyPage() {
 
   // Show onboarding on first visit
   useEffect(() => {
-    if (!localStorage.getItem('kokoro_onboarded')) {
+    if (!localStorage.getItem('cocoro_onboarded')) {
       setShowOnboarding(true);
     }
   }, []);
 
   useEffect(() => {
-    const savedName = localStorage.getItem('kokoro_display_name');
-    const savedAvatar = localStorage.getItem('kokoro_avatar_id');
+    const savedName = localStorage.getItem('cocoro_display_name');
+    const savedAvatar = localStorage.getItem('cocoro_avatar_id');
     if (savedName) setDisplayName(savedName);
     if (savedAvatar) setSelectedAvatarId(savedAvatar);
     if (!savedName) {
@@ -66,12 +66,12 @@ export default function LobbyPage() {
 
   const handleSelectAvatar = useCallback((avatar: AvatarDefinition) => {
     setSelectedAvatarId(avatar.id);
-    localStorage.setItem('kokoro_avatar_id', avatar.id);
+    localStorage.setItem('cocoro_avatar_id', avatar.id);
     if (navigator.vibrate) navigator.vibrate(20);
   }, []);
 
   const handleAvatarConfirm = useCallback(() => {
-    localStorage.setItem('kokoro_display_name', displayName);
+    localStorage.setItem('cocoro_display_name', displayName);
     setStep('room');
   }, [displayName]);
 
@@ -79,7 +79,7 @@ export default function LobbyPage() {
     (roomId: string) => {
       setIsJoining(roomId);
       if (navigator.vibrate) navigator.vibrate([20, 50, 30]);
-      localStorage.setItem('kokoro_display_name', displayName);
+      localStorage.setItem('cocoro_display_name', displayName);
       const room = rooms.find((r) => r.id === roomId);
       recordRoomVisit(roomId, room?.name ?? roomId, 'cosmos');
       const params = new URLSearchParams(window.location.search);
@@ -139,7 +139,7 @@ export default function LobbyPage() {
             <span className="text-sm">🫧</span>
           </div>
           <span className="text-lg font-bold bg-linear-to-r from-violet-300 to-fuchsia-300 bg-clip-text text-transparent">
-            kokoro
+            cocoro
           </span>
         </button>
 
@@ -481,13 +481,13 @@ export default function LobbyPage() {
       {showOnboarding && (
         <OnboardingFlow
           onComplete={(avatarId) => {
-            localStorage.setItem('kokoro_onboarded', 'true');
+            localStorage.setItem('cocoro_onboarded', 'true');
             setSelectedAvatarId(avatarId);
-            localStorage.setItem('kokoro_avatar_id', avatarId);
+            localStorage.setItem('cocoro_avatar_id', avatarId);
             setShowOnboarding(false);
           }}
           onSkip={() => {
-            localStorage.setItem('kokoro_onboarded', 'true');
+            localStorage.setItem('cocoro_onboarded', 'true');
             setShowOnboarding(false);
           }}
           isVoiceActive={false}

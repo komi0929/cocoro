@@ -1,5 +1,5 @@
 /**
- * kokoro — KokoroCanvas
+ * cocoro — CocoroCanvas
  * React Three Fiber のルート Canvas ラッパー
  * シネマティックカメラ + プレミアムポストプロセス
  */
@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import { SpatialStage } from './SpatialStage';
 import { AvatarEntity } from './AvatarEntity';
 import { CinematicCamera } from './CinematicCamera';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 import { getThemeForRoom, DEFAULT_THEME } from '@/data/roomThemes';
 import { getPerformanceProfile } from '@/engine/performance/PerformanceConfig';
 import { CollectiveResonance } from './CollectiveResonance';
@@ -33,7 +33,7 @@ import { AuroraFloor } from './AuroraFloor';
 import { EmotionParticles } from './EmotionParticles';
 import { PresenceAura } from './PresenceAura';
 
-interface KokoroCanvasProps {
+interface CocoroCanvasProps {
   className?: string;
 }
 
@@ -44,8 +44,8 @@ interface KokoroCanvasProps {
 function DeferredPostProcessing() {
   const { gl } = useThree();
   const [ready, setReady] = useState(false);
-  const density = useKokoroStore((s) => s.density);
-  const lighting = useKokoroStore((s) => s.lighting);
+  const density = useCocoroStore((s) => s.density);
+  const lighting = useCocoroStore((s) => s.lighting);
 
   useEffect(() => {
     if (gl && gl.getContext()) {
@@ -91,10 +91,10 @@ function DeferredPostProcessing() {
   );
 }
 
-export function KokoroCanvas({ className }: KokoroCanvasProps) {
-  const participants = useKokoroStore((s) => s.participants);
-  const localId = useKokoroStore((s) => s.localParticipantId);
-  const roomId = useKokoroStore((s) => s.roomId);
+export function CocoroCanvas({ className }: CocoroCanvasProps) {
+  const participants = useCocoroStore((s) => s.participants);
+  const localId = useCocoroStore((s) => s.localParticipantId);
+  const roomId = useCocoroStore((s) => s.roomId);
   const theme = useMemo(() => roomId ? getThemeForRoom(roomId) : DEFAULT_THEME, [roomId]);
   const perfProfile = useMemo(() => getPerformanceProfile(), []);
 

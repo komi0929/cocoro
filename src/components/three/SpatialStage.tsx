@@ -13,8 +13,8 @@
 import { useRef, useState, useCallback, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { SpacePhase } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { SpacePhase } from '@/types/cocoro';
 import { VoiceReactiveFloor } from './VoiceReactiveFloor';
 import { CosmicParticles } from './CosmicParticles';
 import { GhostParticles } from './GhostParticles';
@@ -50,13 +50,13 @@ function themeToColors(theme: RoomTheme) {
 }
 
 export function SpatialStage({ roomId }: SpatialStageProps) {
-  const phase = useKokoroStore((s) => s.phase);
-  const density = useKokoroStore((s) => s.density);
-  const lighting = useKokoroStore((s) => s.lighting);
+  const phase = useCocoroStore((s) => s.phase);
+  const density = useCocoroStore((s) => s.density);
+  const lighting = useCocoroStore((s) => s.lighting);
   
   // Voice metrics from active speakers
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
-  const participants = useKokoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
 
   // Room theme (each room has a unique personality)
   const theme = useMemo(() => roomId ? getThemeForRoom(roomId) : DEFAULT_THEME, [roomId]);

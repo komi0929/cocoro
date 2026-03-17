@@ -1,5 +1,5 @@
 /**
- * kokoro — Conflict Resolution System
+ * cocoro — Conflict Resolution System
  * 対立を「エンタメ」に昇華 — ブロック以外の選択肢
  *
  * リサーチ結果:

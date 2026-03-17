@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Game Engine
+ * cocoro — Conversation Game Engine
  * 会話そのものがゲームになる — エンタメ化の核心
  *
  * 反復356-365:

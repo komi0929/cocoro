@@ -23,12 +23,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "kokoro — 声だけで繋がる、認知メタバース",
+  title: "cocoro — 声だけで繋がる、認知メタバース",
   description:
     "カメラもAIクラウドも要らない。声の感情がオーラを纏い、空間があなたを覚える。2026年の新しいコミュニケーション。",
   keywords: ["メタバース", "音声SNS", "VRM", "アバター", "ボイスチャット", "感情知能", "空間記憶"],
   openGraph: {
-    title: "kokoro — 声だけで繋がる、認知メタバース",
+    title: "cocoro — 声だけで繋がる、認知メタバース",
     description: "感情がオーラを纏い、空間があなたを覚える。2026年の声だけのメタバース。",
     type: "website",
   },

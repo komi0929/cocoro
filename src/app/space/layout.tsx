@@ -1,5 +1,5 @@
 /**
- * kokoro — Space Layout
+ * cocoro — Space Layout
  * SSGプリレンダリングをスキップし、dynamic renderingを強制
  */
 export const dynamic = 'force-dynamic';

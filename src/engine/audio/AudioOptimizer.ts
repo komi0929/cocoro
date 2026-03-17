@@ -1,5 +1,5 @@
 /**
- * kokoro — Audio Optimizer
+ * cocoro — Audio Optimizer
  * WebRTC音声のパフォーマンス最適化
  *
  * サイクル1: Opus最適化 + VAD(Voice Activity Detection)

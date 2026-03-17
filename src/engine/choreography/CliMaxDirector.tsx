@@ -1,5 +1,5 @@
 /**
- * kokoro — CliMax Director
+ * cocoro — CliMax Director
  * 会話の最高潮を「映画のクライマックスシーン」として演出
  * 
  * 設計思想（手塚眞「映像の文法」に対抗）:
@@ -11,7 +11,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 const CLIMAX_THRESHOLD = 0.55;
 const CLIMAX_COOLDOWN = 12000;
@@ -24,8 +24,8 @@ export interface CliMaxState {
 }
 
 export function useCliMaxDirector(): CliMaxState {
-  const density = useKokoroStore((s) => s.density);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const density = useCocoroStore((s) => s.density);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
   const [state, setState] = useState<CliMaxState>({
     active: false,
     intensity: 0,

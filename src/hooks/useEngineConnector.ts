@@ -1,6 +1,6 @@
 'use client';
 /**
- * kokoro — useEngineConnector
+ * cocoro — useEngineConnector
  * 全113エンジンの出力をZustand storeとUIに接続するブリッジフック
  *
  * エンジンAPIはクラスごとに異なるため、ダイナミック呼び出し (as any) で
@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 import type { SpaceEngines } from './useSpaceEngines';
 
 export interface EngineStatus {
@@ -115,7 +115,7 @@ function safeProp(engine: any, prop: string): any {
 export function useEngineConnector(engines: SpaceEngines): EngineStatus {
   const statusRef = useRef<EngineStatus>({ ...DEFAULT_STATUS });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const store = useKokoroStore as any;
+  const store = useCocoroStore as any;
 
   const collectStatus = useCallback(() => {
     const s = store.getState();

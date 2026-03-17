@@ -1,5 +1,5 @@
 /**
- * kokoro — Sound Design
+ * cocoro — Sound Design
  * UI効果音統一システム — ブランドの聴覚要素
  *
  * サイクル72: 音でブランドを伝える

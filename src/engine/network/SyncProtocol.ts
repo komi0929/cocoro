@@ -1,5 +1,5 @@
 /**
- * kokoro — Sync Protocol Schema
+ * cocoro — Sync Protocol Schema
  * クライアント-サーバー間の通信プロトコル定義
  * WebSocket / DataChannel 共通スキーマ
  */

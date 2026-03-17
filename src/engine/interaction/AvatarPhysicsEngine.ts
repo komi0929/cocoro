@@ -1,5 +1,5 @@
 /**
- * kokoro — Avatar Physics Engine
+ * cocoro — Avatar Physics Engine
  * アバターの物理シミュレーション
  *
  * 反復221-225:

@@ -1,5 +1,5 @@
 /**
- * kokoro — Profile Card 究極版
+ * cocoro — Profile Card 究極版
  * アバタータップでプロフィール情報をオーバーレイ表示
  * 
  * 反復111-120:

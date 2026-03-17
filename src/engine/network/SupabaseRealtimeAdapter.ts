@@ -1,5 +1,5 @@
 /**
- * kokoro — Supabase Realtime Adapter
+ * cocoro — Supabase Realtime Adapter
  * Socket.IOサーバー不要でWebRTC + 状態同期を実現
  *
  * Supabase Realtime Broadcastを使用:
@@ -14,8 +14,8 @@
 
 import { getSupabase } from '@/lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { Participant, AvatarTransform, SpeakingState, EmotionState } from '@/types/kokoro';
-import { SpacePhase } from '@/types/kokoro';
+import type { Participant, AvatarTransform, SpeakingState, EmotionState } from '@/types/cocoro';
+import { SpacePhase } from '@/types/cocoro';
 
 // ===== Interfaces =====
 

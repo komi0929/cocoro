@@ -1,5 +1,5 @@
 /**
- * kokoro — RoomGovernance
+ * cocoro — RoomGovernance
  * ルームの**階層的権限管理**システム
  *
  * X Spacesから学ぶ: ホストコントロールの重要性

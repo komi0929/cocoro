@@ -1,5 +1,5 @@
 /**
- * kokoro — Connection Quality Indicator
+ * cocoro — Connection Quality Indicator
  * 接続品質のリアルタイム表示
  *
  * サイクル76: ネットワーク品質を可視化

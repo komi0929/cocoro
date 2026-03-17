@@ -1,11 +1,11 @@
 /**
- * kokoro — EQVoiceEngine
+ * cocoro — EQVoiceEngine
  * 48次元感情分析エンジン — Hume AI EVI相当をWeb Audio APIでローカル実装
  *
  * 2026年メタバースレポート:
  * - Hume AI: 48次元の感情空間 / EVI 300ms以下の応答
  * - Nuance Labs: フレーム単位の感情検出
- * - kokoro: Web Audio API + AnalyserNodeで**運用コスト¥0**
+ * - cocoro: Web Audio API + AnalyserNodeで**運用コスト¥0**
  *
  * 音声プロソディから推論:
  * - ピッチ(F0)の平均/変動 → 興奮度/安定度

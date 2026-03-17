@@ -1,5 +1,5 @@
 /**
- * kokoro — Dynamic Room Theme Engine
+ * cocoro — Dynamic Room Theme Engine
  * 会話の雰囲気に応じてルームのビジュアルテーマが動的に変化
  *
  * 反復226-230:

@@ -1,5 +1,5 @@
 /**
- * kokoro — Onboarding Flow
+ * cocoro — Onboarding Flow
  * 初回体験 — 最初の3分で価値を体験させる
  *
  * 反復396-410:
@@ -32,7 +32,7 @@ const AVATAR_OPTIONS = [
   { id: 'avatar_06', name: 'はると', emoji: '👦', color: '#6df7e5' },
 ];
 
-const STORAGE_KEY = 'kokoro_onboarding_done';
+const STORAGE_KEY = 'cocoro_onboarding_done';
 
 export function OnboardingFlow({ onComplete, onSkip, isVoiceActive, volume }: OnboardingFlowProps) {
   const [step, setStep] = useState<OnboardingStep>('welcome');
@@ -90,7 +90,7 @@ export function OnboardingFlow({ onComplete, onSkip, isVoiceActive, volume }: On
         {step === 'welcome' && (
           <div className="text-center" style={{ animation: 'fade-in-up 0.5s ease-out' }}>
             <p className="text-4xl mb-6">✨</p>
-            <h1 className="text-2xl font-bold text-white/90 mb-3">kokoro へようこそ</h1>
+            <h1 className="text-2xl font-bold text-white/90 mb-3">cocoro へようこそ</h1>
             <p className="text-sm text-white/50 leading-relaxed mb-2">
               声とアバターで、
             </p>

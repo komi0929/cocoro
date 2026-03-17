@@ -1,10 +1,10 @@
 /**
- * kokoro — AudienceDirector
+ * cocoro — AudienceDirector
  * ROM(聴き専)を**観客として番組に参加**させるエンジン
  *
  * Clubhouseの教訓: 聴き専が何もできない→離脱
  * TikTok Liveから学ぶ: ギフト/コメント/投票で参加感
- * kokoro独自: アバターが観客席でライトスティック振る
+ * cocoro独自: アバターが観客席でライトスティック振る
  *
  * 機能:
  * 1. ライトスティック(色でムード投票)

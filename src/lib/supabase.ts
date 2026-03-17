@@ -1,5 +1,5 @@
 /**
- * kokoro — Supabase Client
+ * cocoro — Supabase Client
  * ブラウザ用 + サーバー用クライアント
  */
 

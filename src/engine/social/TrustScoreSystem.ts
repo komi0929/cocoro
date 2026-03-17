@@ -1,5 +1,5 @@
 /**
- * kokoro — Trust Score System
+ * cocoro — Trust Score System
  * 信頼スコア / レピュテーション — コミュニティ自治の基盤
  *
  * リサーチ結果:
@@ -56,7 +56,7 @@ const SCORE_ACTIONS = {
   streakDay: 3,
 };
 
-const STORAGE_KEY = 'kokoro_trust';
+const STORAGE_KEY = 'cocoro_trust';
 
 export class TrustScoreSystem {
   private profiles: Map<string, TrustProfile> = new Map();

@@ -1,5 +1,5 @@
 /**
- * kokoro — useRooms フック
+ * cocoro — useRooms フック
  * Supabase roomsテーブルからルーム一覧取得 + リアルタイム更新
  */
 'use client';

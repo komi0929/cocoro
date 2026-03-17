@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation HUD
+ * cocoro — Conversation HUD
  * 沈黙演出 + 会話アーク + 現在の状態表示
  *
  * サイクル11: SilenceDirector + ConversationArcのUI

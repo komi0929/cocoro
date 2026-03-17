@@ -1,5 +1,5 @@
 /**
- * kokoro — Safety Panel
+ * cocoro — Safety Panel
  * ハラスメント対策のUI — ワンタップで安全操作
  *
  * サイクル13: SafetyBoundary + ReportのUI

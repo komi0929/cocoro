@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Heatmap
+ * cocoro — Conversation Heatmap
  * 会話の「熱量」をフロアにヒートマップとして可視化
  * 
  * 反復61-70: 誰がどこで声を出したかがフロアの色で残る

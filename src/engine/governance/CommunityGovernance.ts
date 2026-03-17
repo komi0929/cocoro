@@ -1,5 +1,5 @@
 /**
- * kokoro — MembershipTier + CommunityMilestone + AIAutoModerator + ContentArchive + CreatorDashboard
+ * cocoro — MembershipTier + CommunityMilestone + AIAutoModerator + ContentArchive + CreatorDashboard
  * コミュニティ自治の残り5システムを統合実装
  */
 
@@ -255,7 +255,7 @@ export interface ArchivedSession {
 
 export class ContentArchive {
   private archives: ArchivedSession[] = [];
-  private STORAGE_KEY = 'kokoro_content_archive';
+  private STORAGE_KEY = 'cocoro_content_archive';
 
   constructor() {
     this.loadFromStorage();

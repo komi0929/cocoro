@@ -1,5 +1,5 @@
 /**
- * kokoro — Smart Notification
+ * cocoro — Smart Notification
  * 通知AIがユーザーの反応率で頻度を自動調整
  *
  * サイクル20: 通知のスマート化
@@ -18,7 +18,7 @@ interface NotificationStats {
   hourlyStats: Record<number, { sent: number; opened: number }>; // hour → stats
 }
 
-const STORAGE_KEY = 'kokoro_smart_notif';
+const STORAGE_KEY = 'cocoro_smart_notif';
 
 export class SmartNotificationEngine {
   private stats: NotificationStats;

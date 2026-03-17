@@ -1,5 +1,5 @@
 /**
- * kokoro — WebRTC Voice Channel
+ * cocoro — WebRTC Voice Channel
  * P2P音声チャットエンジン
  * 
  * 設計:

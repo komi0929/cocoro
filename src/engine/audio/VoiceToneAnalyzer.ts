@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Tone Analyzer
+ * cocoro — Voice Tone Analyzer
  * 声のトーン（明るさ・温かさ・力強さ）をリアルタイム分析
  *
  * 反復211-215:

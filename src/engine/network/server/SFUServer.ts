@@ -1,5 +1,5 @@
 /**
- * kokoro — SFU Server Module
+ * cocoro — SFU Server Module
  * mediasoup互換のSFUサーバーサイドハンドラ
  *
  * アーキテクチャ:

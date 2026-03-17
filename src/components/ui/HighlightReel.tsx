@@ -1,5 +1,5 @@
 /**
- * kokoro — Highlight Reel
+ * cocoro — Highlight Reel
  * セッション後のベストモーメント自動編集
  *
  * 反復366-375:

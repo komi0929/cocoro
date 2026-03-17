@@ -1,11 +1,11 @@
 /**
- * kokoro — AgenticShowRunner
+ * cocoro — AgenticShowRunner
  * Razer AVA相当のエージェンティックAI — 番組を自律運営
  *
  * 2026年メタバースレポート:
  * - Razer AVA: 意図→計画→実行の自律エージェント
  * - Companion-to-Companion Coordination
- * - kokoro: LiveShowDirector/GameShow/DynamicBGMを**AI自律制御**
+ * - cocoro: LiveShowDirector/GameShow/DynamicBGMを**AI自律制御**
  *
  * 機能:
  * 1. 会話品質のリアルタイム監視

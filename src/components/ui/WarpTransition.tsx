@@ -1,5 +1,5 @@
 /**
- * kokoro — Warp Transition Effect
+ * cocoro — Warp Transition Effect
  * ルーム間移動時のワープ演出
  *
  * 反復181-190:

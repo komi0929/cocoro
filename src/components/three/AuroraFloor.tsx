@@ -1,5 +1,5 @@
 /**
- * kokoro — Aurora Floor
+ * cocoro — Aurora Floor
  * カスタムGLSLシェーダーによるオーロラ波紋フロア
  * 発話者の足元から声の波形に連動した波紋が広がる
  */
@@ -8,8 +8,8 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { SpacePhase } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { SpacePhase } from '@/types/cocoro';
 
 // Simplex Noise GLSL (embedded)
 const SIMPLEX_NOISE_GLSL = /* glsl */ `
@@ -154,10 +154,10 @@ const fragmentShader = /* glsl */ `
 
 export function AuroraFloor() {
   const meshRef = useRef<THREE.Mesh>(null);
-  const phase = useKokoroStore((s) => s.phase);
-  const density = useKokoroStore((s) => s.density);
-  const participants = useKokoroStore((s) => s.participants);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const phase = useCocoroStore((s) => s.phase);
+  const density = useCocoroStore((s) => s.density);
+  const participants = useCocoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
 
   const uniforms = useMemo(
     () => ({

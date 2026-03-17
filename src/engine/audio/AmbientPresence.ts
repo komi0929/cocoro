@@ -1,22 +1,22 @@
 /**
- * kokoro — Ambient Presence System
+ * cocoro — Ambient Presence System
  * 空間の「気配」を演出するアンビエント音+環境パーティクル制御
  * 誰もいないときも空間に静かな生命感を与える
  */
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { SpacePhase } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { SpacePhase } from '@/types/cocoro';
 
 /**
  * Web Audio APIで動的にアンビエント音を生成
  * Oscillator + 高次倍音 + フィルターで瞑想的なドローンを作成
  */
 export function useAmbientPresence() {
-  const phase = useKokoroStore((s) => s.phase);
-  const density = useKokoroStore((s) => s.density);
-  const participantCount = useKokoroStore((s) => s.participants.size);
+  const phase = useCocoroStore((s) => s.phase);
+  const density = useCocoroStore((s) => s.density);
+  const participantCount = useCocoroStore((s) => s.participants.size);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);

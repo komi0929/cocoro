@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Arc Director
+ * cocoro — Conversation Arc Director
  * 会話の「起承転結」を自動検知 + 演出エスカレーション
  *
  * サイクル3: ピーク/山場を逃さない

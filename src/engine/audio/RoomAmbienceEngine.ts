@@ -1,5 +1,5 @@
 /**
- * kokoro — Room Ambient Sound Engine
+ * cocoro — Room Ambient Sound Engine
  * ルームの環境音（静かなハム、風の音、会話の温もり）
  * 
  * 反復81-90: 「空間に音がある」ことで没入感が劇的に向上

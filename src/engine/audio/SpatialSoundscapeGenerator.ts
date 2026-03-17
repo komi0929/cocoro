@@ -1,5 +1,5 @@
 /**
- * kokoro — Spatial Soundscape Generator
+ * cocoro — Spatial Soundscape Generator
  * 空間の「音の風景」を感情/密度に応じて動的生成
  *
  * 反復281-290:

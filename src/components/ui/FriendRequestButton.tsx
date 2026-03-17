@@ -1,5 +1,5 @@
 /**
- * kokoro — Friend Request Button
+ * cocoro — Friend Request Button
  * 会話後のワンタップフレンド申請
  *
  * 反復346-355 (UI部分2):

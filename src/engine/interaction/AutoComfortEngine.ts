@@ -1,5 +1,5 @@
 /**
- * kokoro — Auto Comfort Engine
+ * cocoro — Auto Comfort Engine
  * 参加者の快適さを自動管理するエンジン
  *
  * 反復261-270:

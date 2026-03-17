@@ -1,5 +1,5 @@
 /**
- * kokoro — Conversation Level System
+ * cocoro — Conversation Level System
  * 成長実感 — 「使うほど上手くなる」ゲーミフィケーション
  *
  * サイクル18: 会話レベル + 称号
@@ -31,12 +31,12 @@ const TITLES: Array<{ minLevel: number; title: string; emoji: string }> = [
   { minLevel: 16, title: 'つながりの星', emoji: '⭐' },
   { minLevel: 20, title: 'スペースマスター', emoji: '🌌' },
   { minLevel: 25, title: '伝説の語り部', emoji: '👑' },
-  { minLevel: 30, title: 'kokoroの守護者', emoji: '🔮' },
+  { minLevel: 30, title: 'cocoroの守護者', emoji: '🔮' },
 ];
 
 const XP_PER_LEVEL = (level: number) => Math.floor(80 + level * 30);
 
-const STORAGE_KEY = 'kokoro_level';
+const STORAGE_KEY = 'cocoro_level';
 
 export class ConversationLevelSystem {
   private state: LevelState;

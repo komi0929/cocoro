@@ -1,5 +1,5 @@
 /**
- * kokoro — Presence Aura  
+ * cocoro — Presence Aura  
  * アバターの存在感を声の状態で自動演出
  *
  * - 話している人: 光のリングが脈動

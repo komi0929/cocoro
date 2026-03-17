@@ -1,5 +1,5 @@
 /**
- * kokoro — Favorite Rooms + Room History
+ * cocoro — Favorite Rooms + Room History
  * 常連・お気に入り・「いつもの場所」
  *
  * サイクル13+15: リピートの核
@@ -30,8 +30,8 @@ export interface RoomVisitRecord {
   highlights: string[];
 }
 
-const FAV_KEY = 'kokoro_favorite_rooms';
-const HISTORY_KEY = 'kokoro_room_history';
+const FAV_KEY = 'cocoro_favorite_rooms';
+const HISTORY_KEY = 'cocoro_room_history';
 
 export class FavoriteRoomsManager {
   private favorites: Map<string, FavoriteRoom> = new Map();

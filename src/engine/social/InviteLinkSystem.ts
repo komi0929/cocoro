@@ -1,9 +1,9 @@
 /**
- * kokoro — Invite Link
+ * cocoro — Invite Link
  * URL1つでルームに参加 — バイラル成長の要
  *
  * サイクル26: 招待リンク生成
- * - 短いURL生成(kokoro.space/r/xxxx)
+ * - 短いURL生成(cocoro.space/r/xxxx)
  * - OGPメタデータ自動生成(ルーム名/参加者数/カテゴリ)
  * - QRコード生成
  * - 有効期限設定(24時間/無期限)
@@ -30,7 +30,7 @@ export interface InviteLink {
   config: InviteConfig;
 }
 
-const STORAGE_KEY = 'kokoro_invites';
+const STORAGE_KEY = 'cocoro_invites';
 
 export class InviteLinkSystem {
   private invites: Map<string, InviteLink> = new Map();
@@ -60,13 +60,13 @@ export class InviteLinkSystem {
    */
   create(config: InviteConfig): InviteLink {
     const code = this.generateCode();
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://kokoro.space';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://cocoro.space';
 
     const invite: InviteLink = {
       code,
       url: `${baseUrl}/space?invite=${code}`,
-      ogTitle: `${config.roomName} — kokoro`,
-      ogDescription: `${config.creatorName}の部屋で${config.participantCount}人が話し中！ #kokoro`,
+      ogTitle: `${config.roomName} — cocoro`,
+      ogDescription: `${config.creatorName}の部屋で${config.participantCount}人が話し中！ #cocoro`,
       createdAt: Date.now(),
       expiresAt: config.expiresIn > 0 ? Date.now() + config.expiresIn : null,
       config,
@@ -95,7 +95,7 @@ export class InviteLinkSystem {
    * シェア用テキスト生成
    */
   getShareText(invite: InviteLink): string {
-    return `🎤 ${invite.config.roomName} で会話しよう！\n${invite.url}\n#kokoro`;
+    return `🎤 ${invite.config.roomName} で会話しよう！\n${invite.url}\n#cocoro`;
   }
 
   /**

@@ -1,5 +1,5 @@
 /**
- * kokoro — SFU Client (mediasoup-client互換)
+ * cocoro — SFU Client (mediasoup-client互換)
  * P2Pメッシュ → SFU移行で20人以上の同時接続を実現
  *
  * アーキテクチャ:

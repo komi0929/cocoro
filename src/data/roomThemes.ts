@@ -1,5 +1,5 @@
 /**
- * kokoro — Room Themes
+ * cocoro — Room Themes
  * ルームごとに異なる視覚体験を提供するテーマシステム
  * 
  * 思想: 「場所」に個性がある = SNSとして居場所の選択肢がある

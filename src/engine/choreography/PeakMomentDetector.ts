@@ -1,5 +1,5 @@
 /**
- * kokoro — Peak Moment Detector
+ * cocoro — Peak Moment Detector
  * 「伝説の瞬間」を自動検出してタイムラインに記録
  * 
  * 反復51-55:

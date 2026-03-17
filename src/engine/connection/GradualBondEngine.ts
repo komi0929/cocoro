@@ -1,5 +1,5 @@
 /**
- * kokoro — GradualBondEngine
+ * cocoro — GradualBondEngine
  * 自然な関係漸進 — 時間と共有体験で**静かに**関係が深まる
  *
  * 設計思想:
@@ -57,7 +57,7 @@ const STAGE_LABELS: Record<BondStage, string> = {
 export class GradualBondEngine {
   private bonds: Map<string, BondRecord> = new Map();
   private listeners: Array<(notification: BondNotification) => void> = [];
-  private readonly STORAGE_KEY = 'kokoro_bonds';
+  private readonly STORAGE_KEY = 'cocoro_bonds';
 
   constructor() {
     this.loadBonds();

@@ -1,5 +1,5 @@
 /**
- * kokoro — AI Companion
+ * cocoro — AI Companion
  * 1人でも会話相手がいる — コールドスタート最大の武器
  *
  * サイクル22: AIが話し相手になる
@@ -21,7 +21,7 @@ export interface CompanionResponse {
 
 const COMPANION_SCRIPTS: Record<string, CompanionResponse[]> = {
   greeting: [
-    { text: 'こんにちは！ kokoro へようこそ 🌟', emotion: 'happy', gesture: 'wave', delayMs: 1000 },
+    { text: 'こんにちは！ cocoro へようこそ 🌟', emotion: 'happy', gesture: 'wave', delayMs: 1000 },
     { text: 'はじめまして！ 待ってたよ ✨', emotion: 'excited', gesture: 'wave', delayMs: 1000 },
     { text: 'やっほー！ 誰か来てくれた！ 💫', emotion: 'happy', gesture: 'clap', delayMs: 800 },
   ],

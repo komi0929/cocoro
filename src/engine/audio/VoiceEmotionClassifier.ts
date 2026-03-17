@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Emotion Classifier v2
+ * cocoro — Voice Emotion Classifier v2
  * MFCC+統計的特徴量ベースの感情推定エンジン
  *
  * v1からの改善:

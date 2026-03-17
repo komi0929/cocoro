@@ -1,5 +1,5 @@
 /**
- * kokoro — Audio Router (SFU Logic)
+ * cocoro — Audio Router (SFU Logic)
  * 上位N人のみ音声転送 — 帯域とCPU節約
  *
  * サイクル4: SFU(Selective Forwarding Unit)ロジック

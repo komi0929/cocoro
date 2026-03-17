@@ -1,5 +1,5 @@
 /**
- * kokoro — Reaction Panel (究極版)
+ * cocoro — Reaction Panel (究極版)
  * リアクションが「エンターテインメント」になる演出システム
  *
  * 思想: 拍手が紙吹雪になり、笑いが虹になり、🔥が炎になる
@@ -8,8 +8,8 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
-import { ReactionType } from '@/types/kokoro';
+import { useCocoroStore } from '@/store/useCocoroStore';
+import { ReactionType } from '@/types/cocoro';
 
 const REACTIONS: { type: ReactionType; emoji: string; label: string; color: string; burst: string[] }[] = [
   { type: ReactionType.NOD, emoji: '👍', label: 'うなずき', color: '#60a5fa', burst: ['👍', '✓', '○'] },
@@ -50,8 +50,8 @@ function ScreenFlash({ color, active }: { color: string; active: boolean }) {
 }
 
 export function ReactionPanel() {
-  const localId = useKokoroStore((s) => s.localParticipantId);
-  const addReaction = useKokoroStore((s) => s.addReaction);
+  const localId = useCocoroStore((s) => s.localParticipantId);
+  const addReaction = useCocoroStore((s) => s.addReaction);
   const [isExpanded, setIsExpanded] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [flash, setFlash] = useState<{ color: string; active: boolean }>({ color: '', active: false });

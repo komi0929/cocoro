@@ -1,5 +1,5 @@
 /**
- * kokoro — Space Page
+ * cocoro — Space Page
  * メインの空間ページ（3D描画 + 音声 + UI）
  * シネマティックローディング + アンビエントプレゼンス + CliMax演出
  */
@@ -8,14 +8,14 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 import { SpaceHUD } from '@/components/ui/SpaceHUD';
 import { ReactionPanel } from '@/components/ui/ReactionPanel';
 
 import { ProfileCard } from '@/components/ui/ProfileCard';
 import { ShareRoom } from '@/components/ui/ShareRoom';
 import { DemoOrchestrator } from '@/engine/demo/DemoOrchestrator';
-import { ReactionType } from '@/types/kokoro';
+import { ReactionType } from '@/types/cocoro';
 import { VoiceAnalyzer } from '@/engine/audio/VoiceAnalyzer';
 import { VoiceEmotionClassifier } from '@/engine/audio/VoiceEmotionClassifier';
 import { VoiceSignature } from '@/engine/audio/VoiceSignature';
@@ -50,11 +50,11 @@ import { LivePoll } from '@/components/ui/LivePoll';
 import { WarpTransition } from '@/components/ui/WarpTransition';
 import { FriendRequestButton } from '@/components/ui/FriendRequestButton';
 
-// Dynamic import for KokoroCanvas (SSR disabled for Three.js)
-const KokoroCanvas = dynamic(
+// Dynamic import for CocoroCanvas (SSR disabled for Three.js)
+const CocoroCanvas = dynamic(
   () =>
-    import('@/components/three/KokoroCanvas').then((m) => ({
-      default: m.KokoroCanvas,
+    import('@/components/three/CocoroCanvas').then((m) => ({
+      default: m.CocoroCanvas,
     })),
   { ssr: false }
 );
@@ -73,7 +73,7 @@ export default function SpacePage() {
   const syncEngineRef = useRef<StateSyncEngine | null>(null);
   const voiceChannelRef = useRef<VoiceChannel | null>(null);
   const realtimeRef = useRef<SupabaseRealtimeAdapter | null>(null);
-  const store = useKokoroStore;
+  const store = useCocoroStore;
   const climaxState = useCliMaxDirector();
   const { state: bubbleState, activate: activateBubble } = usePrivateBubble();
   const engines = useSpaceEngines();
@@ -121,7 +121,7 @@ export default function SpacePage() {
     const params = new URLSearchParams(window.location.search);
     const roomId = params.get('room') ?? 'demo-room';
     const displayName = params.get('name')
-      ?? localStorage.getItem('kokoro_display_name')
+      ?? localStorage.getItem('cocoro_display_name')
       ?? 'あなた';
     const isGuest = params.get('guest') === 'true';
     const serverUrl = params.get('server') ?? (window.location.hostname === 'localhost' ? window.location.origin : null);
@@ -186,7 +186,7 @@ export default function SpacePage() {
 
         await adapter.join(
           displayName,
-          localStorage.getItem('kokoro_avatar_id') ?? 'seed-san'
+          localStorage.getItem('cocoro_avatar_id') ?? 'seed-san'
         );
 
         realtimeRef.current = adapter;
@@ -297,7 +297,7 @@ export default function SpacePage() {
         id: localId,
         displayName,
         vrmUrl: null,
-        avatarId: localStorage.getItem('kokoro_avatar_id') ?? 'seed-san',
+        avatarId: localStorage.getItem('cocoro_avatar_id') ?? 'seed-san',
         isGuest,
         transform: {
           position: { x: 0, y: 0, z: 5 },
@@ -326,7 +326,7 @@ export default function SpacePage() {
     });
 
     // Load cognitive context
-    const avatarId = localStorage.getItem('kokoro_avatar_id') ?? 'seed-san';
+    const avatarId = localStorage.getItem('cocoro_avatar_id') ?? 'seed-san';
     cognitiveContext.buildSnapshot(roomId, avatarId).then((snapshot) => {
       if (snapshot.welcomeMessage) {
         setCognitiveMessage(snapshot.welcomeMessage);
@@ -480,7 +480,7 @@ export default function SpacePage() {
         });
         voiceAnalyzerRef.current = analyzer;
         setIsMicActive(true);
-        localStorage.setItem('kokoro_mic_used', 'true'); // 初回マイク使用を記録
+        localStorage.setItem('cocoro_mic_used', 'true'); // 初回マイク使用を記録
 
         // Share MediaStream with VoiceChannel for WebRTC P2P audio
         const stream = analyzer.getMediaStream();
@@ -556,7 +556,7 @@ export default function SpacePage() {
   return (
     <div className="fixed inset-0 bg-[#0f0a1a]">
       {/* 3D Canvas */}
-      {isLoaded && <KokoroCanvas className="absolute inset-0" />}
+      {isLoaded && <CocoroCanvas className="absolute inset-0" />}
 
       {/* HUD Overlay */}
       <SpaceHUD
@@ -574,7 +574,7 @@ export default function SpacePage() {
       />
 
       {/* Mic Onboarding Hint (反復10: 初回体験ガイド) */}
-      {isLoaded && !isMicActive && !localStorage.getItem('kokoro_mic_used') && (
+      {isLoaded && !isMicActive && !localStorage.getItem('cocoro_mic_used') && (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-40 animate-fade-in-up pointer-events-none">
           <div className="px-4 py-2.5 rounded-2xl bg-violet-500/20 backdrop-blur-xl
                           border border-violet-400/20 text-violet-200 text-sm
@@ -814,7 +814,7 @@ export default function SpacePage() {
             participantCount: store.getState().participants.size,
             peakMoments: engines.peakDetector.getAllMoments?.() ?? [],
             dominantEmotion: engines.emotionPulse.computeRoomMood()?.dominant ?? 'neutral',
-            roomName: 'kokoro space',
+            roomName: 'cocoro space',
           }}
           onClose={() => { setShowSessionEnd(false); router.push('/lobby'); }}
         />
@@ -896,7 +896,7 @@ export default function SpacePage() {
             role: p.speakingState.isSpeaking ? 'speaker' as const : 'listener' as const,
           }))}
           flowPeakMinute={Math.round(performance.now() / 120000)}
-          roomName="kokoro space"
+          roomName="cocoro space"
           onClose={() => setShowHighlightReel(false)}
           onShare={() => {}}
         />
@@ -971,7 +971,7 @@ export default function SpacePage() {
         type="enter"
         active={isWarping}
         onComplete={() => setIsWarping(false)}
-        roomName="kokoro space"
+        roomName="cocoro space"
       />
 
       {/* Bubble Button (bottom-left) */}
@@ -982,7 +982,7 @@ export default function SpacePage() {
       {/* Share Room (toggled from HUD) */}
       {showShareRoom && (
         <div className="fixed top-16 left-4 z-50 animate-scale-in">
-          <ShareRoom roomId={roomId} roomName="kokoro space" />
+          <ShareRoom roomId={roomId} roomName="cocoro space" />
         </div>
       )}
 
@@ -1108,7 +1108,7 @@ export default function SpacePage() {
                 transform: loadingPhase >= 2 ? 'translateY(0)' : 'translateY(15px)',
               }}
             >
-              kokoro
+              cocoro
             </p>
           </div>
 

@@ -1,5 +1,5 @@
 /**
- * kokoro — CognitiveTrustGraph
+ * cocoro — CognitiveTrustGraph
  * 参加者間の関係を**グラフ構造**で管理
  *
  * 2026年メタバースレポート:

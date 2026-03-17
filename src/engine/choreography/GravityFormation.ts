@@ -1,5 +1,5 @@
 /**
- * kokoro — Gravity Formation Engine (Spring Physics)
+ * cocoro — Gravity Formation Engine (Spring Physics)
  * 
  * ばね物理演算（Spring-Damper System）による動的アバター配置
  * 静的Lerpを完全撤廃し、弾力のある有機的な動きを実現
@@ -13,8 +13,8 @@
  *   position += velocity * dt
  */
 
-import type { AvatarTransform, GravityParams, LightingState } from '@/types/kokoro';
-import { SpacePhase } from '@/types/kokoro';
+import type { AvatarTransform, GravityParams, LightingState } from '@/types/cocoro';
+import { SpacePhase } from '@/types/cocoro';
 
 /** フォーメーション計算結果 */
 export interface FormationResult {

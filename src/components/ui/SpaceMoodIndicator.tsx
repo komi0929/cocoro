@@ -1,5 +1,5 @@
 /**
- * kokoro — Space Mood Indicator
+ * cocoro — Space Mood Indicator
  * 画面上部に会話フロー状態を繊細に表示するHUD要素
  * 
  * 反復171-180:

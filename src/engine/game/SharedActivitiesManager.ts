@@ -1,5 +1,5 @@
 /**
- * kokoro — Shared Activities Manager
+ * cocoro — Shared Activities Manager
  * 会話以外の「一緒にやること」— エンタメ化の本丸
  *
  * リサーチ結果:

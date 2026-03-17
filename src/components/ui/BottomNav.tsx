@@ -1,5 +1,5 @@
 /**
- * kokoro — Bottom Navigation
+ * cocoro — Bottom Navigation
  * モバイルファーストのタブバー
  * ホーム / ロビー / アバター / 設定
  */

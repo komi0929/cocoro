@@ -1,5 +1,5 @@
 /**
- * kokoro — Seasonal Content Engine
+ * cocoro — Seasonal Content Engine
  * 季節 / 時間帯に合わせたコンテンツ — 「いつ来ても新しい」
  *
  * - 季節テーマ(桜/夏祭り/紅葉/雪)

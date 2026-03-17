@@ -1,5 +1,5 @@
 /**
- * kokoro — Voice Analyzer Engine
+ * cocoro — Voice Analyzer Engine
  * Web Audio API + AudioWorklet による音声解析
  * VAD（Voice Activity Detection）、RMS音量、ピッチ推定、ビゼーム出力
  */

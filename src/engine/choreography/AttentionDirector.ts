@@ -1,5 +1,5 @@
 /**
- * kokoro — Attention Director (IK-Enhanced)
+ * cocoro — Attention Director (IK-Enhanced)
  * アバターの視線・首・体の追従をSpring-DampedなIK制御で実現
  * 発話者への自然な首追従 + 眼球追従 + 体回転
  */

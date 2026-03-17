@@ -1,5 +1,5 @@
 /**
- * kokoro — Session End Summary
+ * cocoro — Session End Summary
  * セッション終了時の「振り返り」画面
  * 
  * 反復91-100: セッションハイライト + 統計 + ピークモーメント

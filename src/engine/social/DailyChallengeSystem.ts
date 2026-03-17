@@ -1,5 +1,5 @@
 /**
- * kokoro — Daily Challenge + Streak
+ * cocoro — Daily Challenge + Streak
  * 毎日来る理由を作る — リテンション設計の要
  *
  * サイクル17: デイリーお題 + ストリーク
@@ -55,7 +55,7 @@ const STREAK_REWARDS: Array<{ streak: number; reward: string; emoji: string }> =
   { streak: 30, reward: '👑 30日連続！ゴールドクラウン解放', emoji: '👑' },
 ];
 
-const STORAGE_KEY = 'kokoro_daily';
+const STORAGE_KEY = 'cocoro_daily';
 
 export class DailyChallengeSystem {
   private state: DailyState;

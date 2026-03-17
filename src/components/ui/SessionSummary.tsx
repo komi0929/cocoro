@@ -1,5 +1,5 @@
 /**
- * kokoro — Session Summary Card (UI)
+ * cocoro — Session Summary Card (UI)
  * セッション終了後のまとめ画面
  *
  * セッションの振り返り + シェア促進 + 次回への動機付け

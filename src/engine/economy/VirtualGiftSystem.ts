@@ -1,5 +1,5 @@
 /**
- * kokoro — Virtual Gift System
+ * cocoro — Virtual Gift System
  * バーチャルギフト — マネタイズの核心
  *
  * サイクル41: アジア市場で証明済みのモデル
@@ -43,7 +43,7 @@ const GIFT_CATALOG: VirtualGift[] = [
   { id: 'rainbow', name: 'レインボー', emoji: '🌈', coinCost: 2000, rarity: 'legendary', animation: 'rain', creatorSharePercent: 70 },
 ];
 
-const STORAGE_KEY = 'kokoro_gifts';
+const STORAGE_KEY = 'cocoro_gifts';
 
 export class VirtualGiftSystem {
   private transactions: GiftTransaction[] = [];

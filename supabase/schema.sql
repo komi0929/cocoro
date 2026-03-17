@@ -1,5 +1,5 @@
 -- ============================================
--- kokoro — Supabase DB Schema
+-- cocoro — Supabase DB Schema
 -- Supabase Dashboard > SQL Editor で実行
 -- ============================================
 

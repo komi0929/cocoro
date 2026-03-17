@@ -1,5 +1,5 @@
 /**
- * kokoro — LOD Manager
+ * cocoro — LOD Manager
  * Three.js Level of Detail — 距離ベースの品質調整
  *
  * サイクル2: スマホの3Dパフォーマンス対策

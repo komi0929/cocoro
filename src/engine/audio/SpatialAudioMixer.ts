@@ -1,5 +1,5 @@
 /**
- * kokoro — Spatial Audio Mixer
+ * cocoro — Spatial Audio Mixer
  * Web Audio API PannerNode ベースの3D空間音響
  * アバター座標に基づいて音声を3D定位
  */

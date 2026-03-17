@@ -1,5 +1,5 @@
 /**
- * kokoro — Spatial Audio Engine
+ * cocoro — Spatial Audio Engine
  * WebAudio PannerNode による3D音声定位
  * 
  * 他の人の声が「どこから聞こえるか」を感じる

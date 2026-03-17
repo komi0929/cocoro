@@ -1,5 +1,5 @@
 /**
- * kokoro — Welcome Toast
+ * cocoro — Welcome Toast
  * 入室歓迎オーバーレイ
  * 
  * 他のユーザーが参加した時に温かい通知を表示
@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 interface ToastMessage {
   id: string;
@@ -19,7 +19,7 @@ interface ToastMessage {
 
 export function WelcomeToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const localId = useKokoroStore((s) => s.localParticipantId);
+  const localId = useCocoroStore((s) => s.localParticipantId);
   const prevSizeRef = useRef(0);
 
   const addToast = useCallback((name: string, type: 'join' | 'leave') => {
@@ -33,7 +33,7 @@ export function WelcomeToast() {
   // Poll participant count changes
   useEffect(() => {
     const interval = setInterval(() => {
-      const state = useKokoroStore.getState();
+      const state = useCocoroStore.getState();
       const currentSize = state.participants.size;
       if (currentSize > prevSizeRef.current && prevSizeRef.current > 0) {
         // New participant joined

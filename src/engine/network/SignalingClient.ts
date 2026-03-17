@@ -1,5 +1,5 @@
 /**
- * kokoro — Signaling Client
+ * cocoro — Signaling Client
  * Socket.IO ベースのシグナリング（ルーム管理・状態同期）
  * 
  * 本番環境ではSocket.IOサーバーと通信するが、
@@ -12,8 +12,8 @@ import type {
   ReactionEvent,
   SyncMessage,
   SyncMessageType,
-} from '@/types/kokoro';
-import { SpacePhase } from '@/types/kokoro';
+} from '@/types/cocoro';
+import { SpacePhase } from '@/types/cocoro';
 
 type MessageHandler = (message: SyncMessage) => void;
 

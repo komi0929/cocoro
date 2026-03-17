@@ -1,5 +1,5 @@
 /**
- * kokoro — Emotion Timeline
+ * cocoro — Emotion Timeline
  * セッション中の感情の流れをリアルタイムで記録・可視化
  * 
  * 反復121-125:

@@ -1,5 +1,5 @@
 /**
- * kokoro — Room Creator
+ * cocoro — Room Creator
  * ユーザーが「場」を作れる — VRChatの成功要因
  *
  * サイクル11: テーマ付きルーム作成

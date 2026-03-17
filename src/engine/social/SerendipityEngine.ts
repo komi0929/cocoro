@@ -1,5 +1,5 @@
 /**
- * kokoro — Serendipity Engine
+ * cocoro — Serendipity Engine
  * 社会的発見 — 「フィルターバブルを破る偶然の出会い」
  *
  * リサーチ結果:

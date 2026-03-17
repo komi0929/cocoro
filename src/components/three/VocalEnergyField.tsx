@@ -1,5 +1,5 @@
 /**
- * kokoro — Vocal Energy Field (3D)
+ * cocoro — Vocal Energy Field (3D)
  * 声のエネルギーが空間に「力場」として可視化される
  * 
  * 反復191-200:
@@ -13,7 +13,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useKokoroStore } from '@/store/useKokoroStore';
+import { useCocoroStore } from '@/store/useCocoroStore';
 
 const FIELD_SHADER = {
   vertex: /* glsl */ `
@@ -87,8 +87,8 @@ const FIELD_SHADER = {
 };
 
 export function VocalEnergyField() {
-  const participants = useKokoroStore((s) => s.participants);
-  const activeSpeakers = useKokoroStore((s) => s.activeSpeakers);
+  const participants = useCocoroStore((s) => s.participants);
+  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
   const meshRef = useRef<THREE.Mesh>(null);
 
   const uniforms = useMemo(() => ({

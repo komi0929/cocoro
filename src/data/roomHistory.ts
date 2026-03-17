@@ -1,5 +1,5 @@
 /**
- * kokoro — Room History Manager
+ * cocoro — Room History Manager
  * 最近訪れたルームの履歴を管理
  * 
  * 思想: 「緩い繋がり」= 一期一会ではなく、また戻れる場所がある
@@ -13,7 +13,7 @@ export interface RoomHistoryEntry {
   visitCount: number;
 }
 
-const STORAGE_KEY = 'kokoro_room_history';
+const STORAGE_KEY = 'cocoro_room_history';
 const MAX_HISTORY = 20;
 
 /** 訪問履歴を取得 */
