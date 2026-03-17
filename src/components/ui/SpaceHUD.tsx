@@ -36,6 +36,54 @@ const PHASE_LABELS: Record<
   },
 };
 
+interface MenuButtonProps {
+  onShowGame?: () => void;
+  onShowFriends?: () => void;
+  onShowSafety?: () => void;
+  onShowSession?: () => void;
+  onShowHighlight?: () => void;
+}
+
+function MenuButton({ onShowGame, onShowFriends, onShowSafety, onShowSession, onShowHighlight }: MenuButtonProps) {
+  const [open, setOpen] = useState(false);
+  const items = [
+    onShowGame && { icon: '🎲', label: 'ゲーム', action: onShowGame },
+    onShowFriends && { icon: '👥', label: 'フレンド', action: onShowFriends },
+    onShowSafety && { icon: '🛡️', label: '安全管理', action: onShowSafety },
+    onShowSession && { icon: '📊', label: 'セッション', action: onShowSession },
+    onShowHighlight && { icon: '✨', label: 'ハイライト', action: onShowHighlight },
+  ].filter(Boolean) as { icon: string; label: string; action: () => void }[];
+
+  return (
+    <div className="relative">
+      {open && (
+        <div className="absolute bottom-14 right-0 flex flex-col gap-1.5 mb-1"
+          style={{ animation: 'slideDown 0.2s ease-out' }}>
+          {items.map((item) => (
+            <button key={item.label} onClick={() => { item.action(); setOpen(false); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl
+                bg-black/60 backdrop-blur-2xl border border-white/10
+                hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap">
+              <span className="text-sm">{item.icon}</span>
+              <span className="text-xs text-white/70">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <button onClick={() => setOpen(!open)}
+        className={`w-11 h-11 rounded-full backdrop-blur-xl border transition-all
+          flex items-center justify-center
+          ${open ? 'bg-white/15 border-white/20 rotate-45' : 'bg-white/5 border-white/10 hover:bg-white/10'}
+          active:scale-90`}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-white/60">
+          <line x1="3" y1="9" x2="15" y2="9" />
+          <line x1="9" y1="3" x2="9" y2="15" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 interface SpaceHUDProps {
   isMicActive: boolean;
   onToggleMic: () => void;
@@ -61,7 +109,6 @@ export function SpaceHUD({
   onShowSafety,
   onShowSession,
   onShowHighlight,
-  engineStatus,
 }: SpaceHUDProps) {
   const phase = useCocoroStore((s) => s.phase);
   const density = useCocoroStore((s) => s.density);
@@ -273,165 +320,19 @@ export function SpaceHUD({
         </div>
       </div>
 
-      {/* Quick Action Bar — bottom right */}
-      <div className="fixed bottom-8 right-4 z-50 flex flex-col gap-2">
-        {onShowGame && (
-          <button onClick={onShowGame} title="ゲーム"
-            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
-              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
-            🎲
-          </button>
-        )}
-        {onShowFriends && (
-          <button onClick={onShowFriends} title="フレンド"
-            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
-              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
-            👥
-          </button>
-        )}
-        {onShowSafety && (
-          <button onClick={onShowSafety} title="安全管理"
-            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
-              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
-            🛡️
-          </button>
-        )}
-        {onShowSession && (
-          <button onClick={onShowSession} title="セッション"
-            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
-              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
-            📊
-          </button>
-        )}
-        {onShowHighlight && (
-          <button onClick={onShowHighlight} title="ハイライト"
-            className="w-11 h-11 rounded-full bg-white/5 backdrop-blur-xl border border-white/10
-              flex items-center justify-center text-xl hover:bg-white/10 active:scale-90 transition-all">
-            ✨
-          </button>
-        )}
-      </div>
-
-      {/* Engine Status Dashboard — 全エンジン出力を可視化 */}
-      {engineStatus && (
-        <div className="fixed top-4 left-4 z-40 flex flex-col gap-1 pointer-events-auto max-w-[280px]"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-          <div className="bg-black/40 backdrop-blur-2xl rounded-xl px-3 py-2 border border-white/8 shadow-lg">
-            {/* Row 1: Core state */}
-            <div className="flex items-center gap-2.5 text-[10px] flex-wrap">
-              <span className={`${engineStatus.flowLevel === 'zone' ? 'text-amber-400' : engineStatus.flowLevel === 'flowing' ? 'text-green-400' : 'text-white/30'}`}>
-                🌊 {engineStatus.flowLevel}
-              </span>
-              <span className="text-white/40">
-                💜 {engineStatus.dominantEmotion}
-              </span>
-              <span className="text-white/30">
-                🤝 {Math.round(engineStatus.trustLevel * 100)}%
-              </span>
-              <span className={`${engineStatus.safetyLevel === 'green' ? 'text-green-400/50' : 'text-red-400'}`}>
-                🛡 {engineStatus.safetyLevel}
-              </span>
-            </div>
-
-            {/* Row 2: Conversation */}
-            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
-              <span className="text-white/35">
-                📖 {engineStatus.conversationArc}
-              </span>
-              <span className="text-white/25">
-                🤫 {engineStatus.silenceDuration.toFixed(0)}s
-              </span>
-              <span className="text-white/30">
-                🎭 {Math.round(engineStatus.emotionIntensity * 100)}%
-              </span>
-              <span className="text-white/25">
-                🌈 {engineStatus.roomMoodLabel}
-              </span>
-            </div>
-
-            {/* Row 3: Social */}
-            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
-              <span className="text-white/30">
-                💞 絆{Math.round(engineStatus.bondLevel * 100)}%
-              </span>
-              <span className="text-white/30">
-                ⚡ エナジー{Math.round(engineStatus.groupEnergy * 100)}%
-              </span>
-              <span className="text-white/25">
-                👥 {Math.round(engineStatus.activeParticipantRatio * 100)}%活動
-              </span>
-            </div>
-
-            {/* Row 4: Audio + Game */}
-            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
-              <span className="text-white/25">
-                🎵 {engineStatus.bgmGenre}
-              </span>
-              {engineStatus.voiceEffectActive !== 'none' && (
-                <span className="text-cyan-300/40">
-                  🎤 {engineStatus.voiceEffectActive}
-                </span>
-              )}
-              {engineStatus.activeGame && (
-                <span className="text-amber-300/60">
-                  🎮 {engineStatus.activeGame}
-                </span>
-              )}
-              {engineStatus.debateActive && (
-                <span className="text-red-300/50">
-                  ⚔️ ディベート中
-                </span>
-              )}
-              <span className="text-white/20">
-                🎪 {engineStatus.showState}
-              </span>
-            </div>
-
-            {/* Row 5: Economy + Governance */}
-            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
-              {engineStatus.coinBalance > 0 && (
-                <span className="text-yellow-300/50">
-                  🪙 {engineStatus.coinBalance}
-                </span>
-              )}
-              <span className="text-white/20">
-                👑 {engineStatus.memberTier}
-              </span>
-              {engineStatus.reputationScore > 0 && (
-                <span className="text-white/25">
-                  ⭐ rep.{engineStatus.reputationScore}
-                </span>
-              )}
-              {engineStatus.moderationActive && (
-                <span className="text-orange-300/40">
-                  🔒 モデレーション中
-                </span>
-              )}
-            </div>
-
-            {/* Row 6: Cognitive + Performance */}
-            <div className="flex items-center gap-2.5 text-[10px] mt-1 flex-wrap">
-              <span className="text-white/25">
-                🧠 EQ:{Math.round(engineStatus.eqScore * 100)}
-              </span>
-              <span className="text-white/20">
-                📊 負荷:{Math.round(engineStatus.cognitiveLoad * 100)}%
-              </span>
-              <span className="text-white/20">
-                ⚡ {engineStatus.fps}fps
-              </span>
-              {engineStatus.memoryUsageMB > 0 && (
-                <span className="text-white/15">
-                  💾 {engineStatus.memoryUsageMB}MB
-                </span>
-              )}
-              <span className={`${engineStatus.networkQuality === 'good' ? 'text-green-400/30' : 'text-red-400/50'}`}>
-                📶 {engineStatus.networkQuality}
-              </span>
-            </div>
-          </div>
+      {/* Quick Action — single menu toggle (bottom right) */}
+      {(onShowGame || onShowFriends || onShowSafety || onShowSession || onShowHighlight) && (
+        <div className="fixed bottom-8 right-4 z-50">
+          <MenuButton
+            onShowGame={onShowGame}
+            onShowFriends={onShowFriends}
+            onShowSafety={onShowSafety}
+            onShowSession={onShowSession}
+            onShowHighlight={onShowHighlight}
+          />
         </div>
       )}
+
 
       {/* Active speakers overlay — shows who's talking */}
       {activeSpeakers.length > 0 && (
@@ -449,7 +350,7 @@ export function SpaceHUD({
                 const speakerId = activeSpeakers[0];
                 const speaker = speakerId ? participants.get(speakerId) : undefined;
                 const vol = speaker?.speakingState.volume ?? 0;
-                const barHeight = 6 + (vol * 10) * Math.sin(Date.now() / 100 + i * 1.5);
+                const barHeight = 6 + (vol * 10) * Math.sin(i * 1.5);
                 return (
                   <div
                     key={i}
