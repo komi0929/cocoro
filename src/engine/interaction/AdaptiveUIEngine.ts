@@ -31,7 +31,7 @@ export class AdaptiveUIEngine {
   private isFirstVisit: boolean;
 
   constructor() {
-    this.isFirstVisit = !localStorage.getItem('kokoro_has_visited');
+    this.isFirstVisit = typeof window !== 'undefined' ? !localStorage.getItem('kokoro_has_visited') : false;
     if (this.isFirstVisit) {
       this.mode = 'onboarding';
     }
