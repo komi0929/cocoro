@@ -91,7 +91,7 @@ export function SpaceHUD({
     .map((id) => participants.get(id)?.displayName ?? '不明')
     .join('、');
 
-  const phaseInfo = PHASE_LABELS[phase];
+  const phaseInfo = PHASE_LABELS[phase] ?? PHASE_LABELS[SpacePhase.SILENCE];
   const participantCount = participants.size;
 
   // Mic button scale based on volume
