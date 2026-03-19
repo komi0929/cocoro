@@ -7,6 +7,7 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { AjitRoom } from './AjitRoom';
 import { FurniturePlacer } from './FurniturePlacer';
 import { FurnitureDragger } from './FurnitureDragger';
@@ -43,6 +44,7 @@ export function AjitCanvas() {
         height: '100%',
         touchAction: 'none',
       }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       <Suspense fallback={null}>
         <AjitRoom />
@@ -63,6 +65,11 @@ export function AjitCanvas() {
         maxPolarAngle={Math.PI / 2.1}
         minPolarAngle={0.2}
         target={[0, 0.5, 0]}
+        mouseButtons={{
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.PAN,
+          RIGHT: undefined as unknown as THREE.MOUSE,
+        }}
         touches={{
           ONE: 1,
           TWO: 2,

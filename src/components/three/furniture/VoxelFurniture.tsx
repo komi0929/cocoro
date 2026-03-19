@@ -186,6 +186,11 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
           e.stopPropagation();
           onClick?.();
         }}
+        onContextMenu={(e) => {
+          e.stopPropagation();
+          // 右クリックでも家具を選択
+          onClick?.();
+        }}
       >
         {/* Selection highlight — pulsing ring + bounding glow */}
         {isSelected && (
