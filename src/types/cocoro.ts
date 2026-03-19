@@ -213,6 +213,17 @@ export interface CocoroStore {
 // Furniture (Phase 4)
 // ============================================================
 
+export type FurnitureActionType =
+  | 'sit' | 'sleep' | 'play' | 'strum' | 'gaze' | 'dance'
+  | 'eat' | 'work' | 'read' | 'kick' | 'admire' | 'relax'
+  | 'swing' | 'warm' | 'write' | 'lounge' | 'water' | 'dj' | 'browse';
+
+export interface FurnitureColorVariant {
+  id: string;
+  label: string;
+  hex: string;
+}
+
 export interface FurnitureDef {
   type: string;
   name: string;
@@ -221,6 +232,8 @@ export interface FurnitureDef {
   category: string;
   placement?: 'wall' | 'floor';
   nanoBananaPrompt?: string;
+  colorVariants?: FurnitureColorVariant[];
+  action?: FurnitureActionType;
 }
 
 export interface FurnitureItem {
@@ -230,6 +243,7 @@ export interface FurnitureItem {
   rotationY: number;
   rotation?: number;
   state?: Record<string, unknown>;
+  colorVariant?: string;
 }
 
 /** Alias for backward compatibility */
@@ -240,7 +254,8 @@ export type FurnitureType = string;
 // ============================================================
 
 export type AvatarSpecies = 'bear' | 'cat' | 'dog' | 'rabbit' | 'fox' | 'frog' | 'penguin' | 'panda';
-export type AvatarItemType = 'none' | 'sword_shield' | 'skateboard' | 'controller' | 'pizza' | 'sunglasses';
+export type AvatarItemType = 'none' | 'sword_shield' | 'skateboard' | 'controller' | 'pizza' | 'sunglasses'
+  | 'ribbon' | 'magic_wand' | 'plushie' | 'tiara' | 'flower_bouquet';
 
 export interface AvatarConfig {
   species: AvatarSpecies;
@@ -266,18 +281,25 @@ export const AVATAR_SPECIES_EMOJI: Record<AvatarSpecies, string> = {
 
 export const AVATAR_ITEM_LIST: AvatarItemType[] = [
   'none', 'sword_shield', 'skateboard', 'controller', 'pizza', 'sunglasses',
+  'ribbon', 'magic_wand', 'plushie', 'tiara', 'flower_bouquet',
 ];
 
 export const AVATAR_ITEM_LABELS: Record<AvatarItemType, string> = {
-  none: '\u306A\u3057', sword_shield: '\u5263\u3068\u76FE',
-  skateboard: '\u30B9\u30B1\u30DC\u30FC', controller: '\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u30FC',
-  pizza: '\u30D4\u30B6', sunglasses: '\u30B5\u30F3\u30B0\u30E9\u30B9',
+  none: 'なし', sword_shield: '剣と盾',
+  skateboard: 'スケボー', controller: 'コントローラー',
+  pizza: 'ピザ', sunglasses: 'サングラス',
+  ribbon: 'リボン', magic_wand: '魔法のステッキ',
+  plushie: 'ぬいぐるみ', tiara: 'ティアラ',
+  flower_bouquet: '花束',
 };
 
 export const AVATAR_ITEM_EMOJI: Record<AvatarItemType, string> = {
-  none: '\u2796', sword_shield: '\u2694\uFE0F',
-  skateboard: '\u{1F6F9}', controller: '\u{1F3AE}',
-  pizza: '\u{1F355}', sunglasses: '\u{1F576}\uFE0F',
+  none: '➖', sword_shield: '⚔️',
+  skateboard: '🛹', controller: '🎮',
+  pizza: '🍕', sunglasses: '🕶️',
+  ribbon: '🎀', magic_wand: '🪄',
+  plushie: '🧸', tiara: '👑',
+  flower_bouquet: '💐',
 };
 
 export const AVATAR_COLOR_PRESETS: { hex: string; label: string }[] = [

@@ -1,26 +1,27 @@
 /**
- * cocoro  EVoxel Furniture Factory Phase 4
- * 56種の家具をルーチE��ング  E色ノイズ + 選択ハイライチE */
+ * cocoro  — Voxel Furniture Factory Phase 4.5
+ * 50+ furniture routing with color variant + selection highlight
+ */
 
 import React, { Suspense } from 'react';
 import type { FurnitureItem } from '@/types/cocoro';
 
 // --- チル系 ---
 import {
-  VoxelBed, VoxelSofa, VoxelSofaRed, VoxelSofaGreen,
+  VoxelBed, VoxelSofa,
   VoxelLSofa, VoxelBeanbag, VoxelHammock,
   VoxelRug, VoxelRugRound, VoxelRugStripe,
   VoxelCushion, VoxelTable, VoxelLowTable, VoxelCactus,
 } from './ChillFurniture';
 
-// --- 遊�E系 ---
+// --- 遊び系 ---
 import {
   VoxelArcade, VoxelSkateboard, VoxelDJBooth, VoxelPizzaBox,
   VoxelBasketball, VoxelGuitar, VoxelBoombox,
   VoxelBigSpeaker, VoxelPinball, VoxelVinylPlayer, VoxelFoamSword,
 } from './PlayFurniture';
 
-// --- チE��ク系 ---
+// --- デスク系 ---
 import {
   VoxelDesk, VoxelGamingChair, VoxelMonitor, VoxelMonitorDual,
   VoxelGamingPC, VoxelSteelRack, VoxelChair, VoxelShelf,
@@ -34,7 +35,7 @@ import {
   VoxelPendantLight, VoxelCandleSet,
 } from './LightFurniture';
 
-// --- チE��系 ---
+// --- デコ系 ---
 import {
   VoxelPoster, VoxelPosterFrame, VoxelWallShelf,
   VoxelPlant, VoxelPlantTall, VoxelPlantHanging,
@@ -52,8 +53,9 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   // チル系
   bed: VoxelBed,
   sofa: VoxelSofa,
-  sofa_red: VoxelSofaRed,
-  sofa_green: VoxelSofaGreen,
+  // Backward compat: old color-specific sofa types route to unified VoxelSofa
+  sofa_red: VoxelSofa,
+  sofa_green: VoxelSofa,
   l_sofa: VoxelLSofa,
   beanbag: VoxelBeanbag,
   hammock: VoxelHammock,
@@ -65,7 +67,7 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   low_table: VoxelLowTable,
   cactus: VoxelCactus,
 
-  // 遊�E系
+  // 遊び系
   arcade: VoxelArcade,
   skateboard: VoxelSkateboard,
   dj_booth: VoxelDJBooth,
@@ -78,7 +80,7 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   vinyl_player: VoxelVinylPlayer,
   foam_sword: VoxelFoamSword,
 
-  // チE��ク系
+  // デスク系
   desk: VoxelDesk,
   gaming_chair: VoxelGamingChair,
   monitor: VoxelMonitor,
@@ -101,7 +103,7 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   pendant_light: VoxelPendantLight,
   candle_set: VoxelCandleSet,
 
-  // チE��系
+  // デコ系
   poster: VoxelPoster,
   poster_frame: VoxelPosterFrame,
   wall_shelf: VoxelWallShelf,
@@ -130,7 +132,7 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
           onClick?.();
         }}
       >
-        {/* Selection highlight  Epulsing ring + bounding glow */}
+        {/* Selection highlight — pulsing ring + bounding glow */}
         {isSelected && (
           <>
             <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>

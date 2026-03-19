@@ -24,6 +24,7 @@ interface AjitState {
   placedFurniture: FurnitureItem[];
   selectedFurnitureId: string | null;
   placingType: string | null;
+  placingColorVariant: string | undefined;
   isDragging: boolean;
   roomCapacity: number;
   isDrawerOpen: boolean;
@@ -41,6 +42,7 @@ interface AjitState {
   selectFurniture: (id: string) => void;
   deselectFurniture: () => void;
   setPlacingType: (type: string | null) => void;
+  setPlacingColorVariant: (color: string | undefined) => void;
   setIsDragging: (d: boolean) => void;
   setDragging: (d: boolean) => void;
   setDrawerOpen: (open: boolean) => void;
@@ -56,6 +58,7 @@ export const useAjitStore = create<AjitState>((set, get) => ({
   placedFurniture: [],
   selectedFurnitureId: null,
   placingType: null,
+  placingColorVariant: undefined,
   isDragging: false,
   roomCapacity: 200,
   isDrawerOpen: false,
@@ -97,6 +100,7 @@ export const useAjitStore = create<AjitState>((set, get) => ({
   selectFurniture: (id) => set({ selectedFurnitureId: id }),
   deselectFurniture: () => set({ selectedFurnitureId: null }),
   setPlacingType: (type) => set({ placingType: type }),
+  setPlacingColorVariant: (color) => set({ placingColorVariant: color }),
   setIsDragging: (d) => set({ isDragging: d }),
   setDragging: (d) => set({ isDragging: d }),
   setDrawerOpen: (open) => set({ isDrawerOpen: open }),

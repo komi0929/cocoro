@@ -1,14 +1,14 @@
 /**
  * cocoro - AvatarEntity
- * Avatar AI behavior component with furniture collision avoidance
+ * Avatar AI behavior component with furniture-specific actions
  *
  * State machine:
- *   IDLE -> (3s) -> WANDER -> (arrive at furniture) -> PLAYING
+ *   IDLE -> (3s) -> WANDER -> (arrive at furniture) -> PLAYING (with action)
  *   Any state + someone speaks -> CONVERSATION
  *   CONVERSATION -> (silence 5s) -> IDLE
  *
- * Collision: Avatar stops short of furniture (FURNITURE_RADIUS)
- * and faces it from a comfortable distance.
+ * Actions: each furniture type triggers a specific avatar action
+ * (sit, sleep, dance, gaze, play, work, etc.)
  */
 
 import { useRef, useEffect, useCallback } from 'react';
@@ -19,7 +19,8 @@ import { useSceneStore } from '@/store/useSceneStore';
 import { useCallStore } from '@/store/useCallStore';
 import { useAjitStore } from '@/store/useAjitStore';
 import { useAvatarStore } from '@/store/useAvatarStore';
-import type { FurnitureItem } from '@/types/cocoro';
+import { getFurnitureAction } from '@/data/furnitureCatalog';
+import type { FurnitureItem, FurnitureActionType } from '@/types/cocoro';
 
 // ============================================================
 // Constants
@@ -27,19 +28,35 @@ import type { FurnitureItem } from '@/types/cocoro';
 
 const ROOM_HALF = 3.5;
 const WALK_SPEED = 0.8;
-const ARRIVE_THRESHOLD = 0.6; // stop before furniture (not on top)
-const FURNITURE_RADIUS = 0.5; // collision radius around each furniture
+const ARRIVE_THRESHOLD = 0.6;
+const FURNITURE_RADIUS = 0.5;
 const IDLE_TO_WANDER_DELAY = 3;
 const SILENCE_TO_IDLE_DELAY = 5;
-const PLAY_DURATION = 6;
+const PLAY_DURATION_BASE = 5;
 const CONVERSATION_GATHER_POINT: [number, number, number] = [0, 0, 0];
 
-const PLAYABLE_TYPES = new Set([
-  'arcade', 'skateboard', 'dj_booth', 'guitar', 'boombox',
-  'pinball', 'vinyl_player', 'foam_sword', 'basketball',
-  'gaming_chair', 'monitor', 'gaming_pc', 'beanbag', 'sofa',
-  'sofa_red', 'sofa_green', 'l_sofa', 'pizza_box',
-]);
+/** Different actions have different durations */
+const ACTION_DURATIONS: Partial<Record<FurnitureActionType, number>> = {
+  sit: 8,
+  sleep: 10,
+  play: 6,
+  dance: 7,
+  gaze: 5,
+  strum: 6,
+  eat: 4,
+  work: 7,
+  read: 8,
+  kick: 3,
+  admire: 5,
+  relax: 7,
+  swing: 4,
+  warm: 5,
+  write: 6,
+  lounge: 6,
+  water: 3,
+  dj: 7,
+  browse: 4,
+};
 
 // ============================================================
 // Helpers
@@ -69,10 +86,6 @@ function angleTo(from: [number, number, number], to: [number, number, number]): 
   return Math.atan2(to[0] - from[0], to[2] - from[2]);
 }
 
-/**
- * Check if moving to nextPos would collide with any furniture.
- * Returns a pushed-out position if collision detected.
- */
 function avoidFurniture(
   nextPos: [number, number, number],
   furniture: FurnitureItem[],
@@ -81,7 +94,6 @@ function avoidFurniture(
   let [x, y, z] = nextPos;
 
   for (const item of furniture) {
-    // Don't avoid the furniture we're walking toward
     if (item.id === targetFurnitureId) continue;
 
     const dx = x - item.position[0];
@@ -89,7 +101,6 @@ function avoidFurniture(
     const d = Math.sqrt(dx * dx + dz * dz);
 
     if (d < FURNITURE_RADIUS && d > 0.001) {
-      // Push avatar outward from furniture center
       const nx = dx / d;
       const nz = dz / d;
       x = item.position[0] + nx * FURNITURE_RADIUS;
@@ -120,17 +131,19 @@ export function AvatarEntity() {
   const setLocalAvatarRotation = useSceneStore(s => s.setLocalAvatarRotation);
   const setLocalAvatarBehavior = useSceneStore(s => s.setLocalAvatarBehavior);
   const setPlayTarget = useSceneStore(s => s.setPlayTarget);
+  const setCurrentAction = useSceneStore(s => s.setCurrentAction);
   const setCameraMode = useSceneStore(s => s.setCameraMode);
   const setFocusTarget = useSceneStore(s => s.setFocusTarget);
   const setAnySpeaking = useSceneStore(s => s.setAnySpeaking);
 
-  // Internal refs (avoid re-renders)
+  // Internal refs
   const stateTimerRef = useRef(0);
   const playTimerRef = useRef(0);
   const silenceTimerRef = useRef(0);
   const posRef = useRef<[number, number, number]>([...localAvatar.position]);
   const rotRef = useRef(localAvatar.rotationY);
   const isWalkingRef = useRef(false);
+  const currentPlayDuration = useRef(PLAY_DURATION_BASE);
 
   // Detect speaking
   const localSpeaking = localIsSpeaking;
@@ -138,10 +151,10 @@ export function AvatarEntity() {
   const remoteSpeaking = callParticipants.some(p => p.isSpeaking);
   const anySpeaking = localSpeaking || remoteSpeaking;
 
-  const pickPlayTarget = useCallback((): FurnitureItem | null => {
-    const playable = furniture.filter(f => PLAYABLE_TYPES.has(f.type));
-    if (playable.length === 0) return null;
-    return playable[Math.floor(Math.random() * playable.length)];
+  /** Pick a random furniture to interact with (any furniture now, not just "playable") */
+  const pickInteractionTarget = useCallback((): FurnitureItem | null => {
+    if (furniture.length === 0) return null;
+    return furniture[Math.floor(Math.random() * furniture.length)];
   }, [furniture]);
 
   useEffect(() => {
@@ -158,6 +171,7 @@ export function AvatarEntity() {
     // ============================================================
     if (anySpeaking && behavior !== 'conversation') {
       setLocalAvatarBehavior('conversation');
+      setCurrentAction(null);
       stateTimerRef.current = 0;
       silenceTimerRef.current = 0;
 
@@ -180,7 +194,7 @@ export function AvatarEntity() {
         stateTimerRef.current += dt;
 
         if (stateTimerRef.current > IDLE_TO_WANDER_DELAY) {
-          const target = pickPlayTarget();
+          const target = pickInteractionTarget();
           if (target) {
             setLocalAvatarBehavior('wander');
             setPlayTarget(target.id);
@@ -204,18 +218,24 @@ export function AvatarEntity() {
 
         const d = dist2D(posRef.current, target);
         if (d < ARRIVE_THRESHOLD) {
-          // Arrived - face the furniture
+          // Arrived - check if we have a furniture target
           if (localAvatar.playTargetId) {
             const playItem = furniture.find(f => f.id === localAvatar.playTargetId);
             if (playItem) {
               const faceAngle = angleTo(posRef.current, playItem.position);
               rotRef.current = faceAngle;
               setLocalAvatarRotation(rotRef.current);
+
+              // Determine action based on furniture type
+              const action = getFurnitureAction(playItem.type) ?? 'gaze';
+              setCurrentAction(action);
+              currentPlayDuration.current = ACTION_DURATIONS[action] ?? PLAY_DURATION_BASE;
             }
             setLocalAvatarBehavior('playing');
             playTimerRef.current = 0;
           } else {
-            const nextTarget = pickPlayTarget();
+            // No furniture target, pick a new one
+            const nextTarget = pickInteractionTarget();
             if (nextTarget) {
               setPlayTarget(nextTarget.id);
               setLocalAvatarTarget(nextTarget.position);
@@ -235,10 +255,8 @@ export function AvatarEntity() {
             posRef.current[2] + Math.cos(angle) * step,
           ];
 
-          // Furniture collision avoidance
           nextPos = avoidFurniture(nextPos, furniture, localAvatar.playTargetId);
 
-          // Wall clipping
           nextPos[0] = Math.max(-ROOM_HALF + 0.4, Math.min(ROOM_HALF - 0.4, nextPos[0]));
           nextPos[2] = Math.max(-ROOM_HALF + 0.4, Math.min(ROOM_HALF - 0.4, nextPos[2]));
 
@@ -261,8 +279,9 @@ export function AvatarEntity() {
           setLocalAvatarRotation(rotRef.current);
         }
 
-        if (playTimerRef.current > PLAY_DURATION) {
-          const next = pickPlayTarget();
+        if (playTimerRef.current > currentPlayDuration.current) {
+          setCurrentAction(null);
+          const next = pickInteractionTarget();
           if (next) {
             setPlayTarget(next.id);
             setLocalAvatarTarget(next.position);
@@ -315,6 +334,7 @@ export function AvatarEntity() {
           silenceTimerRef.current += dt;
           if (silenceTimerRef.current > SILENCE_TO_IDLE_DELAY) {
             setLocalAvatarBehavior('idle');
+            setCurrentAction(null);
             setCameraMode('overview');
             setFocusTarget(null);
             setPlayTarget(null);
@@ -344,6 +364,7 @@ export function AvatarEntity() {
         voiceVolume={localVol}
         isSpeaking={localSpeaking}
         isWalking={isWalkingRef.current}
+        currentAction={localAvatar.currentAction}
       />
     </group>
   );

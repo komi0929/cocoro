@@ -1,14 +1,15 @@
 /**
- * cocoro — VoxelAvatar (Phase 5)
+ * cocoro — VoxelAvatar (Phase 5.5)
  * Procedural voxel animal avatar
  * Shared body + species parts + color noise + voice-reactive animation
+ * + Furniture-specific action animations
  * 2-2.5 head-to-body ratio, Minecraft/Crossy Road style
  */
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { AvatarSpecies, AvatarConfig } from '@/types/cocoro';
+import type { AvatarSpecies, AvatarConfig, FurnitureActionType } from '@/types/cocoro';
 import { createFaceTexture } from './voxelFaceTexture';
 import { VoxelItem } from './VoxelItems';
 
@@ -295,6 +296,7 @@ export interface VoxelAvatarProps {
   isWalking?: boolean;
   isSpeaking?: boolean;
   emissiveBoost?: number;
+  currentAction?: FurnitureActionType | null;
 }
 
 export function VoxelAvatar({
@@ -303,6 +305,7 @@ export function VoxelAvatar({
   isWalking = false,
   isSpeaking = false,
   emissiveBoost = 0,
+  currentAction = null,
 }: VoxelAvatarProps) {
   const groupRef = useRef<THREE.Group>(null);
   const leftArmRef = useRef<THREE.Group>(null);
@@ -336,18 +339,156 @@ export function VoxelAvatar({
     if (groupRef.current) {
       const breathe = 1 + Math.sin(t * 2) * 0.015;
       let jumpY = 0;
+
       if (isSpeaking && voiceVolume > 0.08) {
         jumpY = Math.abs(Math.sin(t * 12)) * 0.06 * Math.min(1, voiceVolume * 3);
       }
+
+      // Action-specific body transforms
+      if (currentAction) {
+        switch (currentAction) {
+          case 'sit':
+            // Lower body to sitting position
+            jumpY = -0.15;
+            break;
+          case 'sleep':
+            // Lie down (tilt sideways)
+            groupRef.current.rotation.z = Math.PI / 2 * 0.8;
+            jumpY = -0.2;
+            break;
+          case 'dance':
+            // Bounce up and down + sway
+            jumpY = Math.abs(Math.sin(t * 6)) * 0.1;
+            groupRef.current.rotation.z = Math.sin(t * 3) * 0.15;
+            break;
+          case 'relax':
+            // Sit low on ground
+            jumpY = -0.2;
+            break;
+          default:
+            // Reset rotation for non-sleep/dance actions
+            if (groupRef.current.rotation.z !== 0) {
+              groupRef.current.rotation.z *= 0.9;
+            }
+            break;
+        }
+      } else {
+        // Reset z rotation when no action
+        if (groupRef.current.rotation.z !== 0) {
+          groupRef.current.rotation.z *= 0.9;
+          if (Math.abs(groupRef.current.rotation.z) < 0.01) groupRef.current.rotation.z = 0;
+        }
+      }
+
       groupRef.current.position.y = jumpY;
       groupRef.current.scale.y = breathe;
     }
 
-    const swing = isWalking ? Math.sin(t * 8) * 0.4 : 0;
-    if (leftArmRef.current) leftArmRef.current.rotation.x = swing;
-    if (rightArmRef.current) rightArmRef.current.rotation.x = -swing;
-    if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
-    if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
+    // Arm & Leg animation
+    let leftArmRot = 0;
+    let rightArmRot = 0;
+    let leftLegRot = 0;
+    let rightLegRot = 0;
+
+    if (isWalking) {
+      const swing = Math.sin(t * 8) * 0.4;
+      leftArmRot = swing;
+      rightArmRot = -swing;
+      leftLegRot = -swing;
+      rightLegRot = swing;
+    } else if (currentAction) {
+      switch (currentAction) {
+        case 'play':
+        case 'dj':
+          // Fast arm movement (button mashing / turntable)
+          leftArmRot = Math.sin(t * 10) * 0.5;
+          rightArmRot = Math.sin(t * 12 + 1) * 0.5;
+          break;
+        case 'strum':
+          // Strumming motion
+          rightArmRot = Math.sin(t * 8) * 0.6;
+          leftArmRot = -0.3; // Holding neck
+          break;
+        case 'dance':
+          // Arms up and swaying
+          leftArmRot = Math.sin(t * 4) * 0.5 - 0.3;
+          rightArmRot = Math.sin(t * 4 + Math.PI) * 0.5 - 0.3;
+          leftLegRot = Math.sin(t * 6) * 0.15;
+          rightLegRot = Math.sin(t * 6 + Math.PI) * 0.15;
+          break;
+        case 'gaze':
+        case 'admire':
+          // Still, arms slightly back (contemplative)
+          leftArmRot = -0.1;
+          rightArmRot = -0.1;
+          break;
+        case 'sit':
+          // Legs forward
+          leftLegRot = -0.8;
+          rightLegRot = -0.8;
+          // Hands on knees
+          leftArmRot = -0.5;
+          rightArmRot = -0.5;
+          break;
+        case 'sleep':
+          // Arms curled in
+          leftArmRot = -0.6;
+          rightArmRot = -0.6;
+          leftLegRot = -0.4;
+          rightLegRot = -0.4;
+          break;
+        case 'eat':
+          // Bring hand to mouth repeatedly
+          rightArmRot = Math.sin(t * 4) * 0.3 - 0.6;
+          break;
+        case 'work':
+        case 'write':
+          // Typing / writing motion
+          leftArmRot = Math.sin(t * 6) * 0.2 - 0.5;
+          rightArmRot = Math.sin(t * 6 + 2) * 0.2 - 0.5;
+          break;
+        case 'read':
+        case 'browse':
+          // Holding something
+          leftArmRot = -0.5;
+          rightArmRot = -0.5;
+          break;
+        case 'kick':
+          // Kicking motion (one leg forward)
+          rightLegRot = Math.sin(t * 6) * 0.6;
+          break;
+        case 'swing':
+          // Swinging weapon
+          rightArmRot = Math.sin(t * 8) * 0.8;
+          break;
+        case 'warm':
+          // Hands extended forward
+          leftArmRot = -0.4;
+          rightArmRot = -0.4;
+          break;
+        case 'water':
+          // Watering motion (tilt arm)
+          rightArmRot = Math.sin(t * 2) * 0.2 - 0.6;
+          break;
+        case 'lounge':
+          // Leaning on table
+          leftArmRot = -0.3;
+          rightArmRot = -0.3;
+          break;
+        case 'relax':
+          // Arms out relaxed
+          leftArmRot = -0.2;
+          rightArmRot = -0.2;
+          leftLegRot = -0.6;
+          rightLegRot = -0.6;
+          break;
+      }
+    }
+
+    if (leftArmRef.current) leftArmRef.current.rotation.x = leftArmRot;
+    if (rightArmRef.current) rightArmRef.current.rotation.x = rightArmRot;
+    if (leftLegRef.current) leftLegRef.current.rotation.x = leftLegRot;
+    if (rightLegRef.current) rightLegRef.current.rotation.x = rightLegRot;
 
     if (cheekMatRef.current) {
       const glow = isSpeaking ? Math.min(1, voiceVolume * 4) * 0.6 + emissiveBoost : emissiveBoost;

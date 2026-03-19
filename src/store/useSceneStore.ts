@@ -7,6 +7,7 @@
  */
 
 import { create } from 'zustand';
+import type { FurnitureActionType } from '@/types/cocoro';
 
 // ============================================================
 // Types
@@ -20,10 +21,12 @@ export interface AvatarRuntimeState {
   targetPosition: [number, number, number] | null;
   rotationY: number;
   behavior: AvatarBehavior;
-  /** 遊�E中の家具ID */
+  /** 遊び中の家具ID */
   playTargetId: string | null;
   /** 会話相手を見つめるための注視点 */
   lookAtTarget: [number, number, number] | null;
+  /** 現在実行中のアクション */
+  currentAction: FurnitureActionType | null;
 }
 
 export interface SceneState {
@@ -49,6 +52,7 @@ export interface SceneState {
   setLocalAvatarRotation: (ry: number) => void;
   setLocalAvatarBehavior: (behavior: AvatarBehavior) => void;
   setPlayTarget: (id: string | null) => void;
+  setCurrentAction: (action: FurnitureActionType | null) => void;
   setLookAtTarget: (target: [number, number, number] | null) => void;
   setCameraMode: (mode: CameraMode) => void;
   setFocusTarget: (target: [number, number, number] | null) => void;
@@ -65,6 +69,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     behavior: 'idle',
     playTargetId: null,
     lookAtTarget: null,
+    currentAction: null,
   },
 
   cameraMode: 'overview',
@@ -87,6 +92,9 @@ export const useSceneStore = create<SceneState>((set) => ({
   })),
   setPlayTarget: (id) => set(s => ({
     localAvatar: { ...s.localAvatar, playTargetId: id },
+  })),
+  setCurrentAction: (action) => set(s => ({
+    localAvatar: { ...s.localAvatar, currentAction: action },
   })),
   setLookAtTarget: (target) => set(s => ({
     localAvatar: { ...s.localAvatar, lookAtTarget: target },

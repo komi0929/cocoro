@@ -17,8 +17,10 @@ const HALF_D = ROOM_D / 2 - 0.3;
 
 export function FurniturePlacer() {
   const placingType = useAjitStore(s => s.placingType);
+  const placingColorVariant = useAjitStore(s => s.placingColorVariant);
   const addFurniture = useAjitStore(s => s.addFurniture);
   const setPlacingType = useAjitStore(s => s.setPlacingType);
+  const setPlacingColorVariant = useAjitStore(s => s.setPlacingColorVariant);
   const { scene } = useThree();
 
   const isWallPlacement = placingType
@@ -52,9 +54,10 @@ export function FurniturePlacer() {
             rotY = normal.x > 0 ? Math.PI / 2 : -Math.PI / 2;
           }
 
-          const item = { id: crypto.randomUUID(), type: placingType, position: wallPos as [number,number,number], rotationY: rotY };
+          const item = { id: crypto.randomUUID(), type: placingType, position: wallPos as [number,number,number], rotationY: rotY, colorVariant: placingColorVariant };
           addFurniture(item);
           setPlacingType(null);
+          setPlacingColorVariant(undefined);
           return;
         }
       }
@@ -63,11 +66,12 @@ export function FurniturePlacer() {
       const point = e.point;
       const x = Math.max(-HALF_W, Math.min(HALF_W, point.x));
       const z = Math.max(-HALF_D, Math.min(HALF_D, point.z));
-      const item = { id: crypto.randomUUID(), type: placingType, position: [x, 0, z] as [number,number,number], rotationY: 0 };
+      const item = { id: crypto.randomUUID(), type: placingType, position: [x, 0, z] as [number,number,number], rotationY: 0, colorVariant: placingColorVariant };
       addFurniture(item);
       setPlacingType(null);
+      setPlacingColorVariant(undefined);
     }
-  }, [placingType, addFurniture, setPlacingType, isWallPlacement]);
+  }, [placingType, placingColorVariant, addFurniture, setPlacingType, setPlacingColorVariant, isWallPlacement]);
 
   if (!placingType) return null;
 
