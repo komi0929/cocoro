@@ -23,6 +23,7 @@ import { TextChat } from './components/ui/TextChat';
 import { EmoteBar } from './components/ui/EmoteBar';
 import { useUserStore } from './store/useUserStore';
 import { useRoomStore } from './store/useRoomStore';
+import { useAjitStore } from './store/useAjitStore';
 import { startAmbience, stopAmbience } from './engine/voice/AmbientSounds';
 import type { RoomTheme } from './types/cocoro';
 
@@ -136,21 +137,29 @@ export default function App() {
 
       {/* Room action buttons */}
       <div className="room-action-bar">
+        {/* 模様替えボタン — 自分の部屋で家具を置ける */}
+        <button
+          className="room-action-btn"
+          onClick={() => useAjitStore.getState().setDrawerOpen(true)}
+          title={'模様替え'}
+        >
+          {'🔨'}
+        </button>
         {currentRoom && (
           <>
             <button
               className="room-action-btn"
               onClick={() => setShowInvite(true)}
-              title={'\u62DB\u5F85'}
+              title={'招待'}
             >
-              {'\u{1F4E8}'}
+              {'📨'}
             </button>
             <button
               className="room-action-btn"
               onClick={() => setShowSettings(true)}
-              title={'\u8A2D\u5B9A'}
+              title={'設定'}
             >
-              {'\u2699\uFE0F'}
+              {'⚙️'}
             </button>
           </>
         )}
