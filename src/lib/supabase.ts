@@ -1,48 +1,41 @@
 /**
- * cocoro — Supabase Client
- * ブラウザ用 + サーバー用クライアント
+ * cocoro - Supabase Client
+ * Central Supabase instance with env variable validation
  */
 
-import { createBrowserClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Fallback for build-time prerendering when env vars are unavailable
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
+let supabaseInstance: SupabaseClient | null = null;
 
-/** Returns true only when REAL Supabase credentials are configured */
+export function getSupabase(): SupabaseClient {
+  if (supabaseInstance) return supabaseInstance;
+
+  // Support both VITE_ and NEXT_PUBLIC_ prefixes
+  const url = import.meta.env.VITE_SUPABASE_URL
+    || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key || url.includes('YOUR_PROJECT_ID')) {
+    console.warn('[cocoro] Supabase not configured. Running in offline/localStorage mode.');
+    supabaseInstance = createClient('https://placeholder.supabase.co', 'placeholder-key');
+    return supabaseInstance;
+  }
+
+  supabaseInstance = createClient(url, key, {
+    realtime: {
+      params: { eventsPerSecond: 30 },
+    },
+  });
+
+  return supabaseInstance;
+}
+
+/** Check if Supabase is properly configured */
 export function isSupabaseConfigured(): boolean {
-  return !SUPABASE_URL.includes('placeholder');
-}
-
-// ========== Browser Client (Client Components) ==========
-export function createSupabaseBrowser() {
-  return createBrowserClient<Database>(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
-}
-
-// ========== Server Client (Server Actions / API Routes) ==========
-export function createSupabaseServer() {
-  return createClient<Database>(
-    SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? SUPABASE_ANON_KEY,
-    { auth: { persistSession: false } }
-  );
-}
-
-// ========== Singleton for client-side ==========
-let browserClient: ReturnType<typeof createSupabaseBrowser> | null = null;
-
-export function getSupabase() {
-  if (typeof window === 'undefined') {
-    // Server-side: always create new client
-    return createSupabaseServer();
-  }
-  if (!browserClient) {
-    browserClient = createSupabaseBrowser();
-  }
-  return browserClient;
+  const url = import.meta.env.VITE_SUPABASE_URL
+    || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return !!(url && key && !url.includes('YOUR_PROJECT_ID'));
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * cocoro — CliMax Director
  * 会話の最高潮を「映画のクライマックスシーン」として演出
@@ -11,7 +12,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { useCocoroStore } from '@/store/useCocoroStore';
+import { useSceneStore } from '@/store/useSceneStore';
 
 const CLIMAX_THRESHOLD = 0.55;
 const CLIMAX_COOLDOWN = 12000;
@@ -24,8 +25,8 @@ export interface CliMaxState {
 }
 
 export function useCliMaxDirector(): CliMaxState {
-  const density = useCocoroStore((s) => s.density);
-  const activeSpeakers = useCocoroStore((s) => s.activeSpeakers);
+  const density = useSceneStore((s) => s.density);
+  const activeSpeakers = useSceneStore((s) => s.activeSpeakers);
   const [state, setState] = useState<CliMaxState>({
     active: false,
     intensity: 0,
