@@ -181,7 +181,7 @@ export function VoxelPendantLight({}: Props) {
   );
 }
 
-// === キャンドルセチE�� ===
+// === キャンドルセット ===
 export function VoxelCandleSet({}: Props) {
   const flame1 = useRef<THREE.Mesh>(null!);
   const flame2 = useRef<THREE.Mesh>(null!);
@@ -195,15 +195,12 @@ export function VoxelCandleSet({}: Props) {
   });
   return (
     <group>
-      {/* トレイ */}
       <NoisyBox size={[0.2, 0.02, 0.1]} position={[0, 0.01, 0]} color="#78350f" seed={680} />
-      {/* キャンドル1(太) */}
       <NoisyCylinder args={[0.025, 0.025, 0.12, 8]} position={[-0.04, 0.08, 0]} color="#fef3c7" seed={681} />
       <mesh ref={flame1} position={[-0.04, 0.16, 0]}>
         <sphereGeometry args={[0.012, 6, 6]} />
         <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={3} toneMapped={false} />
       </mesh>
-      {/* キャンドル2(細) */}
       <NoisyCylinder args={[0.018, 0.018, 0.08, 8]} position={[0.04, 0.06, 0]} color="#fef3c7" seed={682} />
       <mesh ref={flame2} position={[0.04, 0.12, 0]}>
         <sphereGeometry args={[0.01, 6, 6]} />
@@ -213,3 +210,226 @@ export function VoxelCandleSet({}: Props) {
     </group>
   );
 }
+
+// === ミラーボール ===
+export function VoxelDiscoBall({}: Props) {
+  const ballRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (ballRef.current) {
+      ballRef.current.rotation.y = clock.elapsedTime * 0.8;
+    }
+  });
+  return (
+    <group>
+      <NoisyCylinder args={[0.005, 0.005, 0.3, 4]} position={[0, 0.85, 0]} color="#999" seed={690} metalness={0.6} />
+      <mesh ref={ballRef} position={[0, 0.65, 0]} castShadow>
+        <sphereGeometry args={[0.15, 16, 12]} />
+        <meshStandardMaterial color="#e5e7eb" metalness={0.9} roughness={0.05} />
+      </mesh>
+      <pointLight position={[0, 0.65, 0]} color="#f472b6" intensity={1} distance={3} decay={2} />
+    </group>
+  );
+}
+
+// === スポットライト ===
+export function VoxelSpotLight({}: Props) {
+  return (
+    <group>
+      <NoisyCylinder args={[0.02, 0.02, 0.6, 6]} position={[0, 0.3, 0]} color="#555" seed={700} metalness={0.5} />
+      <NoisyBox size={[0.12, 0.02, 0.12]} position={[0, 0.01, 0]} color="#374151" seed={701} metalness={0.4} />
+      <NoisyCylinder args={[0.06, 0.04, 0.1, 8]} position={[0, 0.65, 0]} rotation={[0.3, 0, 0]} color="#1e293b" seed={702} metalness={0.3} />
+      <pointLight position={[0, 0.65, 0.1]} color="#fde68a" intensity={2} distance={3} decay={2} />
+    </group>
+  );
+}
+
+// === LEDストリップ (壁掛け) ===
+export function VoxelLEDStrip({}: Props) {
+  const ledRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (ledRef.current) {
+      const mat = ledRef.current.material as THREE.MeshStandardMaterial;
+      const hue = (clock.elapsedTime * 0.15) % 1;
+      mat.color.setHSL(hue, 0.9, 0.5);
+      mat.emissive.setHSL(hue, 0.9, 0.5);
+    }
+  });
+  return (
+    <group>
+      <mesh ref={ledRef} position={[0, 0, 0.01]}>
+        <boxGeometry args={[0.8, 0.02, 0.01]} />
+        <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={3} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+// === 提灯 ===
+export function VoxelPaperLantern({}: Props) {
+  return (
+    <group>
+      <NoisyCylinder args={[0.005, 0.005, 0.15, 4]} position={[0, 0.4, 0]} color="#333" seed={710} />
+      <NoisySphere args={[0.1, 10, 8]} position={[0, 0.25, 0]} color="#dc2626" seed={711} lightnessSpread={0.15} />
+      <NoisyBox size={[0.06, 0.02, 0.06]} position={[0, 0.35, 0]} color="#1e293b" seed={712} />
+      <NoisyBox size={[0.06, 0.02, 0.06]} position={[0, 0.15, 0]} color="#1e293b" seed={713} />
+      <pointLight position={[0, 0.25, 0]} color="#fbbf24" intensity={0.8} distance={1.5} decay={2} />
+    </group>
+  );
+}
+
+// === 光る瓶 ===
+export function VoxelFairyJar({}: Props) {
+  const glowRef = useRef<THREE.PointLight>(null!);
+  useFrame(({ clock }) => {
+    if (glowRef.current) {
+      glowRef.current.intensity = 0.5 + Math.sin(clock.elapsedTime * 2) * 0.3;
+    }
+  });
+  return (
+    <group>
+      <mesh position={[0, 0.08, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.05, 0.12, 8]} />
+        <meshStandardMaterial color="#e0f2fe" transparent opacity={0.3} roughness={0.05} />
+      </mesh>
+      <NoisyBox size={[0.06, 0.02, 0.06]} position={[0, 0.15, 0]} color="#78350f" seed={720} />
+      <EmissiveBox size={[0.02, 0.02, 0.02]} position={[0.01, 0.08, 0.01]} color="#fbbf24" emissiveIntensity={3} />
+      <EmissiveBox size={[0.015, 0.015, 0.015]} position={[-0.02, 0.1, -0.01]} color="#22c55e" emissiveIntensity={2} />
+      <pointLight ref={glowRef} position={[0, 0.08, 0]} color="#fbbf24" intensity={0.5} distance={1} decay={2} />
+    </group>
+  );
+}
+
+// === ムーンライト ===
+export function VoxelMoonLight({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.06, 0.02, 0.06]} position={[0, 0.01, 0]} color="#374151" seed={730} metalness={0.4} />
+      <NoisyCylinder args={[0.008, 0.008, 0.06, 4]} position={[0, 0.04, 0]} color="#555" seed={731} metalness={0.5} />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <sphereGeometry args={[0.08, 16, 12]} />
+        <meshStandardMaterial color="#fef3c7" emissive="#fde68a" emissiveIntensity={1.5} />
+      </mesh>
+      <pointLight position={[0, 0.15, 0]} color="#fde68a" intensity={1} distance={2} decay={2} />
+    </group>
+  );
+}
+
+// === スタープロジェクター ===
+export function VoxelStarProjector({}: Props) {
+  const projRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (projRef.current) {
+      projRef.current.rotation.y = clock.elapsedTime * 0.3;
+    }
+  });
+  return (
+    <group>
+      <NoisyBox size={[0.08, 0.02, 0.08]} position={[0, 0.01, 0]} color="#1e1b4b" seed={740} />
+      <NoisyCylinder args={[0.04, 0.03, 0.12, 8]} position={[0, 0.08, 0]} color="#1e293b" seed={741} />
+      <group ref={projRef} position={[0, 0.15, 0]}>
+        {[0, 60, 120, 180, 240, 300].map((deg, i) => {
+          const r = deg * Math.PI / 180;
+          return (
+            <EmissiveBox key={i} size={[0.005, 0.005, 0.04]}
+              position={[Math.cos(r) * 0.03, 0, Math.sin(r) * 0.03]}
+              rotation={[0, r, 0]}
+              color={['#fbbf24', '#67e8f9', '#f472b6', '#22c55e', '#a78bfa', '#fbbf24'][i]}
+              emissiveIntensity={3} />
+          );
+        })}
+      </group>
+      <pointLight position={[0, 0.15, 0]} color="#a78bfa" intensity={0.5} distance={3} decay={2} />
+    </group>
+  );
+}
+
+// === 暖炉 ===
+export function VoxelFireplace({}: Props) {
+  const flameRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (flameRef.current) {
+      const s = 1 + Math.sin(clock.elapsedTime * 5) * 0.15;
+      flameRef.current.scale.set(s, 1 + Math.sin(clock.elapsedTime * 7) * 0.2, s);
+    }
+  });
+  return (
+    <group>
+      {/* 外枠 */}
+      <NoisyBox size={[0.8, 0.7, 0.4]} position={[0, 0.35, 0]} color="#78350f" seed={750} lightnessSpread={0.15} />
+      {/* 内部 */}
+      <NoisyBox size={[0.55, 0.45, 0.3]} position={[0, 0.28, 0.06]} color="#1e1b4b" seed={751} />
+      {/* 薪 */}
+      <NoisyCylinder args={[0.04, 0.03, 0.35, 6]} position={[0, 0.12, 0.08]} rotation={[0, 0, Math.PI/2]} color="#92400e" seed={752} />
+      <NoisyCylinder args={[0.03, 0.025, 0.3, 6]} position={[0.05, 0.18, 0.08]} rotation={[0, 0.4, Math.PI/2]} color="#78350f" seed={753} />
+      {/* 炎 */}
+      <mesh ref={flameRef} position={[0, 0.28, 0.08]}>
+        <boxGeometry args={[0.15, 0.2, 0.08]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#f97316" emissiveIntensity={3} toneMapped={false} transparent opacity={0.8} />
+      </mesh>
+      <pointLight position={[0, 0.3, 0.2]} color="#f97316" intensity={2} distance={3} decay={2} />
+    </group>
+  );
+}
+
+// === 松明 (壁掛け) ===
+export function VoxelTorch({}: Props) {
+  const flameRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (flameRef.current) {
+      const s = 1 + Math.sin(clock.elapsedTime * 6) * 0.2;
+      flameRef.current.scale.set(s, 1 + Math.sin(clock.elapsedTime * 8) * 0.25, s);
+    }
+  });
+  return (
+    <group>
+      <NoisyBox size={[0.04, 0.2, 0.04]} position={[0, -0.05, 0]} color="#78350f" seed={760} lightnessSpread={0.2} />
+      <mesh ref={flameRef} position={[0, 0.1, 0.02]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#f97316" emissiveIntensity={3} toneMapped={false} />
+      </mesh>
+      <pointLight position={[0, 0.1, 0.05]} color="#f97316" intensity={1} distance={2} decay={2} />
+    </group>
+  );
+}
+
+// === ランタン ===
+export function VoxelLantern({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.08, 0.02, 0.08]} position={[0, 0.01, 0]} color="#374151" seed={770} metalness={0.5} />
+      <NoisyBox size={[0.06, 0.12, 0.06]} position={[0, 0.08, 0]} color="#fef3c7" seed={771} />
+      <NoisyBox size={[0.07, 0.02, 0.07]} position={[0, 0.15, 0]} color="#374151" seed={772} metalness={0.5} />
+      <NoisyBox size={[0.02, 0.03, 0.02]} position={[0, 0.175, 0]} color="#555" seed={773} metalness={0.5} />
+      <EmissiveBox size={[0.03, 0.06, 0.03]} position={[0, 0.08, 0]} color="#fbbf24" emissiveIntensity={2} />
+      <pointLight position={[0, 0.08, 0]} color="#fbbf24" intensity={0.6} distance={1.5} decay={2} />
+    </group>
+  );
+}
+
+// === ネオンイナズマ (壁掛け) ===
+export function VoxelNeonLightning({}: Props) {
+  const boltRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (boltRef.current) {
+      boltRef.current.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = 2 + Math.sin(clock.elapsedTime * 4) * 1;
+        }
+      });
+    }
+  });
+  return (
+    <group>
+      <NoisyBox size={[0.3, 0.4, 0.03]} position={[0, 0, 0]} color="#0f172a" seed={780} />
+      <group ref={boltRef}>
+        <EmissiveBox size={[0.06, 0.08, 0.025]} position={[0, 0.1, 0.02]} color="#eab308" emissiveIntensity={3} />
+        <EmissiveBox size={[0.06, 0.08, 0.025]} position={[-0.04, 0.02, 0.02]} color="#fbbf24" emissiveIntensity={3} />
+        <EmissiveBox size={[0.06, 0.08, 0.025]} position={[0.02, -0.06, 0.02]} color="#eab308" emissiveIntensity={3} />
+        <EmissiveBox size={[0.04, 0.06, 0.025]} position={[-0.02, -0.12, 0.02]} color="#fbbf24" emissiveIntensity={2.5} />
+      </group>
+      <pointLight position={[0, 0, 0.15]} color="#eab308" intensity={1.5} distance={2.5} decay={2} />
+    </group>
+  );
+}
+

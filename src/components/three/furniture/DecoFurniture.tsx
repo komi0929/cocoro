@@ -251,15 +251,184 @@ export function VoxelMiniFridge({}: Props) {
   return (
     <group>
       <NoisyBox size={[0.3, 0.5, 0.28]} position={[0, 0.25, 0]} color="#e2e8f0" seed={800} lightnessSpread={0.08} />
-      {/* ドア刁E��緁E*/}
       <NoisyBox size={[0.28, 0.005, 0.005]} position={[0, 0.35, 0.141]} color="#9ca3af" seed={801} />
-      {/* ハンドル */}
       <NoisyBox size={[0.02, 0.1, 0.02]} position={[0.12, 0.42, 0.15]} color="#6b7280" seed={802} metalness={0.5} />
       <NoisyBox size={[0.02, 0.08, 0.02]} position={[0.12, 0.2, 0.15]} color="#6b7280" seed={803} metalness={0.5} />
-      {/* スチE��カー */}
       <NoisyBox size={[0.06, 0.06, 0.003]} position={[-0.06, 0.42, 0.142]} color="#f43f5e" seed={804} />
       <NoisyBox size={[0.04, 0.04, 0.003]} position={[0.02, 0.25, 0.142]} color="#fbbf24" seed={805} />
       <NoisyBox size={[0.05, 0.05, 0.003]} position={[-0.08, 0.15, 0.142]} color="#3b82f6" seed={806} />
     </group>
   );
 }
+
+// === 水槽 ===
+export function VoxelFishTank({}: Props) {
+  const fishRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (fishRef.current) {
+      fishRef.current.position.x = Math.sin(clock.elapsedTime * 0.5) * 0.08;
+      fishRef.current.position.y = 0.15 + Math.sin(clock.elapsedTime * 0.8) * 0.02;
+    }
+  });
+  return (
+    <group>
+      {/* ガラス */}
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <boxGeometry args={[0.35, 0.22, 0.2]} />
+        <meshStandardMaterial color="#bfdbfe" transparent opacity={0.2} roughness={0.05} />
+      </mesh>
+      {/* 水 */}
+      <NoisyBox size={[0.33, 0.18, 0.18]} position={[0, 0.13, 0]} color="#1e40af" seed={810} lightnessSpread={0.15} />
+      {/* 砂利 */}
+      <NoisyBox size={[0.33, 0.03, 0.18]} position={[0, 0.055, 0]} color="#92400e" seed={811} lightnessSpread={0.3} />
+      {/* 魚 */}
+      <group ref={fishRef}>
+        <NoisyBox size={[0.04, 0.02, 0.01]} position={[0, 0.15, 0]} color="#f97316" seed={812} />
+      </group>
+      {/* 水草 */}
+      <NoisyBox size={[0.02, 0.1, 0.02]} position={[-0.1, 0.12, 0.04]} color="#22c55e" seed={813} />
+      <NoisyBox size={[0.02, 0.08, 0.02]} position={[0.08, 0.11, -0.03]} color="#16a34a" seed={814} />
+    </group>
+  );
+}
+
+// === ドリームキャッチャー (壁掛け) ===
+export function VoxelDreamCatcher({}: Props) {
+  return (
+    <group>
+      <mesh position={[0, 0, 0]}>
+        <torusGeometry args={[0.12, 0.008, 6, 16]} />
+        <meshStandardMaterial color="#92400e" roughness={0.7} />
+      </mesh>
+      {/* 網目 */}
+      {[0, 60, 120].map((deg, i) => {
+        const r = deg * Math.PI / 180;
+        return (
+          <mesh key={i} position={[0, 0, 0.005]} rotation={[0, 0, r]}>
+            <boxGeometry args={[0.003, 0.2, 0.003]} />
+            <meshStandardMaterial color="#d4a574" roughness={0.8} />
+          </mesh>
+        );
+      })}
+      {/* 羽根 */}
+      <NoisyBox size={[0.015, 0.08, 0.005]} position={[-0.06, -0.16, 0]} color="#67e8f9" seed={820} />
+      <NoisyBox size={[0.015, 0.1, 0.005]} position={[0, -0.18, 0]} color="#f472b6" seed={821} />
+      <NoisyBox size={[0.015, 0.07, 0.005]} position={[0.06, -0.15, 0]} color="#a78bfa" seed={822} />
+      {/* ビーズ */}
+      <NoisySphere args={[0.008, 6, 6]} position={[-0.06, -0.12, 0]} color="#fbbf24" seed={823} />
+      <NoisySphere args={[0.008, 6, 6]} position={[0, -0.13, 0]} color="#22c55e" seed={824} />
+      <NoisySphere args={[0.008, 6, 6]} position={[0.06, -0.11, 0]} color="#dc2626" seed={825} />
+    </group>
+  );
+}
+
+// === 姿見ミラー (壁掛け) ===
+export function VoxelMirror({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.35, 0.7, 0.03]} position={[0, 0, 0]} color="#78350f" seed={830} lightnessSpread={0.15} />
+      <mesh position={[0, 0, 0.016]}>
+        <boxGeometry args={[0.28, 0.6, 0.005]} />
+        <meshStandardMaterial color="#bfdbfe" metalness={0.8} roughness={0.05} />
+      </mesh>
+    </group>
+  );
+}
+
+// === フラッグ (壁掛け) ===
+export function VoxelFlag({ item }: Props) {
+  const colorMap: Record<string, string> = {
+    red: '#dc2626', blue: '#2563eb', green: '#16a34a', yellow: '#eab308',
+  };
+  const variant = item.colorVariant ?? 'red';
+  const flagColor = colorMap[variant] ?? colorMap.red;
+  return (
+    <group>
+      <NoisyBox size={[0.02, 0.35, 0.02]} position={[-0.12, 0, 0]} color="#78350f" seed={840} />
+      <NoisyBox size={[0.22, 0.15, 0.01]} position={[0.02, 0.08, 0.01]} color={flagColor} seed={841} lightnessSpread={0.15} />
+      {/* 模様 */}
+      <NoisyBox size={[0.06, 0.06, 0.005]} position={[0.02, 0.08, 0.02]} color="#fbbf24" seed={842} />
+    </group>
+  );
+}
+
+// === フォトフレーム (壁掛け) ===
+export function VoxelPhotoFrame({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.2, 0.25, 0.02]} position={[0, 0, 0]} color="#78350f" seed={850} lightnessSpread={0.15} />
+      <NoisyBox size={[0.15, 0.2, 0.005]} position={[0, 0, 0.011]} color="#e0e7ff" seed={851} lightnessSpread={0.08} />
+      {/* 写真の内容 */}
+      <NoisyBox size={[0.12, 0.08, 0.003]} position={[0, 0.03, 0.015]} color="#22c55e" seed={852} lightnessSpread={0.3} />
+      <NoisyBox size={[0.04, 0.06, 0.003]} position={[0, -0.03, 0.015]} color="#f472b6" seed={853} />
+    </group>
+  );
+}
+
+// === スノードーム ===
+export function VoxelSnowGlobe({}: Props) {
+  const snowRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (snowRef.current) {
+      snowRef.current.children.forEach((child, i) => {
+        if (child instanceof THREE.Mesh) {
+          child.position.y = 0.12 + Math.sin(clock.elapsedTime * 0.5 + i * 2) * 0.05;
+        }
+      });
+    }
+  });
+  return (
+    <group>
+      <NoisyBox size={[0.1, 0.03, 0.1]} position={[0, 0.015, 0]} color="#5c3a1e" seed={860} />
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <sphereGeometry args={[0.09, 12, 12]} />
+        <meshStandardMaterial color="#e0f2fe" transparent opacity={0.25} roughness={0.05} />
+      </mesh>
+      {/* 中の家 */}
+      <NoisyBox size={[0.03, 0.04, 0.03]} position={[0, 0.07, 0]} color="#dc2626" seed={861} />
+      {/* 雪 */}
+      <group ref={snowRef}>
+        <NoisySphere args={[0.005, 4, 4]} position={[0.02, 0.12, 0.02]} color="#f5f5f4" seed={862} />
+        <NoisySphere args={[0.004, 4, 4]} position={[-0.03, 0.14, -0.01]} color="#f5f5f4" seed={863} />
+        <NoisySphere args={[0.005, 4, 4]} position={[0.01, 0.16, -0.03]} color="#f5f5f4" seed={864} />
+      </group>
+    </group>
+  );
+}
+
+// === オルゴール ===
+export function VoxelMusicBox({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.15, 0.05, 0.1]} position={[0, 0.025, 0]} color="#78350f" seed={870} lightnessSpread={0.15} />
+      {/* 蓋(開いた状態) */}
+      <NoisyBox size={[0.14, 0.005, 0.09]} position={[0, 0.06, -0.045]} rotation={[-0.5, 0, 0]} color="#92400e" seed={871} />
+      {/* シリンダー */}
+      <NoisyCylinder args={[0.015, 0.015, 0.1, 8]} position={[0, 0.04, 0.01]} rotation={[0, 0, Math.PI / 2]} color="#fbbf24" seed={872} metalness={0.5} />
+      {/* 内張 */}
+      <NoisyBox size={[0.12, 0.005, 0.07]} position={[0, 0.05, 0.01]} color="#7c3aed" seed={873} />
+    </group>
+  );
+}
+
+// === 盆栽 ===
+export function VoxelBonsai({}: Props) {
+  return (
+    <group>
+      {/* 鉢 */}
+      <NoisyBox size={[0.14, 0.06, 0.1]} position={[0, 0.03, 0]} color="#78350f" seed={880} lightnessSpread={0.2} />
+      {/* 土 */}
+      <NoisyBox size={[0.12, 0.02, 0.08]} position={[0, 0.07, 0]} color="#5c3a1e" seed={881} lightnessSpread={0.25} />
+      {/* 幹 */}
+      <NoisyBox size={[0.03, 0.12, 0.03]} position={[0, 0.14, 0]} color="#92400e" seed={882} lightnessSpread={0.18} />
+      {/* 枝 */}
+      <NoisyBox size={[0.08, 0.02, 0.02]} position={[0.05, 0.18, 0]} rotation={[0, 0, -0.3]} color="#78350f" seed={883} />
+      <NoisyBox size={[0.06, 0.02, 0.02]} position={[-0.04, 0.22, 0]} rotation={[0, 0, 0.4]} color="#78350f" seed={884} />
+      {/* 葉 */}
+      <NoisySphere args={[0.06, 8, 6]} position={[0.06, 0.22, 0]} color="#16a34a" seed={885} lightnessSpread={0.25} />
+      <NoisySphere args={[0.05, 8, 6]} position={[-0.05, 0.25, 0]} color="#15803d" seed={886} lightnessSpread={0.25} />
+      <NoisySphere args={[0.04, 6, 6]} position={[0, 0.28, 0.02]} color="#22c55e" seed={887} lightnessSpread={0.25} />
+    </group>
+  );
+}
+

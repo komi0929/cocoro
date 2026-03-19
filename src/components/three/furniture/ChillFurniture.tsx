@@ -288,3 +288,152 @@ export function VoxelCactus({}: Props) {
     </group>
   );
 }
+
+// === こたつ ===
+export function VoxelKotatsu({}: Props) {
+  return (
+    <group>
+      {/* テーブル天板 */}
+      <NoisyBox size={[0.8, 0.04, 0.6]} position={[0, 0.32, 0]} color="#78350f" seed={200} lightnessSpread={0.15} />
+      {/* 布団 (天板より大きい) */}
+      <NoisyBox size={[0.9, 0.06, 0.7]} position={[0, 0.26, 0]} color="#dc2626" seed={201} lightnessSpread={0.18} />
+      {/* テーブル脚 x4 */}
+      {[[-0.3, 0.13, -0.2], [0.3, 0.13, -0.2], [-0.3, 0.13, 0.2], [0.3, 0.13, 0.2]].map((p, i) => (
+        <NoisyBox key={i} size={[0.05, 0.22, 0.05]} position={p as [number,number,number]} color="#5c3a1e" seed={202+i} />
+      ))}
+      {/* みかん */}
+      <NoisySphere args={[0.04, 8, 6]} position={[0.1, 0.37, 0.05]} color="#f97316" seed={206} />
+    </group>
+  );
+}
+
+// === ロッキングチェア ===
+export function VoxelRockingChair({}: Props) {
+  return (
+    <group>
+      {/* 座面 */}
+      <NoisyBox size={[0.35, 0.04, 0.35]} position={[0, 0.3, 0]} color="#78350f" seed={210} lightnessSpread={0.15} />
+      {/* 背もたれ */}
+      <NoisyBox size={[0.35, 0.35, 0.04]} position={[0, 0.5, -0.15]} color="#92400e" seed={211} />
+      {/* 肘掛け */}
+      <NoisyBox size={[0.04, 0.12, 0.3]} position={[-0.17, 0.38, 0]} color="#78350f" seed={212} />
+      <NoisyBox size={[0.04, 0.12, 0.3]} position={[0.17, 0.38, 0]} color="#78350f" seed={213} />
+      {/* ロッカー(曲線の脚) */}
+      <NoisyBox size={[0.04, 0.04, 0.5]} position={[-0.15, 0.04, 0]} color="#5c3a1e" seed={214} />
+      <NoisyBox size={[0.04, 0.04, 0.5]} position={[0.15, 0.04, 0]} color="#5c3a1e" seed={215} />
+    </group>
+  );
+}
+
+// === デイベッド ===
+export function VoxelDaybed({ item }: Props) {
+  const c = getSofaColors(item);
+  return (
+    <group>
+      {/* マットレス */}
+      <NoisyBox size={[1.0, 0.15, 0.5]} position={[0, 0.2, 0]} color={c.main} seed={220} lightnessSpread={0.14} />
+      {/* 背もたれ（片側のみ） */}
+      <NoisyBox size={[1.0, 0.2, 0.08]} position={[0, 0.35, -0.2]} color={c.back} seed={221} />
+      {/* 肘掛け（片方） */}
+      <NoisyBox size={[0.08, 0.18, 0.5]} position={[-0.48, 0.25, 0]} color={c.arm} seed={222} />
+      {/* クッション */}
+      <NoisyBox size={[0.2, 0.1, 0.18]} position={[-0.3, 0.32, 0]} color={c.cushionA} seed={223} />
+      {/* 脚 */}
+      {[[-0.4, 0.05, -0.18], [0.4, 0.05, -0.18], [-0.4, 0.05, 0.18], [0.4, 0.05, 0.18]].map((p, i) => (
+        <NoisyCylinder key={i} args={[0.02, 0.02, 0.1, 6]} position={p as [number,number,number]} color="#1e1b4b" seed={224+i} metalness={0.4} />
+      ))}
+    </group>
+  );
+}
+
+// === ブランケット ===
+export function VoxelBlanket({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.5, 0.04, 0.35]} position={[0, 0.02, 0]} color="#f472b6" seed={230} lightnessSpread={0.2} />
+      <NoisyBox size={[0.4, 0.03, 0.3]} position={[0.02, 0.055, -0.01]} color="#f9a8d4" seed={231} lightnessSpread={0.15} />
+      <NoisyBox size={[0.3, 0.02, 0.2]} position={[0.04, 0.075, -0.02]} color="#fce7f3" seed={232} />
+    </group>
+  );
+}
+
+// === 枕の山 ===
+export function VoxelPillowPile({ item }: Props) {
+  const colorMap: Record<string, string[]> = {
+    cyan: ['#06b6d4', '#67e8f9', '#a5f3fc'],
+    pink: ['#ec4899', '#f9a8d4', '#fce7f3'],
+    yellow: ['#eab308', '#fde68a', '#fef9c3'],
+    lavender: ['#8b5cf6', '#c4b5fd', '#ede9fe'],
+  };
+  const variant = item.colorVariant ?? 'cyan';
+  const cols = colorMap[variant] ?? colorMap.cyan;
+  return (
+    <group>
+      <NoisyBox size={[0.25, 0.12, 0.2]} position={[-0.1, 0.06, 0]} color={cols[0]} seed={240} />
+      <NoisyBox size={[0.22, 0.1, 0.18]} position={[0.1, 0.05, 0.03]} color={cols[1]} seed={241} />
+      <NoisyBox size={[0.2, 0.1, 0.16]} position={[0, 0.14, 0]} rotation={[0, 0.4, 0]} color={cols[2]} seed={242} />
+    </group>
+  );
+}
+
+// === 寝袋 ===
+export function VoxelSleepingBag({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.35, 0.1, 0.8]} position={[0, 0.05, 0]} color="#16a34a" seed={250} lightnessSpread={0.18} />
+      <NoisyBox size={[0.3, 0.08, 0.15]} position={[0, 0.12, -0.35]} color="#15803d" seed={251} />
+      {/* ジッパーライン */}
+      <NoisyBox size={[0.02, 0.005, 0.7]} position={[0.12, 0.105, 0.03]} color="#fbbf24" seed={252} />
+    </group>
+  );
+}
+
+// === スイングチェア ===
+export function VoxelSwingChair({}: Props) {
+  return (
+    <group>
+      {/* フレーム */}
+      <NoisyCylinder args={[0.02, 0.02, 1.4, 6]} position={[0, 0.7, 0]} color="#64748b" seed={260} metalness={0.5} />
+      {/* チェーン */}
+      <NoisyBox size={[0.02, 0.4, 0.02]} position={[0, 1.2, 0]} color="#94a3b8" seed={261} metalness={0.6} />
+      {/* シート（卵型） */}
+      <NoisySphere args={[0.3, 10, 8]} position={[0, 0.55, 0]} color="#e2e8f0" seed={262} lightnessSpread={0.1} />
+      {/* クッション */}
+      <NoisySphere args={[0.2, 8, 6]} position={[0, 0.45, 0.05]} color="#f472b6" seed={263} />
+    </group>
+  );
+}
+
+// === 布団セット ===
+export function VoxelFuton({ item }: Props) {
+  const variant = item.colorVariant ?? 'purple';
+  const colorMap: Record<string, { mattress: string; blanket: string; pillow: string }> = {
+    purple: { mattress: '#f5f5f4', blanket: '#6d28d9', pillow: '#f472b6' },
+    blue: { mattress: '#f5f5f4', blanket: '#1d4ed8', pillow: '#67e8f9' },
+    pink: { mattress: '#f5f5f4', blanket: '#db2777', pillow: '#fde68a' },
+    green: { mattress: '#f5f5f4', blanket: '#15803d', pillow: '#86efac' },
+  };
+  const c = colorMap[variant] ?? colorMap.purple;
+  return (
+    <group>
+      {/* 敷布団 */}
+      <NoisyBox size={[0.5, 0.06, 0.9]} position={[0, 0.03, 0]} color={c.mattress} seed={270} lightnessSpread={0.1} />
+      {/* 掛け布団 */}
+      <NoisyBox size={[0.48, 0.08, 0.6]} position={[0, 0.08, 0.1]} color={c.blanket} seed={271} lightnessSpread={0.18} />
+      {/* 枕 */}
+      <NoisyBox size={[0.3, 0.06, 0.15]} position={[0, 0.08, -0.35]} color={c.pillow} seed={272} />
+    </group>
+  );
+}
+
+// === ヨガマット ===
+export function VoxelFloorMat({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.4, 0.02, 1.0]} position={[0, 0.01, 0]} color="#7c3aed" seed={280} lightnessSpread={0.15} />
+      {/* 巻いた端 */}
+      <NoisyCylinder args={[0.03, 0.03, 0.4, 8]} position={[0, 0.04, 0.48]} rotation={[0, 0, Math.PI / 2]} color="#6d28d9" seed={281} />
+    </group>
+  );
+}
+

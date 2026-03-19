@@ -1,6 +1,6 @@
 /**
- * cocoro  — Voxel Furniture Factory Phase 4.5
- * 50+ furniture routing with color variant + selection highlight
+ * cocoro — Voxel Furniture Factory Phase 5
+ * 100 furniture routing with color variant + selection highlight
  */
 
 import React, { Suspense } from 'react';
@@ -8,10 +8,11 @@ import type { FurnitureItem } from '@/types/cocoro';
 
 // --- チル系 ---
 import {
-  VoxelBed, VoxelSofa,
-  VoxelLSofa, VoxelBeanbag, VoxelHammock,
+  VoxelBed, VoxelSofa, VoxelLSofa, VoxelBeanbag, VoxelHammock,
   VoxelRug, VoxelRugRound, VoxelRugStripe,
   VoxelCushion, VoxelTable, VoxelLowTable, VoxelCactus,
+  VoxelKotatsu, VoxelRockingChair, VoxelDaybed, VoxelBlanket,
+  VoxelPillowPile, VoxelSleepingBag, VoxelSwingChair, VoxelFuton, VoxelFloorMat,
 } from './ChillFurniture';
 
 // --- 遊び系 ---
@@ -19,6 +20,8 @@ import {
   VoxelArcade, VoxelSkateboard, VoxelDJBooth, VoxelPizzaBox,
   VoxelBasketball, VoxelGuitar, VoxelBoombox,
   VoxelBigSpeaker, VoxelPinball, VoxelVinylPlayer, VoxelFoamSword,
+  VoxelDartBoard, VoxelPoolTable, VoxelKaraokeMic, VoxelDrumSet,
+  VoxelSoccerBall, VoxelBoardGame, VoxelVRHeadset, VoxelTrampoline, VoxelPunchingBag,
 } from './PlayFurniture';
 
 // --- デスク系 ---
@@ -26,6 +29,8 @@ import {
   VoxelDesk, VoxelGamingChair, VoxelMonitor, VoxelMonitorDual,
   VoxelGamingPC, VoxelSteelRack, VoxelChair, VoxelShelf,
   VoxelFilingCabinet, VoxelWhiteboard,
+  VoxelLaptop, VoxelTabletStand, VoxelDeskOrganizer, VoxelKeyboard,
+  VoxelMousePad, VoxelWebcam, VoxelHeadsetStand, VoxelCableBox, VoxelStandingDesk,
 } from './DeskFurniture';
 
 // --- 照明系 ---
@@ -33,6 +38,9 @@ import {
   VoxelLamp, VoxelFloorLamp, VoxelNeonSign, VoxelNeonHeart,
   VoxelNeonStar, VoxelLavaLamp, VoxelStringLights,
   VoxelPendantLight, VoxelCandleSet,
+  VoxelDiscoBall, VoxelSpotLight, VoxelLEDStrip, VoxelPaperLantern,
+  VoxelFairyJar, VoxelMoonLight, VoxelStarProjector,
+  VoxelFireplace, VoxelTorch, VoxelLantern, VoxelNeonLightning,
 } from './LightFurniture';
 
 // --- デコ系 ---
@@ -41,6 +49,8 @@ import {
   VoxelPlant, VoxelPlantTall, VoxelPlantHanging,
   VoxelTerrarium, VoxelGlobe, VoxelTrophy, VoxelClock,
   VoxelVinylRecord, VoxelMiniFridge,
+  VoxelFishTank, VoxelDreamCatcher, VoxelMirror, VoxelFlag,
+  VoxelPhotoFrame, VoxelSnowGlobe, VoxelMusicBox, VoxelBonsai,
 } from './DecoFurniture';
 
 interface Props {
@@ -50,10 +60,9 @@ interface Props {
 }
 
 const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
-  // チル系
+  // チル系 (20)
   bed: VoxelBed,
   sofa: VoxelSofa,
-  // Backward compat: old color-specific sofa types route to unified VoxelSofa
   sofa_red: VoxelSofa,
   sofa_green: VoxelSofa,
   l_sofa: VoxelLSofa,
@@ -66,8 +75,17 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   table: VoxelTable,
   low_table: VoxelLowTable,
   cactus: VoxelCactus,
+  kotatsu: VoxelKotatsu,
+  rocking_chair: VoxelRockingChair,
+  daybed: VoxelDaybed,
+  blanket: VoxelBlanket,
+  pillow_pile: VoxelPillowPile,
+  sleeping_bag: VoxelSleepingBag,
+  swing_chair: VoxelSwingChair,
+  futon: VoxelFuton,
+  floor_mat: VoxelFloorMat,
 
-  // 遊び系
+  // 遊び系 (20)
   arcade: VoxelArcade,
   skateboard: VoxelSkateboard,
   dj_booth: VoxelDJBooth,
@@ -79,8 +97,17 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   pinball: VoxelPinball,
   vinyl_player: VoxelVinylPlayer,
   foam_sword: VoxelFoamSword,
+  dart_board: VoxelDartBoard,
+  pool_table: VoxelPoolTable,
+  karaoke_mic: VoxelKaraokeMic,
+  drum_set: VoxelDrumSet,
+  soccer_ball: VoxelSoccerBall,
+  board_game: VoxelBoardGame,
+  vr_headset: VoxelVRHeadset,
+  trampoline: VoxelTrampoline,
+  punching_bag: VoxelPunchingBag,
 
-  // デスク系
+  // デスク系 (20)
   desk: VoxelDesk,
   gaming_chair: VoxelGamingChair,
   monitor: VoxelMonitor,
@@ -91,8 +118,17 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   shelf: VoxelShelf,
   filing_cabinet: VoxelFilingCabinet,
   whiteboard: VoxelWhiteboard,
+  laptop: VoxelLaptop,
+  tablet_stand: VoxelTabletStand,
+  desk_organizer: VoxelDeskOrganizer,
+  keyboard: VoxelKeyboard,
+  mouse_pad: VoxelMousePad,
+  webcam: VoxelWebcam,
+  headset_stand: VoxelHeadsetStand,
+  cable_box: VoxelCableBox,
+  standing_desk: VoxelStandingDesk,
 
-  // 照明系
+  // 照明系 (20)
   lamp: VoxelLamp,
   floor_lamp: VoxelFloorLamp,
   neon_sign: VoxelNeonSign,
@@ -102,8 +138,19 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   string_lights: VoxelStringLights,
   pendant_light: VoxelPendantLight,
   candle_set: VoxelCandleSet,
+  disco_ball: VoxelDiscoBall,
+  spot_light: VoxelSpotLight,
+  led_strip: VoxelLEDStrip,
+  paper_lantern: VoxelPaperLantern,
+  fairy_jar: VoxelFairyJar,
+  moon_light: VoxelMoonLight,
+  star_projector: VoxelStarProjector,
+  fireplace: VoxelFireplace,
+  torch: VoxelTorch,
+  lantern: VoxelLantern,
+  neon_lightning: VoxelNeonLightning,
 
-  // デコ系
+  // デコ系 (20)
   poster: VoxelPoster,
   poster_frame: VoxelPosterFrame,
   wall_shelf: VoxelWallShelf,
@@ -116,6 +163,14 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
   clock: VoxelClock,
   vinyl_record: VoxelVinylRecord,
   mini_fridge: VoxelMiniFridge,
+  fish_tank: VoxelFishTank,
+  dream_catcher: VoxelDreamCatcher,
+  mirror: VoxelMirror,
+  flag: VoxelFlag,
+  photo_frame: VoxelPhotoFrame,
+  snow_globe: VoxelSnowGlobe,
+  music_box: VoxelMusicBox,
+  bonsai: VoxelBonsai,
 };
 
 export function VoxelFurniture({ item, onClick, isSelected }: Props) {
@@ -146,7 +201,6 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
                 toneMapped={false}
               />
             </mesh>
-            {/* 上部インジケーター */}
             <mesh position={[0, 1.2, 0]}>
               <sphereGeometry args={[0.04, 8, 8]} />
               <meshStandardMaterial

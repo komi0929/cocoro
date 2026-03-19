@@ -282,3 +282,179 @@ export function VoxelFoamSword({}: Props) {
     </group>
   );
 }
+
+// === ダーツボード (壁掛け) ===
+export function VoxelDartBoard({}: Props) {
+  return (
+    <group>
+      <mesh position={[0, 0, 0]} castShadow>
+        <circleGeometry args={[0.2, 20]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+      </mesh>
+      {/* リングス */}
+      {[0.18, 0.14, 0.1, 0.06].map((r, i) => (
+        <mesh key={i} position={[0, 0, 0.004 + i * 0.001]}>
+          <ringGeometry args={[r - 0.03, r, 20]} />
+          <meshStandardMaterial color={['#dc2626', '#22c55e', '#dc2626', '#22c55e'][i]} roughness={0.6} />
+        </mesh>
+      ))}
+      {/* ブル */}
+      <mesh position={[0, 0, 0.01]}>
+        <circleGeometry args={[0.02, 12]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.5} />
+      </mesh>
+      {/* ダーツ */}
+      <NoisyBox size={[0.01, 0.01, 0.08]} position={[0.05, 0.03, 0.04]} rotation={[Math.PI * 0.1, 0, 0]} color="#fbbf24" seed={320} />
+    </group>
+  );
+}
+
+// === ビリヤード台 ===
+export function VoxelPoolTable({}: Props) {
+  return (
+    <group>
+      {/* テーブル */}
+      <NoisyBox size={[1.2, 0.08, 0.7]} position={[0, 0.5, 0]} color="#15803d" seed={330} lightnessSpread={0.12} />
+      {/* フレーム */}
+      <NoisyBox size={[1.25, 0.12, 0.04]} position={[0, 0.48, 0.34]} color="#78350f" seed={331} />
+      <NoisyBox size={[1.25, 0.12, 0.04]} position={[0, 0.48, -0.34]} color="#78350f" seed={332} />
+      <NoisyBox size={[0.04, 0.12, 0.7]} position={[0.6, 0.48, 0]} color="#78350f" seed={333} />
+      <NoisyBox size={[0.04, 0.12, 0.7]} position={[-0.6, 0.48, 0]} color="#78350f" seed={334} />
+      {/* 脚 */}
+      {[[-0.5, 0.21, -0.25], [0.5, 0.21, -0.25], [-0.5, 0.21, 0.25], [0.5, 0.21, 0.25]].map((p, i) => (
+        <NoisyBox key={i} size={[0.08, 0.42, 0.08]} position={p as [number,number,number]} color="#5c3a1e" seed={335+i} />
+      ))}
+      {/* ボール */}
+      {[[-0.2, 0.57, 0], [0.1, 0.57, 0.05], [0.15, 0.57, -0.08]].map((p, i) => (
+        <NoisySphere key={i} args={[0.02, 8, 6]} position={p as [number,number,number]} color={['#fbbf24', '#dc2626', '#1e40af'][i]} seed={340+i} />
+      ))}
+    </group>
+  );
+}
+
+// === カラオケマイク ===
+export function VoxelKaraokeMic({}: Props) {
+  return (
+    <group>
+      {/* スタンド */}
+      <NoisyBox size={[0.15, 0.02, 0.15]} position={[0, 0.01, 0]} color="#333" seed={350} metalness={0.5} />
+      <NoisyCylinder args={[0.015, 0.015, 0.9, 6]} position={[0, 0.46, 0]} color="#555" seed={351} metalness={0.5} />
+      {/* マイク */}
+      <NoisySphere args={[0.04, 8, 8]} position={[0, 0.95, 0]} color="#374151" seed={352} />
+      <NoisyCylinder args={[0.02, 0.02, 0.08, 6]} position={[0, 0.88, 0]} color="#555" seed={353} metalness={0.5} />
+    </group>
+  );
+}
+
+// === ドラムセット ===
+export function VoxelDrumSet({}: Props) {
+  return (
+    <group>
+      {/* バスドラム */}
+      <NoisyCylinder args={[0.2, 0.2, 0.15, 12]} position={[0, 0.2, 0]} rotation={[Math.PI/2, 0, 0]} color="#dc2626" seed={360} />
+      {/* スネア */}
+      <NoisyCylinder args={[0.1, 0.1, 0.06, 10]} position={[-0.2, 0.4, 0.15]} color="#e5e7eb" seed={361} metalness={0.4} />
+      {/* ハイハット */}
+      <NoisyCylinder args={[0.08, 0.08, 0.01, 10]} position={[-0.35, 0.5, 0.1]} color="#fbbf24" seed={362} metalness={0.6} />
+      <NoisyCylinder args={[0.01, 0.01, 0.5, 4]} position={[-0.35, 0.25, 0.1]} color="#999" seed={363} metalness={0.5} />
+      {/* ハイタム */}
+      <NoisyCylinder args={[0.08, 0.08, 0.06, 10]} position={[0.15, 0.38, 0.1]} color="#dc2626" seed={364} />
+      {/* シンバル */}
+      <NoisyCylinder args={[0.12, 0.12, 0.01, 12]} position={[0.3, 0.55, 0]} color="#eab308" seed={365} metalness={0.6} />
+      <NoisyCylinder args={[0.01, 0.01, 0.55, 4]} position={[0.3, 0.27, 0]} color="#999" seed={366} metalness={0.5} />
+    </group>
+  );
+}
+
+// === サッカーボール ===
+export function VoxelSoccerBall({}: Props) {
+  return (
+    <group>
+      <NoisySphere args={[0.12, 12, 12]} position={[0, 0.12, 0]} color="#f5f5f4" seed={370} lightnessSpread={0.08} />
+      {/* 黒パッチ */}
+      {[[0, 0.24, 0], [0.08, 0.12, 0.08], [-0.08, 0.12, -0.08]].map((p, i) => (
+        <mesh key={i} position={p as [number,number,number]}>
+          <boxGeometry args={[0.04, 0.04, 0.04]} />
+          <meshStandardMaterial color="#1e1b4b" roughness={0.6} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// === ボードゲーム ===
+export function VoxelBoardGame({}: Props) {
+  return (
+    <group>
+      {/* ボード */}
+      <NoisyBox size={[0.35, 0.02, 0.35]} position={[0, 0.01, 0]} color="#78350f" seed={380} lightnessSpread={0.15} />
+      {/* グリッド */}
+      <NoisyBox size={[0.3, 0.005, 0.3]} position={[0, 0.02, 0]} color="#fef3c7" seed={381} />
+      {/* コマ */}
+      <NoisyCylinder args={[0.02, 0.02, 0.03, 6]} position={[-0.08, 0.04, 0.05]} color="#dc2626" seed={382} />
+      <NoisyCylinder args={[0.02, 0.02, 0.03, 6]} position={[0.06, 0.04, -0.08]} color="#3b82f6" seed={383} />
+      <NoisyCylinder args={[0.02, 0.02, 0.03, 6]} position={[0.1, 0.04, 0.1]} color="#22c55e" seed={384} />
+      {/* サイコロ */}
+      <NoisyBox size={[0.03, 0.03, 0.03]} position={[0.15, 0.025, 0.15]} color="#f5f5f4" seed={385} />
+    </group>
+  );
+}
+
+// === VRヘッドセット ===
+export function VoxelVRHeadset({}: Props) {
+  return (
+    <group>
+      {/* スタンド */}
+      <NoisyBox size={[0.1, 0.02, 0.1]} position={[0, 0.01, 0]} color="#374151" seed={390} metalness={0.4} />
+      <NoisyCylinder args={[0.015, 0.015, 0.2, 6]} position={[0, 0.12, 0]} color="#555" seed={391} metalness={0.5} />
+      {/* ヘッドセット */}
+      <NoisyBox size={[0.16, 0.1, 0.1]} position={[0, 0.27, 0]} color="#1e1b4b" seed={392} />
+      {/* レンズ部分 */}
+      <NoisyBox size={[0.14, 0.06, 0.02]} position={[0, 0.27, 0.06]} color="#0f172a" seed={393} />
+      {/* バンド */}
+      <NoisyBox size={[0.16, 0.03, 0.005]} position={[0, 0.32, -0.04]} color="#374151" seed={394} />
+    </group>
+  );
+}
+
+// === トランポリン ===
+export function VoxelTrampoline({}: Props) {
+  return (
+    <group>
+      {/* フレーム（円形） */}
+      <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.35, 0.03, 8, 16]} />
+        <meshStandardMaterial color="#374151" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {/* マット */}
+      <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.33, 16]} />
+        <meshStandardMaterial color="#1e1b4b" roughness={0.8} />
+      </mesh>
+      {/* 脚 */}
+      {[0, 120, 240].map((deg, i) => {
+        const r = deg * Math.PI / 180;
+        return (
+          <NoisyCylinder key={i} args={[0.02, 0.02, 0.15, 6]}
+            position={[Math.cos(r) * 0.3, 0.07, Math.sin(r) * 0.3]}
+            color="#555" seed={396+i} metalness={0.5} />
+        );
+      })}
+    </group>
+  );
+}
+
+// === パンチングバッグ ===
+export function VoxelPunchingBag({}: Props) {
+  return (
+    <group>
+      {/* ベース */}
+      <NoisyCylinder args={[0.2, 0.25, 0.06, 12]} position={[0, 0.03, 0]} color="#374151" seed={400} metalness={0.4} />
+      {/* ポール */}
+      <NoisyCylinder args={[0.02, 0.02, 0.8, 6]} position={[0, 0.43, 0]} color="#999" seed={401} metalness={0.6} />
+      {/* バッグ */}
+      <NoisyCylinder args={[0.12, 0.1, 0.35, 10]} position={[0, 1.0, 0]} color="#dc2626" seed={402} lightnessSpread={0.15} />
+    </group>
+  );
+}
+

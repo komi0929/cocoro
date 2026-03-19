@@ -186,7 +186,7 @@ export function VoxelFilingCabinet({}: Props) {
   );
 }
 
-// === ホワイト�EーチE===
+// === ホワイトボード ===
 export function VoxelWhiteboard({}: Props) {
   return (
     <group>
@@ -195,11 +195,171 @@ export function VoxelWhiteboard({}: Props) {
       <NoisyBox size={[0.84, 0.04, 0.04]} position={[0, -0.01, 0]} color="#94a3b8" seed={502} metalness={0.3} />
       <NoisyBox size={[0.04, 0.52, 0.04]} position={[-0.4, 0.25, 0]} color="#94a3b8" seed={503} metalness={0.3} />
       <NoisyBox size={[0.04, 0.52, 0.04]} position={[0.4, 0.25, 0]} color="#94a3b8" seed={504} metalness={0.3} />
-      {/* マ�Eカートレイ */}
       <NoisyBox size={[0.4, 0.03, 0.05]} position={[0, -0.02, 0.03]} color="#64748b" seed={505} metalness={0.4} />
-      {/* マ�Eカー */}
       <NoisyCylinder args={[0.008, 0.008, 0.08, 6]} position={[-0.08, 0.0, 0.03]} rotation={[0, 0, Math.PI / 2]} color="#dc2626" seed={506} />
       <NoisyCylinder args={[0.008, 0.008, 0.08, 6]} position={[0.02, 0.0, 0.03]} rotation={[0, 0, Math.PI / 2]} color="#3b82f6" seed={507} />
     </group>
   );
 }
+
+// === ノートPC ===
+export function VoxelLaptop({}: Props) {
+  return (
+    <group>
+      {/* ベース */}
+      <NoisyBox size={[0.3, 0.02, 0.2]} position={[0, 0.01, 0]} color="#374151" seed={510} metalness={0.3} />
+      {/* キーボード面 */}
+      <NoisyBox size={[0.26, 0.005, 0.14]} position={[0, 0.02, 0.02]} color="#1e293b" seed={511} />
+      {/* スクリーン */}
+      <NoisyBox size={[0.3, 0.2, 0.01]} position={[0, 0.12, -0.09]} rotation={[-0.2, 0, 0]} color="#1e293b" seed={512} />
+      <EmissiveBox size={[0.26, 0.16, 0.005]} position={[0, 0.12, -0.085]} rotation={[-0.2, 0, 0]} color="#60a5fa" emissiveIntensity={1.2} />
+      <pointLight position={[0, 0.12, 0.1]} color="#60a5fa" intensity={0.3} distance={1} decay={2} />
+    </group>
+  );
+}
+
+// === タブレットスタンド ===
+export function VoxelTabletStand({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.1, 0.02, 0.08]} position={[0, 0.01, 0]} color="#374151" seed={520} metalness={0.4} />
+      <NoisyBox size={[0.06, 0.12, 0.02]} position={[0, 0.07, -0.02]} rotation={[-0.15, 0, 0]} color="#555" seed={521} metalness={0.4} />
+      {/* タブレット */}
+      <NoisyBox size={[0.15, 0.22, 0.01]} position={[0, 0.16, -0.03]} rotation={[-0.15, 0, 0]} color="#1e1b4b" seed={522} />
+      <EmissiveBox size={[0.13, 0.19, 0.005]} position={[0, 0.16, -0.025]} rotation={[-0.15, 0, 0]} color="#a78bfa" emissiveIntensity={0.8} />
+    </group>
+  );
+}
+
+// === デスクオーガナイザー ===
+export function VoxelDeskOrganizer({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.2, 0.1, 0.1]} position={[0, 0.05, 0]} color="#78350f" seed={530} lightnessSpread={0.15} />
+      {/* 仕切り */}
+      <NoisyBox size={[0.01, 0.1, 0.1]} position={[-0.05, 0.05, 0]} color="#5c3a1e" seed={531} />
+      {/* ペン */}
+      <NoisyCylinder args={[0.006, 0.006, 0.12, 4]} position={[-0.08, 0.11, 0]} color="#dc2626" seed={532} />
+      <NoisyCylinder args={[0.006, 0.006, 0.1, 4]} position={[-0.06, 0.1, 0.02]} color="#3b82f6" seed={533} />
+      <NoisyCylinder args={[0.006, 0.006, 0.11, 4]} position={[0.06, 0.105, 0]} color="#22c55e" seed={534} />
+      {/* はさみ */}
+      <NoisyBox size={[0.04, 0.08, 0.01]} position={[0.08, 0.09, 0]} color="#9ca3af" seed={535} metalness={0.5} />
+    </group>
+  );
+}
+
+// === メカニカルキーボード ===
+export function VoxelKeyboard({}: Props) {
+  const ledRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (ledRef.current) {
+      const mat = ledRef.current.material as THREE.MeshStandardMaterial;
+      const hue = (clock.elapsedTime * 0.3) % 1;
+      mat.color.setHSL(hue, 0.8, 0.5);
+      mat.emissive.setHSL(hue, 0.8, 0.4);
+    }
+  });
+  return (
+    <group>
+      <NoisyBox size={[0.35, 0.025, 0.12]} position={[0, 0.013, 0]} color="#1e293b" seed={540} />
+      {/* キー列 */}
+      {[-0.04, -0.015, 0.01, 0.035].map((z, row) => (
+        <group key={row}>
+          {Array.from({ length: 10 }).map((_, col) => (
+            <NoisyBox key={col} size={[0.025, 0.01, 0.02]}
+              position={[-0.14 + col * 0.032, 0.03, z]}
+              color="#334155" seed={541 + row * 10 + col} />
+          ))}
+        </group>
+      ))}
+      {/* RGB LED */}
+      <mesh ref={ledRef} position={[0, 0.005, 0.065]}>
+        <boxGeometry args={[0.33, 0.005, 0.003]} />
+        <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={1.5} />
+      </mesh>
+    </group>
+  );
+}
+
+// === マウスパッド ===
+export function VoxelMousePad({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.3, 0.005, 0.25]} position={[0, 0.003, 0]} color="#1e1b4b" seed={550} lightnessSpread={0.1} />
+      {/* ネオンエッジ */}
+      <EmissiveBox size={[0.3, 0.003, 0.003]} position={[0, 0.006, 0.124]} color="#7c3aed" emissiveIntensity={2} />
+      <EmissiveBox size={[0.3, 0.003, 0.003]} position={[0, 0.006, -0.124]} color="#7c3aed" emissiveIntensity={2} />
+      {/* マウス */}
+      <NoisyBox size={[0.04, 0.02, 0.06]} position={[0.05, 0.015, 0]} color="#374151" seed={551} />
+    </group>
+  );
+}
+
+// === ウェブカメラ ===
+export function VoxelWebcam({}: Props) {
+  return (
+    <group>
+      {/* 三脚ベース */}
+      <NoisyBox size={[0.06, 0.02, 0.06]} position={[0, 0.01, 0]} color="#333" seed={560} metalness={0.4} />
+      <NoisyCylinder args={[0.008, 0.008, 0.15, 4]} position={[0, 0.09, 0]} color="#555" seed={561} metalness={0.5} />
+      {/* カメラ本体 */}
+      <NoisyBox size={[0.06, 0.04, 0.04]} position={[0, 0.18, 0]} color="#1e1b4b" seed={562} />
+      {/* レンズ */}
+      <NoisyCylinder args={[0.012, 0.012, 0.01, 8]} position={[0, 0.18, 0.025]} color="#374151" seed={563} metalness={0.6} />
+      {/* LED */}
+      <EmissiveBox size={[0.008, 0.008, 0.005]} position={[0.02, 0.2, 0.021]} color="#22c55e" emissiveIntensity={3} />
+    </group>
+  );
+}
+
+// === ヘッドセットスタンド ===
+export function VoxelHeadsetStand({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.1, 0.02, 0.1]} position={[0, 0.01, 0]} color="#374151" seed={570} metalness={0.4} />
+      <NoisyCylinder args={[0.015, 0.015, 0.25, 6]} position={[0, 0.14, 0]} color="#555" seed={571} metalness={0.5} />
+      {/* フック */}
+      <NoisyBox size={[0.12, 0.02, 0.04]} position={[0, 0.27, 0]} color="#555" seed={572} metalness={0.5} />
+      {/* ヘッドセット */}
+      <mesh position={[0, 0.27, 0]} rotation={[0, 0, 0]} castShadow>
+        <torusGeometry args={[0.06, 0.015, 6, 12, Math.PI]} />
+        <meshStandardMaterial color="#1e1b4b" roughness={0.5} />
+      </mesh>
+      {/* イヤーパッド */}
+      <NoisyBox size={[0.04, 0.05, 0.03]} position={[-0.06, 0.22, 0]} color="#374151" seed={573} />
+      <NoisyBox size={[0.04, 0.05, 0.03]} position={[0.06, 0.22, 0]} color="#374151" seed={574} />
+    </group>
+  );
+}
+
+// === ケーブルボックス ===
+export function VoxelCableBox({}: Props) {
+  return (
+    <group>
+      <NoisyBox size={[0.25, 0.1, 0.1]} position={[0, 0.05, 0]} color="#f5f5f4" seed={580} lightnessSpread={0.08} />
+      {/* 穴 */}
+      <NoisyBox size={[0.03, 0.08, 0.005]} position={[0.11, 0.05, 0.05]} color="#d4d4d8" seed={581} />
+      <NoisyBox size={[0.03, 0.08, 0.005]} position={[-0.11, 0.05, 0.05]} color="#d4d4d8" seed={582} />
+      {/* ケーブル */}
+      <NoisyCylinder args={[0.005, 0.005, 0.12, 4]} position={[0.13, 0.05, 0.08]} rotation={[Math.PI/2, 0, 0.3]} color="#333" seed={583} />
+    </group>
+  );
+}
+
+// === スタンディングデスク ===
+export function VoxelStandingDesk({}: Props) {
+  return (
+    <group>
+      {/* 天板 */}
+      <NoisyBox size={[0.9, 0.05, 0.45]} position={[0, 0.75, 0]} color="#1e293b" seed={590} lightnessSpread={0.1} />
+      {/* 脚（昇降式） */}
+      <NoisyBox size={[0.06, 0.7, 0.06]} position={[-0.38, 0.35, -0.15]} color="#374151" seed={591} metalness={0.4} />
+      <NoisyBox size={[0.06, 0.7, 0.06]} position={[0.38, 0.35, -0.15]} color="#374151" seed={592} metalness={0.4} />
+      <NoisyBox size={[0.06, 0.7, 0.06]} position={[-0.38, 0.35, 0.15]} color="#374151" seed={593} metalness={0.4} />
+      <NoisyBox size={[0.06, 0.7, 0.06]} position={[0.38, 0.35, 0.15]} color="#374151" seed={594} metalness={0.4} />
+      {/* LED */}
+      <EmissiveBox size={[0.8, 0.02, 0.01]} position={[0, 0.79, 0.22]} color="#7c3aed" emissiveIntensity={1.5} />
+    </group>
+  );
+}
+
