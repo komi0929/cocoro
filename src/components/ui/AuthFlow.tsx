@@ -126,8 +126,8 @@ export function AuthFlow({ onAuthComplete }: AuthFlowProps) {
       <div className="auth-card">
         <h1 className="auth-logo">cocoro</h1>
         <p className="auth-subtitle">
-          {'\u3072\u307F\u3064\u306E\u30A2\u30B8\u30C8\u3067'}<br />
-          {'\u53CB\u9054\u3068\u901A\u8A71\u3057\u3088\u3046'}
+          {'ひみつの隠れ家で'}<br />
+          {'友達と通話しよう'}
         </p>
 
         <button className="btn btn-primary" onClick={handleParentStart} style={{ width: '100%', maxWidth: 280 }}>

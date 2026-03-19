@@ -41,7 +41,7 @@ export function PassphraseUI({ onJoinRoom }: PassphraseUIProps) {
     return (
       <div className="passphrase-screen">
         <div className="passphrase-card">
-          <h2>{'\u{1F510} \u3042\u306A\u305F\u306E\u30A2\u30B8\u30C8'}</h2>
+          <h2>{'\u{1F510} あなたの隠れ家'}</h2>
           <p className="passphrase-hint">{'\u3053\u306E\u5408\u8A00\u8449\u3067\u53CB\u9054\u3092\u62DB\u5F85\u3067\u304D\u307E\u3059'}</p>
           <div className="passphrase-words">
             {words.map((w, i) => (
@@ -49,7 +49,7 @@ export function PassphraseUI({ onJoinRoom }: PassphraseUIProps) {
             ))}
           </div>
           <button className="btn btn-primary" onClick={handleConfirmCreate} style={{ width: '100%', maxWidth: 280 }}>
-            {'\u{1F3E0} \u30A2\u30B8\u30C8\u3092\u3064\u304F\u308B'}
+            {'\u{1F3E0} 隠れ家をつくる'}
           </button>
           <button className="btn btn-ghost" onClick={() => setMode('select')} style={{ width: '100%', maxWidth: 280 }}>
             {'\u2190 \u623B\u308B'}
@@ -96,10 +96,10 @@ export function PassphraseUI({ onJoinRoom }: PassphraseUIProps) {
   return (
     <div className="passphrase-screen">
       <div className="passphrase-card">
-        <h2>{'\u{1F3E0} \u30A2\u30B8\u30C8'}</h2>
-        <p className="passphrase-hint">{'\u30A2\u30B8\u30C8\u3092\u3064\u304F\u308B\u304B\u3001\u53CB\u9054\u306E\u30A2\u30B8\u30C8\u306B\u5165\u308B'}</p>
+        <h2>{'\u{1F3E0} 隠れ家'}</h2>
+        <p className="passphrase-hint">{'隠れ家をつくるか、友達の隠れ家に入る'}</p>
         <button className="btn btn-primary" onClick={handleCreate} style={{ width: '100%', maxWidth: 280 }}>
-          {'\u{1F3D7}\uFE0F \u65B0\u3057\u3044\u30A2\u30B8\u30C8\u3092\u3064\u304F\u308B'}
+          {'\u{1F3D7}\uFE0F 新しい隠れ家をつくる'}
         </button>
         <button className="btn btn-ghost" onClick={() => setMode('join')} style={{ width: '100%', maxWidth: 280 }}>
           {'\u{1F511} \u5408\u8A00\u8449\u3067\u5165\u308B'}

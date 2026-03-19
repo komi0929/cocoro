@@ -138,7 +138,7 @@ export function LobbyScreen({ onEnterRoom }: LobbyScreenProps) {
       </div>
 
       <button className="lobby-go-btn btn btn-primary" onClick={handleGo}>
-        {'\u{1F3E0} \u3053\u306E\u3059\u304C\u305F\u3067 \u30A2\u30B8\u30C8\u306B\u884C\u304F\uFF01'}
+        {'🏠 このすがたで 隠れ家に行く！'}
       </button>
     </div>
   );

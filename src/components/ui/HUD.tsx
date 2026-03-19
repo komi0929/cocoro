@@ -14,7 +14,7 @@ export function HUD() {
     <div className="hud">
       <div className="hud-room-name">
         <span className="hud-icon">{'\u{1F3E0}'}</span>
-        <span>{'\u30A2\u30B8\u30C8'}</span>
+        <span>{'隠れ家'}</span>
       </div>
       <div className="hud-passphrase">
         <span className="hud-icon">{'\u{1F511}'}</span>

@@ -74,7 +74,7 @@ export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
         <div className="auth-card">
           <h1 className="auth-logo">cocoro</h1>
           <p className="auth-subtitle">
-            ひみつのアジトで<br />
+            ひみつの隠れ家で<br />
             友達と過ごそう
           </p>
 
