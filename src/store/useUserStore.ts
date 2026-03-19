@@ -44,16 +44,19 @@ function loadUser(): UserAccount | null {
 interface UserState {
   user: UserAccount | null;
   isLoggedIn: boolean;
+  isDemo: boolean;
 
   register: (name: string, pin: string) => UserAccount;
   login: (name: string, pin: string) => boolean;
   logout: () => void;
   updateAvatar: (config: AvatarConfig) => void;
+  enterDemoMode: () => UserAccount;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
   user: loadUser(),
   isLoggedIn: loadUser() !== null,
+  isDemo: false,
 
   register: (name, pin) => {
     const user: UserAccount = {
@@ -91,7 +94,26 @@ export const useUserStore = create<UserState>((set, get) => ({
     const user = get().user;
     if (!user) return;
     const updated = { ...user, avatarConfig: config };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (!get().isDemo) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     set({ user: updated });
+  },
+
+  enterDemoMode: () => {
+    const demoUser: UserAccount = {
+      id: 'demo-' + crypto.randomUUID(),
+      name: 'ゲスト',
+      pinHash: '',
+      browserToken: '',
+      avatarConfig: {
+        species: 'cat',
+        color: '#A0D8F0',
+        item: 'none',
+      },
+      createdAt: Date.now(),
+    };
+    set({ user: demoUser, isLoggedIn: true, isDemo: true });
+    return demoUser;
   },
 }));

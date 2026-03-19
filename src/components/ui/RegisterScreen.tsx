@@ -9,9 +9,10 @@ import { useUserStore } from '@/store/useUserStore';
 
 interface RegisterScreenProps {
   onComplete: () => void;
+  onDemo?: () => void;
 }
 
-export function RegisterScreen({ onComplete }: RegisterScreenProps) {
+export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
   const { user, register, login } = useUserStore();
   const [mode, setMode] = useState<'welcome' | 'register' | 'login'>(user ? 'login' : 'welcome');
   const [name, setName] = useState(user?.name ?? '');
@@ -25,7 +26,6 @@ export function RegisterScreen({ onComplete }: RegisterScreenProps) {
     const next = [...pin];
     next[i] = val;
     setPin(next);
-    // Auto-focus next input
     if (val && i < 3) {
       const el = document.getElementById(`pin-${i + 1}`);
       el?.focus();
@@ -33,20 +33,20 @@ export function RegisterScreen({ onComplete }: RegisterScreenProps) {
   }, [pin]);
 
   const handleRegister = useCallback(() => {
-    if (!name.trim()) { setError('\u540D\u524D\u3092\u5165\u529B\u3057\u3066\u306D'); return; }
-    if (pinStr.length < 4) { setError('4\u6841\u306EPIN\u3092\u5165\u529B\u3057\u3066\u306D'); return; }
+    if (!name.trim()) { setError('名前を入力してね'); return; }
+    if (pinStr.length < 4) { setError('4桁のPINを入力してね'); return; }
     register(name.trim(), pinStr);
     onComplete();
   }, [name, pinStr, register, onComplete]);
 
   const handleLogin = useCallback(() => {
-    if (!name.trim()) { setError('\u540D\u524D\u3092\u5165\u529B\u3057\u3066\u306D'); return; }
-    if (pinStr.length < 4) { setError('4\u6841\u306EPIN\u3092\u5165\u529B\u3057\u3066\u306D'); return; }
+    if (!name.trim()) { setError('名前を入力してね'); return; }
+    if (pinStr.length < 4) { setError('4桁のPINを入力してね'); return; }
     const ok = login(name.trim(), pinStr);
     if (ok) {
       onComplete();
     } else {
-      setError('\u540D\u524D\u304BPIN\u304C\u9055\u3046\u3088');
+      setError('名前かPINが違うよ');
     }
   }, [name, pinStr, login, onComplete]);
 
@@ -74,16 +74,33 @@ export function RegisterScreen({ onComplete }: RegisterScreenProps) {
         <div className="auth-card">
           <h1 className="auth-logo">cocoro</h1>
           <p className="auth-subtitle">
-            {'\u3072\u307F\u3064\u306E\u30A2\u30B8\u30C8\u3067'}<br />
-            {'\u53CB\u9054\u3068\u904E\u3054\u305D\u3046'}
+            ひみつのアジトで<br />
+            友達と過ごそう
           </p>
 
           <button className="btn btn-primary" onClick={() => setMode('register')} style={{ width: '100%', maxWidth: 280 }}>
-            {'\u2728 \u306F\u3058\u3081\u3066\u306E\u4EBA'}
+            ✨ はじめての人
           </button>
           <button className="btn btn-ghost" onClick={() => setMode('login')} style={{ width: '100%', maxWidth: 280 }}>
-            {'\u{1F511} \u30ED\u30B0\u30A4\u30F3'}
+            🔑 ログイン
           </button>
+
+          {onDemo && (
+            <button
+              className="btn btn-ghost"
+              onClick={onDemo}
+              style={{
+                width: '100%',
+                maxWidth: 280,
+                marginTop: 8,
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))',
+                border: '1px solid rgba(139,92,246,0.3)',
+                color: '#a78bfa',
+              }}
+            >
+              🎮 デモを試す（登録不要）
+            </button>
+          )}
         </div>
       </div>
     );

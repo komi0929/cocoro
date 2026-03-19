@@ -1,9 +1,9 @@
 /**
- * cocoro - App Phase 6
- * New screen flow:
+ * cocoro - App Phase 7
+ * Screen flow:
  *   register -> lobby (avatar) -> create-room (theme) -> room (3D + UI)
  *                                                     -> join (via invite URL)
- * Demo mode preserved
+ * Demo mode: welcome -> lobby -> theme-select -> room (no call)
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -32,6 +32,8 @@ type AppScreen = 'register' | 'lobby' | 'theme-select' | 'room';
 export default function App() {
   const user = useUserStore(s => s.user);
   const isLoggedIn = useUserStore(s => s.isLoggedIn);
+  const isDemo = useUserStore(s => s.isDemo);
+  const enterDemoMode = useUserStore(s => s.enterDemoMode);
   const createRoom = useRoomStore(s => s.createRoom);
   const joinByInviteCode = useRoomStore(s => s.joinByInviteCode);
   const currentRoom = useRoomStore(s => s.currentRoom);
@@ -51,14 +53,12 @@ export default function App() {
           setScreen('room');
         }
       }
-      // If not logged in, they'll register first then we check again
     }
   }, [isLoggedIn, joinByInviteCode]);
 
   // Auto-advance if already logged in
   useEffect(() => {
     if (isLoggedIn && screen === 'register') {
-      // Check if there's an invite code in URL
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       if (inviteCode) {
@@ -76,18 +76,23 @@ export default function App() {
     setScreen('lobby');
   }, []);
 
+  const handleDemoMode = useCallback(() => {
+    enterDemoMode();
+    setScreen('lobby');
+  }, [enterDemoMode]);
+
   const handleEnterRoom = useCallback(() => {
     setScreen('theme-select');
   }, []);
 
   const handleThemeSelect = useCallback((theme: RoomTheme) => {
-    if (!user) return;
-    createRoom(user.id, user.name, theme);
+    const u = useUserStore.getState().user;
+    if (!u) return;
+    createRoom(u.id, u.name, theme);
     setScreen('room');
-  }, [user, createRoom]);
+  }, [createRoom]);
 
   const handleSkipRoom = useCallback(() => {
-    // Skip room creation — go to room screen (demo mode or friend's room)
     setScreen('room');
   }, []);
 
@@ -101,7 +106,12 @@ export default function App() {
 
   // Register
   if (screen === 'register' || !isLoggedIn) {
-    return <RegisterScreen onComplete={handleRegisterComplete} />;
+    return (
+      <RegisterScreen
+        onComplete={handleRegisterComplete}
+        onDemo={handleDemoMode}
+      />
+    );
   }
 
   // Lobby (avatar creation)
@@ -119,14 +129,16 @@ export default function App() {
     );
   }
 
-
   // Room (3D + UI)
   return (
     <>
       <AjitCanvas />
       <CapacityBar />
       <HUD />
-      <CallControls />
+
+      {/* 通話コントロール — デモモードでは非表示 */}
+      {!isDemo && <CallControls />}
+
       <CraftDrawer />
       <FurnitureEditToolbar />
 
@@ -135,9 +147,33 @@ export default function App() {
       <TextChat />
       <EmoteBar />
 
+      {/* デモモードバナー */}
+      {isDemo && (
+        <div style={{
+          position: 'fixed',
+          top: 'env(safe-area-inset-top, 8px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '6px 16px',
+          borderRadius: 20,
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.9), rgba(168,85,247,0.9))',
+          color: '#fff',
+          fontSize: 12,
+          fontWeight: 700,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
+        }}>
+          🎮 デモモード
+          <span style={{ opacity: 0.7, fontSize: 10 }}>通話以外の全機能をお試しできます</span>
+        </div>
+      )}
+
       {/* Room action buttons */}
       <div className="room-action-bar">
-        {/* 模様替えボタン — 自分の部屋で家具を置ける */}
         <button
           className="room-action-btn"
           onClick={() => useAjitStore.getState().setDrawerOpen(true)}
@@ -145,7 +181,7 @@ export default function App() {
         >
           {'🔨'}
         </button>
-        {currentRoom && (
+        {currentRoom && !isDemo && (
           <>
             <button
               className="room-action-btn"
