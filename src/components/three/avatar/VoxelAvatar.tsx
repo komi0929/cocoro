@@ -554,9 +554,9 @@ export function VoxelAvatar({
           <RoundedBoxGeo args={body.headSize} />
           <meshStandardMaterial color={colors.head} roughness={0.8} />
         </mesh>
-        <mesh position={[0, 0, body.headSize[2] / 2 + 0.001]}>
+        <mesh position={[0, 0, body.headSize[2] / 2 + 0.01]}>
           <planeGeometry args={[body.headSize[0], body.headSize[1]]} />
-          <meshStandardMaterial map={faceTexture} transparent alphaTest={0.1} roughness={0.9} />
+          <meshStandardMaterial map={faceTexture} transparent alphaTest={0.1} roughness={0.9} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} depthWrite={false} />
         </mesh>
         <Ears type={body.ears} color={colors.ear} headSize={body.headSize} />
         {body.special === 'beak' && <Beak />}
