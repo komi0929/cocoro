@@ -90,6 +90,14 @@ export default function App() {
     setScreen('room');
   }, []);
 
+  // Start/stop ambient sounds based on room theme
+  useEffect(() => {
+    if (screen === 'room' && currentRoom) {
+      startAmbience(currentRoom.theme);
+    }
+    return () => { stopAmbience(); };
+  }, [screen, currentRoom]);
+
   // Register
   if (screen === 'register' || !isLoggedIn) {
     return <RegisterScreen onComplete={handleRegisterComplete} />;
@@ -110,13 +118,6 @@ export default function App() {
     );
   }
 
-  // Start/stop ambient sounds based on room theme
-  useEffect(() => {
-    if (screen === 'room' && currentRoom) {
-      startAmbience(currentRoom.theme);
-    }
-    return () => { stopAmbience(); };
-  }, [screen, currentRoom]);
 
   // Room (3D + UI)
   return (
