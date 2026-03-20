@@ -240,6 +240,15 @@ export function AjitRoom() {
 
       {/* ===== Avatar Entity ===== */}
       <AvatarEntity />
+
+      {/* ===== Avatar Rim Light ===== */}
+      <pointLight
+        position={[0, 1, -1.5]}
+        color="#6366f1"
+        intensity={0.6}
+        distance={3}
+        decay={2}
+      />
     </group>
   );
 }

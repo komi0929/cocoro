@@ -7,7 +7,7 @@
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette, SSAO } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { AjitRoom } from './AjitRoom';
 import { FurniturePlacer } from './FurniturePlacer';
@@ -65,6 +65,12 @@ export function AjitCanvas() {
           luminanceThreshold={0.6}
           luminanceSmoothing={0.9}
           mipmapBlur
+        />
+        <SSAO
+          radius={0.12}
+          intensity={15}
+          luminanceInfluence={0.6}
+          color={new THREE.Color(0, 0, 0)}
         />
         <Vignette
           offset={0.3}

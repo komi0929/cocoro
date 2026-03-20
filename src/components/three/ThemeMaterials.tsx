@@ -111,6 +111,66 @@ function StoneFloorOverlay({ color }: { color: string }) {
   );
 }
 
+function GrassFloorOverlay({ color }: { color: string }) {
+  const tufts = useMemo(() => {
+    const result: { x: number; z: number; rot: number; h: number; shade: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      result.push({
+        x: (Math.random() - 0.5) * ROOM_W * 0.9,
+        z: (Math.random() - 0.5) * ROOM_D * 0.9,
+        rot: Math.random() * Math.PI,
+        h: 0.04 + Math.random() * 0.06,
+        shade: Math.random() * 0.12 - 0.06,
+      });
+    }
+    return result;
+  }, []);
+
+  return (
+    <group>
+      {tufts.map((t, i) => (
+        <mesh key={i} position={[t.x, t.h / 2, t.z]} rotation={[0, t.rot, 0]}>
+          <boxGeometry args={[0.08, t.h, 0.02]} />
+          <meshStandardMaterial
+            color={new THREE.Color(color).offsetHSL(0.02, 0, t.shade).getStyle()}
+            roughness={0.95}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function SandFloorOverlay({ color }: { color: string }) {
+  const ripples = useMemo(() => {
+    const result: { x: number; z: number; w: number; rot: number }[] = [];
+    for (let i = 0; i < 12; i++) {
+      result.push({
+        x: (Math.random() - 0.5) * ROOM_W * 0.85,
+        z: (Math.random() - 0.5) * ROOM_D * 0.85,
+        w: 0.8 + Math.random() * 1.2,
+        rot: Math.random() * 0.3 - 0.15,
+      });
+    }
+    return result;
+  }, []);
+
+  return (
+    <group>
+      {ripples.map((r, i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, r.rot, 0]} position={[r.x, 0.003, r.z]}>
+          <planeGeometry args={[r.w, 0.03]} />
+          <meshStandardMaterial
+            color={new THREE.Color(color).offsetHSL(0, 0, 0.04).getStyle()}
+            roughness={1.0}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function TileFloorOverlay({ color }: { color: string }) {
   return (
     <group>
@@ -222,6 +282,77 @@ function PanelWallOverlay({ color, position, rotation, width, height }: {
   );
 }
 
+function WoodWallOverlay({ color, position, rotation, width, height }: {
+  color: string; position: [number, number, number]; rotation: [number, number, number]; width: number; height: number;
+}) {
+  const planks = Math.floor(width / 0.4);
+  return (
+    <group position={position} rotation={rotation}>
+      {Array.from({ length: planks }).map((_, i) => {
+        const x = -width / 2 + i * 0.4 + 0.2;
+        const shade = (i % 3 === 0) ? -0.04 : (i % 3 === 1) ? 0.02 : 0;
+        return (
+          <mesh key={`wp-${i}`} position={[x, 0, 0.08]}>
+            <boxGeometry args={[0.36, height, 0.01]} />
+            <meshStandardMaterial
+              color={new THREE.Color(color).offsetHSL(0, 0, shade).getStyle()}
+              roughness={0.8}
+              metalness={0.05}
+            />
+          </mesh>
+        );
+      })}
+      {/* Gaps between planks */}
+      {Array.from({ length: planks - 1 }).map((_, i) => (
+        <mesh key={`wg-${i}`} position={[-width / 2 + (i + 1) * 0.4, 0, 0.078]}>
+          <boxGeometry args={[0.01, height, 0.005]} />
+          <meshStandardMaterial
+            color={new THREE.Color(color).offsetHSL(0, 0, -0.12).getStyle()}
+            roughness={0.9}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function RockWallOverlay({ color, position, rotation, width, height }: {
+  color: string; position: [number, number, number]; rotation: [number, number, number]; width: number; height: number;
+}) {
+  const rocks = useMemo(() => {
+    const result: { x: number; y: number; w: number; h: number; shade: number }[] = [];
+    for (let row = 0; row < Math.floor(height / 0.3); row++) {
+      const cols = Math.floor(width / 0.5) + 1;
+      for (let col = 0; col < cols; col++) {
+        const offset = row % 2 === 0 ? 0 : 0.25;
+        result.push({
+          x: -width / 2 + col * 0.5 + offset + (Math.random() - 0.5) * 0.1,
+          y: -height / 2 + row * 0.3 + 0.15 + (Math.random() - 0.5) * 0.05,
+          w: 0.35 + Math.random() * 0.12,
+          h: 0.22 + Math.random() * 0.06,
+          shade: (Math.random() - 0.5) * 0.08,
+        });
+      }
+    }
+    return result;
+  }, [width, height]);
+
+  return (
+    <group position={position} rotation={rotation}>
+      {rocks.map((r, i) => (
+        <mesh key={i} position={[r.x, r.y, 0.08]}>
+          <boxGeometry args={[r.w, r.h, 0.02]} />
+          <meshStandardMaterial
+            color={new THREE.Color(color).offsetHSL(0, 0, r.shade).getStyle()}
+            roughness={0.95}
+            metalness={0.1}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 // ---- Exports ----
 
 interface FloorOverlayProps {
@@ -235,6 +366,8 @@ export function FloorOverlay({ pattern, color }: FloorOverlayProps) {
     case 'stone': return <StoneFloorOverlay color={color} />;
     case 'tile': return <TileFloorOverlay color={color} />;
     case 'lava': return <LavaFloorOverlay color={color} />;
+    case 'grass': return <GrassFloorOverlay color={color} />;
+    case 'sand': return <SandFloorOverlay color={color} />;
     default: return null;
   }
 }
@@ -265,6 +398,8 @@ export function WallOverlay({ pattern, color, wall }: WallOverlayProps) {
     case 'brick': return <BrickWallOverlay color={color} position={wp.pos} rotation={wp.rot} width={wp.w} height={ROOM_H} />;
     case 'glass': return <GlassWallOverlay position={wp.pos} rotation={wp.rot} />;
     case 'panel': return <PanelWallOverlay color={color} position={wp.pos} rotation={wp.rot} width={wp.w} height={ROOM_H} />;
+    case 'wood': return <WoodWallOverlay color={color} position={wp.pos} rotation={wp.rot} width={wp.w} height={ROOM_H} />;
+    case 'rock': return <RockWallOverlay color={color} position={wp.pos} rotation={wp.rot} width={wp.w} height={ROOM_H} />;
     default: return null;
   }
 }
