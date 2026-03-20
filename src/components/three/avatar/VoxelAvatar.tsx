@@ -1,4 +1,4 @@
-/**
+﻿/**
  * cocoro  EVoxelAvatar (Phase 6  EHigh-Poly Voxel)
  * Procedural voxel animal avatar
  * High-poly rounded blocks for smooth Minecraft-style look
@@ -17,7 +17,7 @@ import { VoxelItem } from './VoxelItems';
 // ハイポリ角丸ボクセル用 BoxGeometry wrapper
 // ============================================================
 
-function createRoundedBox(w: number, h: number, d: number, r = 0.02, seg = 2): THREE.BufferGeometry {
+function createRoundedBox(w: number, h: number, d: number, r = 0.035, seg = 4): THREE.BufferGeometry {
   const geo = new THREE.BoxGeometry(w - r * 2, h - r * 2, d - r * 2, seg, seg, seg);
   const pos = geo.attributes.position;
   const norm = geo.attributes.normal;
@@ -42,18 +42,18 @@ function createRoundedBox(w: number, h: number, d: number, r = 0.02, seg = 2): T
   return geo;
 }
 
-/** 角丸ボクセルジオメトリのキャチE��ュ */
+/** 角丸ボクセルジオメトリのキャチE��ュ */
 const geoCache = new Map<string, THREE.BufferGeometry>();
 function getRoundedBox(w: number, h: number, d: number): THREE.BufferGeometry {
   const key = `${w.toFixed(3)}_${h.toFixed(3)}_${d.toFixed(3)}`;
   if (!geoCache.has(key)) {
-    const radius = Math.min(0.025, Math.min(w, h, d) * 0.25);
-    geoCache.set(key, createRoundedBox(w, h, d, radius, 2));
+    const radius = Math.min(0.04, Math.min(w, h, d) * 0.25);
+    geoCache.set(key, createRoundedBox(w, h, d, radius, 4));
   }
   return geoCache.get(key)!;
 }
 
-/** boxGeometryの代わりに使ぁE��ンポ�EネンチE*/
+/** boxGeometryの代わりに使ぁE��ンポ�EネンチE*/
 function RoundedBoxGeo({ args }: { args: [number, number, number] }) {
   const geo = useMemo(() => getRoundedBox(args[0], args[1], args[2]), [args[0], args[1], args[2]]);
   return <primitive object={geo} attach="geometry" />;
