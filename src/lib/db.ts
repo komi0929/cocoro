@@ -7,43 +7,40 @@
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { RoomTheme, AccessMode } from '@/types/cocoro';
 
-// ===== Users =====
+// ===== Profiles (auth.users連動) =====
 
 export interface DBUser {
   id: string;
   name: string;
-  pin_hash: string;
-  browser_token: string;
   avatar_species: string;
   avatar_color: string;
 }
 
-export async function dbCreateUser(
+export async function dbUpdateProfile(
+  id: string,
   name: string,
-  pinHash: string,
-  browserToken: string,
   avatarSpecies: string = 'cat',
   avatarColor: string = '#fbbf24'
 ): Promise<DBUser | null> {
   if (!isSupabaseConfigured()) return null;
 
   const { data, error } = await getSupabase()
-    .from('users')
-    .insert({ name, pin_hash: pinHash, browser_token: browserToken, avatar_species: avatarSpecies, avatar_color: avatarColor })
+    .from('profiles')
+    .upsert({ id, name, avatar_species: avatarSpecies, avatar_color: avatarColor })
     .select()
     .single();
 
-  if (error) { console.error('DB createUser error:', error); return null; }
+  if (error) { console.error('DB updateProfile error:', error); return null; }
   return data as DBUser;
 }
 
-export async function dbGetUserByToken(browserToken: string): Promise<DBUser | null> {
+export async function dbGetProfile(userId: string): Promise<DBUser | null> {
   if (!isSupabaseConfigured()) return null;
 
   const { data, error } = await getSupabase()
-    .from('users')
+    .from('profiles')
     .select('*')
-    .eq('browser_token', browserToken)
+    .eq('id', userId)
     .single();
 
   if (error) return null;
@@ -52,7 +49,7 @@ export async function dbGetUserByToken(browserToken: string): Promise<DBUser | n
 
 export async function dbUpdateUser(id: string, updates: Partial<Pick<DBUser, 'name' | 'avatar_species' | 'avatar_color'>>): Promise<void> {
   if (!isSupabaseConfigured()) return;
-  await getSupabase().from('users').update(updates).eq('id', id);
+  await getSupabase().from('profiles').update(updates).eq('id', id);
 }
 
 // ===== Rooms =====
