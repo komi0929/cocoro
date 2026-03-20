@@ -1,12 +1,13 @@
 /**
- * cocoro - AjitCanvas Phase 5.1
- * Main R3F Canvas wrapper
- * OrbitControls + CinematicCamera + FurnitureDragger + Suspense
+ * cocoro - AjitCanvas Phase 8
+ * Main R3F Canvas wrapper with post-processing
+ * Bloom + Vignette for premium visual feel
  */
 
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { AjitRoom } from './AjitRoom';
 import { FurniturePlacer } from './FurniturePlacer';
@@ -35,7 +36,9 @@ export function AjitCanvas() {
       gl={{
         antialias: true,
         alpha: false,
-        powerPreference: 'low-power',
+        powerPreference: 'default',
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.1,
       }}
       style={{
         position: 'fixed',
@@ -54,6 +57,20 @@ export function AjitCanvas() {
       </Suspense>
 
       <CinematicCamera />
+
+      {/* Post-processing for premium visual feel */}
+      <EffectComposer>
+        <Bloom
+          intensity={0.35}
+          luminanceThreshold={0.6}
+          luminanceSmoothing={0.9}
+          mipmapBlur
+        />
+        <Vignette
+          offset={0.3}
+          darkness={0.5}
+        />
+      </EffectComposer>
 
       <OrbitControls
         enablePan={!cinematicActive}

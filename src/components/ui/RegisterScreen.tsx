@@ -1,10 +1,9 @@
 /**
- * cocoro - RegisterScreen
- * Name + 4-digit PIN registration/login
- * Browser-locked via localStorage token
+ * cocoro - RegisterScreen (Supabase Auth)
+ * Email + password authentication
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 
 interface RegisterScreenProps {
@@ -13,59 +12,63 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
-  const { user, register, login } = useUserStore();
-  const [mode, setMode] = useState<'welcome' | 'register' | 'login'>(user ? 'login' : 'welcome');
-  const [name, setName] = useState(user?.name ?? '');
-  const [pin, setPin] = useState(['', '', '', '']);
-  const [error, setError] = useState('');
+  const { isLoggedIn, isLoading, error, clearError, initialize } = useUserStore();
+  const register = useUserStore(s => s.register);
+  const login = useUserStore(s => s.login);
+  const enterDemoMode = useUserStore(s => s.enterDemoMode);
 
-  const pinStr = pin.join('');
+  const [mode, setMode] = useState<'welcome' | 'register' | 'login'>('welcome');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handlePinChange = useCallback((i: number, val: string) => {
-    if (val.length > 1) return;
-    const next = [...pin];
-    next[i] = val;
-    setPin(next);
-    if (val && i < 3) {
-      const el = document.getElementById(`pin-${i + 1}`);
-      el?.focus();
-    }
-  }, [pin]);
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
-  const handleRegister = useCallback(() => {
-    if (!name.trim()) { setError('名前を入力してね'); return; }
-    if (pinStr.length < 4) { setError('4桁のPINを入力してね'); return; }
-    register(name.trim(), pinStr);
-    onComplete();
-  }, [name, pinStr, register, onComplete]);
-
-  const handleLogin = useCallback(() => {
-    if (!name.trim()) { setError('名前を入力してね'); return; }
-    if (pinStr.length < 4) { setError('4桁のPINを入力してね'); return; }
-    const ok = login(name.trim(), pinStr);
-    if (ok) {
+  // Auto-advance if already logged in
+  useEffect(() => {
+    if (isLoggedIn && !isLoading) {
       onComplete();
-    } else {
-      setError('名前かPINが違うよ');
     }
-  }, [name, pinStr, login, onComplete]);
+  }, [isLoggedIn, isLoading, onComplete]);
 
-  const PinInputs = () => (
-    <div className="pin-input-row">
-      {pin.map((d, i) => (
-        <input
-          key={i}
-          id={`pin-${i}`}
-          type="number"
-          inputMode="numeric"
-          maxLength={1}
-          className="pin-digit"
-          value={d}
-          onChange={e => handlePinChange(i, e.target.value)}
-        />
-      ))}
-    </div>
-  );
+  const handleRegister = useCallback(async () => {
+    if (!name.trim()) return;
+    if (!email.trim()) return;
+    if (password.length < 6) return;
+    clearError();
+    const ok = await register(name.trim(), email.trim(), password);
+    if (ok) onComplete();
+  }, [name, email, password, register, onComplete, clearError]);
+
+  const handleLogin = useCallback(async () => {
+    if (!email.trim()) return;
+    if (!password) return;
+    clearError();
+    const ok = await login(email.trim(), password);
+    if (ok) onComplete();
+  }, [email, password, login, onComplete, clearError]);
+
+  const handleDemo = useCallback(() => {
+    enterDemoMode();
+    if (onDemo) onDemo();
+    onComplete();
+  }, [enterDemoMode, onDemo, onComplete]);
+
+  if (isLoading) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <h1 className="auth-logo">cocoro</h1>
+          <div className="auth-loading">
+            <div className="auth-spinner" />
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 12 }}>読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Welcome
   if (mode === 'welcome') {
@@ -85,22 +88,20 @@ export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
             🔑 ログイン
           </button>
 
-          {onDemo && (
-            <button
-              className="btn btn-ghost"
-              onClick={onDemo}
-              style={{
-                width: '100%',
-                maxWidth: 280,
-                marginTop: 8,
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))',
-                border: '1px solid rgba(139,92,246,0.3)',
-                color: '#a78bfa',
-              }}
-            >
-              🎮 デモを試す（登録不要）
-            </button>
-          )}
+          <button
+            className="btn btn-ghost"
+            onClick={handleDemo}
+            style={{
+              width: '100%',
+              maxWidth: 280,
+              marginTop: 8,
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))',
+              border: '1px solid rgba(139,92,246,0.3)',
+              color: '#a78bfa',
+            }}
+          >
+            🎮 デモを試す（登録不要）
+          </button>
         </div>
       </div>
     );
@@ -111,34 +112,58 @@ export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
     return (
       <div className="auth-screen">
         <div className="auth-card">
-          <h2>{'\u2728 \u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u3064\u304F\u308B'}</h2>
+          <h2>✨ アカウントをつくる</h2>
 
           <div className="auth-field">
-            <label>{'\u{1F464} \u540D\u524D'}</label>
+            <label>👤 名前</label>
             <input
               type="text"
               className="auth-text-input"
               value={name}
-              onChange={e => { setName(e.target.value); setError(''); }}
-              placeholder={'\u306A\u307E\u3048\u3092\u5165\u529B'}
+              onChange={e => { setName(e.target.value); clearError(); }}
+              placeholder="なまえを入力"
               maxLength={20}
               autoFocus
             />
           </div>
 
           <div className="auth-field">
-            <label>{'\u{1F512} 4\u6841PIN'}</label>
-            <PinInputs />
-            <p className="auth-hint">{'\u3053\u306EPIN\u3067\u3053\u306E\u30D6\u30E9\u30A6\u30B6\u304B\u3089\u30ED\u30B0\u30A4\u30F3\u3067\u304D\u307E\u3059'}</p>
+            <label>📧 メール</label>
+            <input
+              type="email"
+              className="auth-text-input"
+              value={email}
+              onChange={e => { setEmail(e.target.value); clearError(); }}
+              placeholder="example@mail.com"
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+          </div>
+
+          <div className="auth-field">
+            <label>🔒 パスワード</label>
+            <input
+              type="password"
+              className="auth-text-input"
+              value={password}
+              onChange={e => { setPassword(e.target.value); clearError(); }}
+              placeholder="6文字以上"
+              minLength={6}
+            />
           </div>
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button className="btn btn-primary" onClick={handleRegister} style={{ width: '100%', maxWidth: 280 }}>
-            {'\u{1F680} \u767B\u9332\u3059\u308B'}
+          <button
+            className="btn btn-primary"
+            onClick={handleRegister}
+            disabled={!name.trim() || !email.trim() || password.length < 6}
+            style={{ width: '100%', maxWidth: 280 }}
+          >
+            🚀 登録する
           </button>
-          <button className="btn btn-ghost" onClick={() => setMode('welcome')} style={{ width: '100%', maxWidth: 280 }}>
-            {'\u2190 \u623B\u308B'}
+          <button className="btn btn-ghost" onClick={() => { setMode('welcome'); clearError(); }} style={{ width: '100%', maxWidth: 280 }}>
+            ← 戻る
           </button>
         </div>
       </div>
@@ -149,35 +174,48 @@ export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <h2>{'\u{1F511} \u304A\u304B\u3048\u308A'}</h2>
+        <h2>🔑 おかえり</h2>
 
         <div className="auth-field">
-          <label>{'\u{1F464} \u540D\u524D'}</label>
+          <label>📧 メール</label>
           <input
-            type="text"
+            type="email"
             className="auth-text-input"
-            value={name}
-            onChange={e => { setName(e.target.value); setError(''); }}
-            placeholder={'\u540D\u524D\u3092\u5165\u529B'}
+            value={email}
+            onChange={e => { setEmail(e.target.value); clearError(); }}
+            placeholder="example@mail.com"
+            autoCapitalize="off"
+            autoCorrect="off"
             autoFocus
           />
         </div>
 
         <div className="auth-field">
-          <label>{'\u{1F512} PIN'}</label>
-          <PinInputs />
+          <label>🔒 パスワード</label>
+          <input
+            type="password"
+            className="auth-text-input"
+            value={password}
+            onChange={e => { setPassword(e.target.value); clearError(); }}
+            placeholder="パスワード"
+          />
         </div>
 
         {error && <p className="auth-error">{error}</p>}
 
-        <button className="btn btn-primary" onClick={handleLogin} style={{ width: '100%', maxWidth: 280 }}>
-          {'\u{1F513} \u30ED\u30B0\u30A4\u30F3'}
+        <button
+          className="btn btn-primary"
+          onClick={handleLogin}
+          disabled={!email.trim() || !password}
+          style={{ width: '100%', maxWidth: 280 }}
+        >
+          🔓 ログイン
         </button>
-        <button className="btn btn-ghost" onClick={() => setMode('register')} style={{ width: '100%', maxWidth: 280 }}>
-          {'\u2728 \u65B0\u898F\u767B\u9332'}
+        <button className="btn btn-ghost" onClick={() => { setMode('register'); clearError(); }} style={{ width: '100%', maxWidth: 280 }}>
+          ✨ 新規登録
         </button>
-        <button className="btn btn-ghost" onClick={() => setMode('welcome')} style={{ width: '100%', maxWidth: 280 }}>
-          {'\u2190 \u623B\u308B'}
+        <button className="btn btn-ghost" onClick={() => { setMode('welcome'); clearError(); }} style={{ width: '100%', maxWidth: 280 }}>
+          ← 戻る
         </button>
       </div>
     </div>

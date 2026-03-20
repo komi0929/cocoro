@@ -80,6 +80,19 @@ class VoiceService {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            // Free TURN server for NAT traversal
+            {
+              urls: 'turn:a.relay.metered.ca:80',
+              username: 'cocoro',
+              credential: 'cocoro-turn-2026',
+            },
+            {
+              urls: 'turn:a.relay.metered.ca:443',
+              username: 'cocoro',
+              credential: 'cocoro-turn-2026',
+            },
           ],
         },
       });

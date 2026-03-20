@@ -1,4 +1,4 @@
-﻿/**
+/**
  * cocoro  EVoxelAvatar (Phase 6  EHigh-Poly Voxel)
  * Procedural voxel animal avatar
  * High-poly rounded blocks for smooth Minecraft-style look
@@ -546,17 +546,42 @@ export function VoxelAvatar({
   const headY = 0.65;
   const torsoY = 0.28;
 
+  // Material properties for soft, plush-like feel
+  const bodyMat = { roughness: 0.7, metalness: 0.02 };
+  const limbMat = { roughness: 0.75, metalness: 0.01 };
+
   return (
     <group ref={groupRef}>
       {/* HEAD */}
       <group position={[0, headY, 0]}>
         <mesh castShadow>
           <RoundedBoxGeo args={body.headSize} />
-          <meshStandardMaterial color={colors.head} roughness={0.8} />
+          <meshStandardMaterial color={colors.head} {...bodyMat} />
         </mesh>
+        {/* Face texture */}
         <mesh position={[0, 0, body.headSize[2] / 2 + 0.01]}>
           <planeGeometry args={[body.headSize[0], body.headSize[1]]} />
           <meshStandardMaterial map={faceTexture} transparent alphaTest={0.1} roughness={0.9} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} depthWrite={false} />
+        </mesh>
+        {/* NOSE - small protruding bump */}
+        {species !== 'penguin' && species !== 'frog' && (
+          <mesh position={[0, -0.02, body.headSize[2] / 2 + 0.03]}>
+            <RoundedBoxGeo args={[0.08, 0.06, 0.06]} />
+            <meshStandardMaterial
+              color={species === 'panda' ? '#111' : species === 'dog' ? '#4a3728' : '#4a3030'}
+              roughness={0.3}
+              metalness={0.05}
+            />
+          </mesh>
+        )}
+        {/* CHEEK BLUSH - two cute round patches */}
+        <mesh position={[-body.headSize[0] / 2 + 0.08, -0.06, body.headSize[2] / 2 + 0.01]}>
+          <RoundedBoxGeo args={[0.1, 0.07, 0.02]} />
+          <meshStandardMaterial color="#FF9EB5" transparent opacity={0.5} roughness={0.9} emissive="#FF9EB5" emissiveIntensity={0.15} />
+        </mesh>
+        <mesh position={[body.headSize[0] / 2 - 0.08, -0.06, body.headSize[2] / 2 + 0.01]}>
+          <RoundedBoxGeo args={[0.1, 0.07, 0.02]} />
+          <meshStandardMaterial color="#FF9EB5" transparent opacity={0.5} roughness={0.9} emissive="#FF9EB5" emissiveIntensity={0.15} />
         </mesh>
         <Ears type={body.ears} color={colors.ear} headSize={body.headSize} />
         {body.special === 'beak' && <Beak />}
@@ -566,50 +591,74 @@ export function VoxelAvatar({
       <group position={[0, torsoY, 0]}>
         <mesh castShadow>
           <RoundedBoxGeo args={[0.5, 0.35, 0.35]} />
-          <meshStandardMaterial color={colors.torso} roughness={0.8} />
+          <meshStandardMaterial color={colors.torso} {...bodyMat} />
         </mesh>
-        {penguinBelly && (
-          <mesh position={[0, 0, 0.13]}>
-            <RoundedBoxGeo args={[0.3, 0.28, 0.02]} />
-            <meshStandardMaterial color="#ECEFF1" roughness={0.8} />
-          </mesh>
-        )}
+        {/* Belly highlight patch */}
+        <mesh position={[0, -0.02, 0.14]}>
+          <RoundedBoxGeo args={[0.24, 0.22, 0.02]} />
+          <meshStandardMaterial
+            color={penguinBelly ? '#ECEFF1' : species === 'panda' ? '#FAFAFA' : noisyColor(color, 10)}
+            roughness={0.85}
+            transparent
+            opacity={penguinBelly || species === 'panda' ? 1.0 : 0.4}
+          />
+        </mesh>
         {body.special === 'panda-pattern' && <PandaPatternOverlay />}
       </group>
 
-      {/* ARMS */}
+      {/* ARMS - fuller with hand bump */}
       <group ref={leftArmRef} position={[-0.34, torsoY + 0.05, 0]}>
         <mesh position={[0, -0.08, 0]} castShadow>
           <RoundedBoxGeo args={[0.16, 0.28, 0.16]} />
-          <meshStandardMaterial color={pandaLimbColor ?? colors.armL} roughness={0.8} />
+          <meshStandardMaterial color={pandaLimbColor ?? colors.armL} {...limbMat} />
+        </mesh>
+        {/* Hand/paw pad */}
+        <mesh position={[0, -0.2, 0.04]}>
+          <RoundedBoxGeo args={[0.1, 0.06, 0.04]} />
+          <meshStandardMaterial color="#E8B4B8" roughness={0.5} />
         </mesh>
       </group>
       <group ref={rightArmRef} position={[0.34, torsoY + 0.05, 0]}>
         <mesh position={[0, -0.08, 0]} castShadow>
           <RoundedBoxGeo args={[0.16, 0.28, 0.16]} />
-          <meshStandardMaterial color={pandaLimbColor ?? colors.armR} roughness={0.8} />
+          <meshStandardMaterial color={pandaLimbColor ?? colors.armR} {...limbMat} />
+        </mesh>
+        {/* Hand/paw pad */}
+        <mesh position={[0, -0.2, 0.04]}>
+          <RoundedBoxGeo args={[0.1, 0.06, 0.04]} />
+          <meshStandardMaterial color="#E8B4B8" roughness={0.5} />
         </mesh>
       </group>
 
-      {/* LEGS */}
+      {/* LEGS - with paw pads */}
       <group ref={leftLegRef} position={[-0.12, 0.12, 0]}>
         <mesh position={[0, -0.06, 0]} castShadow>
           <RoundedBoxGeo args={[0.18, 0.24, 0.18]} />
-          <meshStandardMaterial color={pandaLimbColor ?? colors.legL} roughness={0.8} />
+          <meshStandardMaterial color={pandaLimbColor ?? colors.legL} {...limbMat} />
+        </mesh>
+        {/* Foot pad */}
+        <mesh position={[0, -0.15, 0.05]}>
+          <RoundedBoxGeo args={[0.12, 0.04, 0.06]} />
+          <meshStandardMaterial color="#E8B4B8" roughness={0.5} />
         </mesh>
       </group>
       <group ref={rightLegRef} position={[0.12, 0.12, 0]}>
         <mesh position={[0, -0.06, 0]} castShadow>
           <RoundedBoxGeo args={[0.18, 0.24, 0.18]} />
-          <meshStandardMaterial color={pandaLimbColor ?? colors.legR} roughness={0.8} />
+          <meshStandardMaterial color={pandaLimbColor ?? colors.legR} {...limbMat} />
+        </mesh>
+        {/* Foot pad */}
+        <mesh position={[0, -0.15, 0.05]}>
+          <RoundedBoxGeo args={[0.12, 0.04, 0.06]} />
+          <meshStandardMaterial color="#E8B4B8" roughness={0.5} />
         </mesh>
       </group>
 
       {/* TAIL */}
       <Tail type={body.tail} color={colors.tail} />
 
-      {/* CHEEK GLOW */}
-      <mesh position={[0, headY - 0.05, body.headSize[2] / 2 + 0.01]}>
+      {/* CHEEK GLOW (voice reactive) */}
+      <mesh position={[0, headY - 0.05, body.headSize[2] / 2 + 0.02]}>
         <planeGeometry args={[body.headSize[0] * 0.7, body.headSize[1] * 0.3]} />
         <meshStandardMaterial
           ref={cheekMatRef}

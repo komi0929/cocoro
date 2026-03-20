@@ -324,8 +324,7 @@ export const AVATAR_COLOR_PRESETS: { hex: string; label: string }[] = [
 export interface UserAccount {
   id: string;
   name: string;
-  pinHash: string;
-  browserToken: string;
+  email: string;
   avatarConfig: AvatarConfig;
   createdAt: number;
 }

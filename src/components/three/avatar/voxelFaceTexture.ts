@@ -1,145 +1,245 @@
 /**
- * cocoro  EVoxel Face Texture Generator (Phase 5)
- * Canvas APIで16ÁE6ドット絵チE��スチャを動皁E��戁E * THREE.NearestFilterでピクセルアートをくっきり描画
+ * cocoro — Voxel Face Texture Generator (Phase 8 - Premium)
+ * Canvas API generates 32×32 face textures with enhanced detail:
+ * - Larger eyes with pupils, irises, and specular highlights
+ * - Refined noses and mouths
+ * - Soft cheek blush gradients
+ * THREE.NearestFilter for crisp pixel art
  */
 
 import * as THREE from 'three';
 import type { AvatarSpecies } from '@/types/cocoro';
 
-const TEX_SIZE = 16;
+const TEX_SIZE = 32;
 
-/** HSL色をCSS斁E���Eに変換 */
-function hsl(h: number, s: number, l: number): string {
-  return `hsl(${h}, ${s}%, ${l}%)`;
-}
-
-/** ピクセルを描ぁE*/
+/** Draw a filled pixel */
 function px(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, 1, 1);
 }
 
-/** 矩形を描ぁE*/
+/** Draw a filled rect */
 function rect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, w, h);
 }
 
-// 顔パターン定義
+/** Draw a soft circle (for blush effects) */
+function softCircle(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= r) {
+        const alpha = Math.max(0, 1 - dist / r) * 0.6;
+        ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb(', 'rgba(');
+        ctx.fillRect(cx + dx, cy + dy, 1, 1);
+      }
+    }
+  }
+}
+
+/** Draw an eye with iris, pupil, and highlight */
+function eye(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, irisColor: string, style: 'round' | 'cat' | 'big' = 'round') {
+  if (style === 'cat') {
+    // Vertical slit eye
+    for (let dy = -size; dy <= size; dy++) {
+      const w = Math.max(1, Math.round(size * 0.6 * (1 - Math.abs(dy) / (size + 1))));
+      rect(ctx, cx - Math.floor(w / 2), cy + dy, w, 1, '#111');
+    }
+    // Iris slit
+    const slitH = Math.max(2, size);
+    for (let dy = -Math.floor(slitH / 2); dy < Math.ceil(slitH / 2); dy++) {
+      px(ctx, cx, cy + dy, irisColor);
+    }
+    // Highlight
+    px(ctx, cx, cy - Math.floor(size / 2), '#FFF');
+  } else if (style === 'big') {
+    // Big round eye
+    for (let dy = -size; dy <= size; dy++) {
+      for (let dx = -size; dx <= size; dx++) {
+        if (dx * dx + dy * dy <= size * size) {
+          ctx.fillStyle = '#111';
+          ctx.fillRect(cx + dx, cy + dy, 1, 1);
+        }
+      }
+    }
+    // Iris
+    const iR = Math.max(1, size - 1);
+    for (let dy = -iR; dy <= iR; dy++) {
+      for (let dx = -iR; dx <= iR; dx++) {
+        if (dx * dx + dy * dy <= iR * iR) {
+          ctx.fillStyle = irisColor;
+          ctx.fillRect(cx + dx, cy + dy, 1, 1);
+        }
+      }
+    }
+    // Pupil
+    px(ctx, cx, cy, '#111');
+    if (size > 2) px(ctx, cx + 1, cy, '#111');
+    // Highlight
+    px(ctx, cx - 1, cy - Math.floor(size / 2), '#FFF');
+    if (size > 2) px(ctx, cx, cy - Math.floor(size / 2), '#FFF');
+  } else {
+    // Standard round eye
+    rect(ctx, cx - 1, cy - 1, 3, 3, '#111');
+    rect(ctx, cx, cy, 2, 2, '#111');
+    // Iris
+    px(ctx, cx, cy, irisColor);
+    px(ctx, cx + 1, cy, irisColor);
+    // Pupil
+    px(ctx, cx, cy + 1, '#000');
+    // Highlight
+    px(ctx, cx - 1, cy - 1, '#FFF');
+  }
+}
+
+// ============================
+// Face drawers (32x32)
+// ============================
+
 function drawBearFace(ctx: CanvasRenderingContext2D) {
-  // 目�E�黒い2px�E�E  px(ctx, 5, 6, '#111');  px(ctx, 6, 6, '#111');
-  px(ctx, 9, 6, '#111');  px(ctx, 10, 6, '#111');
-  // 目のハイライチE  px(ctx, 5, 6, '#333');
-  px(ctx, 9, 6, '#333');
-  // 鼻
-  px(ctx, 7, 8, '#222'); px(ctx, 8, 8, '#222');
-  // 口�E�ニチE��リ�E�E  px(ctx, 6, 9, '#333'); px(ctx, 9, 9, '#333');
-  px(ctx, 7, 10, '#333'); px(ctx, 8, 10, '#333');
-  // ほっぺ�E�ピンク�E�E  px(ctx, 3, 9, '#FF8FAA'); px(ctx, 4, 9, '#FF8FAA'); px(ctx, 4, 10, '#FF8FAA');
-  px(ctx, 11, 9, '#FF8FAA'); px(ctx, 12, 9, '#FF8FAA'); px(ctx, 11, 10, '#FF8FAA');
+  eye(ctx, 10, 12, 2, '#5D4037');
+  eye(ctx, 20, 12, 2, '#5D4037');
+  // Nose
+  rect(ctx, 14, 16, 4, 2, '#3E2723');
+  // Mouth
+  px(ctx, 13, 19, '#5D4037'); px(ctx, 14, 20, '#5D4037');
+  px(ctx, 18, 19, '#5D4037'); px(ctx, 17, 20, '#5D4037');
+  // Cheeks
+  softCircle(ctx, 7, 18, 3, 'rgb(255, 143, 170)');
+  softCircle(ctx, 24, 18, 3, 'rgb(255, 143, 170)');
 }
 
 function drawCatFace(ctx: CanvasRenderingContext2D) {
-  // 目�E�縦長キャチE��アイ�E�E  px(ctx, 5, 5, '#111'); px(ctx, 5, 6, '#111'); px(ctx, 5, 7, '#111');
-  px(ctx, 10, 5, '#111'); px(ctx, 10, 6, '#111'); px(ctx, 10, 7, '#111');
-  // 瞳允E  px(ctx, 5, 5, '#44AA44');
-  px(ctx, 10, 5, '#44AA44');
-  // 鼻�E�小さぁE��ンク三角！E  px(ctx, 7, 8, '#FFB6C1'); px(ctx, 8, 8, '#FFB6C1');
-  // 口�E�ω！E  px(ctx, 6, 9, '#444'); px(ctx, 7, 10, '#444');
-  px(ctx, 9, 9, '#444'); px(ctx, 8, 10, '#444');
-  // ヒゲ
-  rect(ctx, 1, 8, 3, 1, '#555');
-  rect(ctx, 12, 8, 3, 1, '#555');
-  rect(ctx, 1, 10, 3, 1, '#555');
-  rect(ctx, 12, 10, 3, 1, '#555');
-  // ほっぺ
-  px(ctx, 3, 9, '#FFB0C0'); px(ctx, 12, 9, '#FFB0C0');
+  eye(ctx, 10, 12, 3, '#66BB6A', 'cat');
+  eye(ctx, 21, 12, 3, '#66BB6A', 'cat');
+  // Nose (small pink triangle)
+  px(ctx, 15, 16, '#FFB6C1'); px(ctx, 16, 16, '#FFB6C1');
+  px(ctx, 15, 17, '#FFB6C1'); px(ctx, 16, 17, '#FFB6C1');
+  // ω mouth
+  px(ctx, 13, 18, '#666'); px(ctx, 14, 19, '#666');
+  px(ctx, 15, 18, '#666'); px(ctx, 16, 18, '#666');
+  px(ctx, 18, 18, '#666'); px(ctx, 17, 19, '#666');
+  // Whiskers
+  rect(ctx, 2, 15, 6, 1, '#888');
+  rect(ctx, 24, 15, 6, 1, '#888');
+  rect(ctx, 2, 19, 6, 1, '#888');
+  rect(ctx, 24, 19, 6, 1, '#888');
+  rect(ctx, 3, 17, 5, 1, '#888');
+  rect(ctx, 24, 17, 5, 1, '#888');
+  // Cheeks
+  softCircle(ctx, 7, 18, 2, 'rgb(255, 176, 192)');
+  softCircle(ctx, 24, 18, 2, 'rgb(255, 176, 192)');
 }
 
 function drawDogFace(ctx: CanvasRenderingContext2D) {
-  // 目�E�丸ぁE��きめ�E�E  px(ctx, 5, 6, '#111'); px(ctx, 6, 6, '#111');
-  px(ctx, 5, 7, '#111'); px(ctx, 6, 7, '#111');
-  px(ctx, 9, 6, '#111'); px(ctx, 10, 6, '#111');
-  px(ctx, 9, 7, '#111'); px(ctx, 10, 7, '#111');
-  // ハイライチE  px(ctx, 5, 6, '#444');
-  px(ctx, 9, 6, '#444');
-  // 鼻
-  rect(ctx, 7, 8, 2, 1, '#222');
-  // 舁E  px(ctx, 7, 10, '#FF6B8A'); px(ctx, 8, 10, '#FF6B8A');
-  px(ctx, 7, 11, '#FF6B8A'); px(ctx, 8, 11, '#FF6B8A');
-  // ほっぺ
-  px(ctx, 3, 9, '#FFB0C0'); px(ctx, 12, 9, '#FFB0C0');
+  eye(ctx, 10, 12, 2, '#6D4C41', 'big');
+  eye(ctx, 21, 12, 2, '#6D4C41', 'big');
+  // Nose
+  rect(ctx, 14, 16, 4, 2, '#3E2723');
+  rect(ctx, 15, 15, 2, 1, '#3E2723');
+  // Tongue
+  rect(ctx, 14, 20, 4, 3, '#FF8A80');
+  rect(ctx, 15, 23, 2, 1, '#FF8A80');
+  // Cheeks
+  softCircle(ctx, 7, 18, 2, 'rgb(255, 176, 192)');
+  softCircle(ctx, 24, 18, 2, 'rgb(255, 176, 192)');
 }
 
 function drawRabbitFace(ctx: CanvasRenderingContext2D) {
-  // 目�E�キラキラ丸目�E�E  px(ctx, 5, 6, '#CC2255'); px(ctx, 6, 6, '#CC2255');
-  px(ctx, 5, 7, '#CC2255'); px(ctx, 6, 7, '#CC2255');
-  px(ctx, 10, 6, '#CC2255'); px(ctx, 11, 6, '#CC2255');
-  px(ctx, 10, 7, '#CC2255'); px(ctx, 11, 7, '#CC2255');
-  // ハイライチE  px(ctx, 5, 6, '#FF88AA');
-  px(ctx, 10, 6, '#FF88AA');
-  // 鼻�E�ピンクY�E�E  px(ctx, 7, 9, '#FFB6C1'); px(ctx, 8, 9, '#FFB6C1');
-  // 口
-  px(ctx, 7, 10, '#AA5577'); px(ctx, 8, 10, '#AA5577');
-  // ほっぺ
-  rect(ctx, 2, 9, 2, 2, '#FF99B5');
-  rect(ctx, 12, 9, 2, 2, '#FF99B5');
+  eye(ctx, 10, 12, 3, '#E91E63', 'big');
+  eye(ctx, 21, 12, 3, '#E91E63', 'big');
+  // Nose (Y shape)
+  px(ctx, 15, 17, '#FFB6C1'); px(ctx, 16, 17, '#FFB6C1');
+  // Mouth (small)
+  px(ctx, 15, 19, '#CC7799'); px(ctx, 16, 19, '#CC7799');
+  // Cheeks (bigger blush)
+  softCircle(ctx, 6, 18, 3, 'rgb(255, 153, 181)');
+  softCircle(ctx, 25, 18, 3, 'rgb(255, 153, 181)');
 }
 
 function drawFoxFace(ctx: CanvasRenderingContext2D) {
-  // 目�E�シュチE��したつり目�E�E  px(ctx, 4, 6, '#111'); px(ctx, 5, 6, '#111'); px(ctx, 6, 7, '#111');
-  px(ctx, 11, 6, '#111'); px(ctx, 10, 6, '#111'); px(ctx, 9, 7, '#111');
-  // 鼻
-  px(ctx, 7, 9, '#222'); px(ctx, 8, 9, '#222');
-  // ニヤリ
-  px(ctx, 5, 10, '#444'); px(ctx, 6, 10, '#444');
-  px(ctx, 9, 10, '#444'); px(ctx, 10, 10, '#444');
-  // 白マズル
-  rect(ctx, 5, 8, 6, 4, 'rgba(255,255,255,0.15)');
+  // Sly eyes
+  rect(ctx, 8, 12, 5, 1, '#111');
+  rect(ctx, 9, 11, 3, 1, '#111');
+  rect(ctx, 19, 12, 5, 1, '#111');
+  rect(ctx, 19, 11, 3, 1, '#111');
+  px(ctx, 10, 12, '#FFD54F'); // Iris
+  px(ctx, 21, 12, '#FFD54F');
+  // White muzzle area
+  rect(ctx, 10, 15, 12, 8, 'rgba(255,255,255,0.2)');
+  // Nose
+  px(ctx, 15, 17, '#333'); px(ctx, 16, 17, '#333');
+  // Smirk
+  px(ctx, 12, 19, '#666'); px(ctx, 13, 20, '#666');
+  px(ctx, 19, 19, '#666'); px(ctx, 18, 20, '#666');
 }
 
 function drawFrogFace(ctx: CanvasRenderingContext2D) {
-  // 大きい目�E�上寁E���E�E  rect(ctx, 3, 3, 3, 3, '#111');
-  rect(ctx, 10, 3, 3, 3, '#111');
-  // 瞳
-  rect(ctx, 4, 3, 2, 2, '#EEDD00');
-  rect(ctx, 11, 3, 2, 2, '#EEDD00');
-  px(ctx, 4, 3, '#222');
-  px(ctx, 11, 3, '#222');
-  // 口�E�にっこり大きく�E�E  rect(ctx, 3, 10, 10, 1, '#335522');
-  px(ctx, 3, 9, '#335522'); px(ctx, 12, 9, '#335522');
-  // ほっぺ
-  rect(ctx, 1, 8, 2, 2, '#FF8888');
-  rect(ctx, 13, 8, 2, 2, '#FF8888');
+  // Giant bulging eyes
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      if (dx * dx + dy * dy <= 9) {
+        ctx.fillStyle = '#111';
+        ctx.fillRect(7 + dx, 8 + dy, 1, 1);
+        ctx.fillRect(24 + dx, 8 + dy, 1, 1);
+      }
+    }
+  }
+  // Iris
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (dx * dx + dy * dy <= 4) {
+        ctx.fillStyle = '#CDDC39';
+        ctx.fillRect(7 + dx, 8 + dy, 1, 1);
+        ctx.fillRect(24 + dx, 8 + dy, 1, 1);
+      }
+    }
+  }
+  px(ctx, 7, 8, '#333'); px(ctx, 24, 8, '#333');
+  // Big smile
+  rect(ctx, 6, 20, 20, 1, '#2E7D32');
+  px(ctx, 6, 19, '#2E7D32'); px(ctx, 25, 19, '#2E7D32');
+  // Cheeks
+  softCircle(ctx, 4, 17, 3, 'rgb(255, 136, 136)');
+  softCircle(ctx, 27, 17, 3, 'rgb(255, 136, 136)');
 }
 
 function drawPenguinFace(ctx: CanvasRenderingContext2D) {
-  // 白ぁE��エリア
-  rect(ctx, 3, 3, 10, 10, 'rgba(255,255,255,0.3)');
-  // 目
-  px(ctx, 5, 6, '#111'); px(ctx, 6, 6, '#111');
-  px(ctx, 9, 6, '#111'); px(ctx, 10, 6, '#111');
-  // ハイライチE  px(ctx, 5, 6, '#333');
-  px(ctx, 9, 6, '#333');
-  // くちばし（黁E��三角！E  rect(ctx, 6, 9, 4, 1, '#FFB300');
-  rect(ctx, 7, 10, 2, 1, '#FFB300');
-  // ほっぺ
-  px(ctx, 4, 8, '#FF99B5'); px(ctx, 11, 8, '#FF99B5');
+  // White face area
+  rect(ctx, 6, 6, 20, 20, 'rgba(255,255,255,0.3)');
+  // Eyes
+  eye(ctx, 10, 12, 2, '#37474F');
+  eye(ctx, 20, 12, 2, '#37474F');
+  // Beak
+  rect(ctx, 12, 17, 8, 2, '#FFB300');
+  rect(ctx, 14, 19, 4, 1, '#FFB300');
+  // Cheeks
+  softCircle(ctx, 8, 17, 2, 'rgb(255, 153, 181)');
+  softCircle(ctx, 23, 17, 2, 'rgb(255, 153, 181)');
 }
 
 function drawPandaFace(ctx: CanvasRenderingContext2D) {
-  // 黒い目の周り（パンダ模様！E  rect(ctx, 3, 4, 4, 4, 'rgba(0,0,0,0.6)');
-  rect(ctx, 9, 4, 4, 4, 'rgba(0,0,0,0.6)');
-  // 目�E�白+黒！E  px(ctx, 5, 5, '#111'); px(ctx, 5, 6, '#111');
-  px(ctx, 11, 5, '#111'); px(ctx, 11, 6, '#111');
-  // ハイライチE  px(ctx, 5, 5, '#555');
-  px(ctx, 11, 5, '#555');
-  // 鼻
-  px(ctx, 7, 9, '#222'); px(ctx, 8, 9, '#222');
-  // 口
-  px(ctx, 7, 10, '#444'); px(ctx, 8, 10, '#444');
-  // ほっぺ
-  px(ctx, 4, 9, '#FF99B5'); px(ctx, 12, 9, '#FF99B5');
+  // Black eye patches
+  for (let dy = -4; dy <= 4; dy++) {
+    for (let dx = -4; dx <= 4; dx++) {
+      if (dx * dx + dy * dy <= 16) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(9 + dx, 12 + dy, 1, 1);
+        ctx.fillRect(22 + dx, 12 + dy, 1, 1);
+      }
+    }
+  }
+  // Eyes
+  eye(ctx, 9, 12, 2, '#FFF');
+  eye(ctx, 22, 12, 2, '#FFF');
+  // Nose
+  px(ctx, 15, 18, '#333'); px(ctx, 16, 18, '#333');
+  // Mouth
+  px(ctx, 15, 20, '#555'); px(ctx, 16, 20, '#555');
+  // Cheeks
+  softCircle(ctx, 8, 20, 2, 'rgb(255, 153, 181)');
+  softCircle(ctx, 24, 20, 2, 'rgb(255, 153, 181)');
 }
 
 const FACE_DRAWERS: Record<AvatarSpecies, (ctx: CanvasRenderingContext2D) => void> = {
@@ -153,7 +253,7 @@ const FACE_DRAWERS: Record<AvatarSpecies, (ctx: CanvasRenderingContext2D) => voi
   panda: drawPandaFace,
 };
 
-/** 種族デフォルト�E毛色 */
+/** Species default fur colors */
 export const SPECIES_DEFAULT_COLORS: Record<AvatarSpecies, string> = {
   bear: '#8B6914',
   cat: '#FF9800',
@@ -165,11 +265,12 @@ export const SPECIES_DEFAULT_COLORS: Record<AvatarSpecies, string> = {
   panda: '#FAFAFA',
 };
 
-// チE��スチャキャチE��ュ
+// Texture cache
 const textureCache = new Map<string, THREE.CanvasTexture>();
 
 /**
- * 種族に応じた顔テクスチャを生成（キャチE��ュ付き�E�E */
+ * Generate a face texture for a species (cached)
+ */
 export function createFaceTexture(species: AvatarSpecies): THREE.CanvasTexture {
   const cacheKey = species;
   const cached = textureCache.get(cacheKey);
@@ -180,10 +281,10 @@ export function createFaceTexture(species: AvatarSpecies): THREE.CanvasTexture {
   canvas.height = TEX_SIZE;
   const ctx = canvas.getContext('2d')!;
 
-  // 透�E背景
+  // Transparent background
   ctx.clearRect(0, 0, TEX_SIZE, TEX_SIZE);
 
-  // 顔を描画
+  // Draw face
   const drawer = FACE_DRAWERS[species];
   if (drawer) drawer(ctx);
 
@@ -197,7 +298,7 @@ export function createFaceTexture(species: AvatarSpecies): THREE.CanvasTexture {
   return texture;
 }
 
-/** キャチE��ュクリア */
+/** Clear texture cache */
 export function clearFaceTextureCache() {
   textureCache.forEach(t => t.dispose());
   textureCache.clear();

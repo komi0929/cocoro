@@ -1,9 +1,11 @@
 /**
- * cocoro - App Phase 7
+ * cocoro - App Phase 8
  * Screen flow:
  *   register -> lobby (avatar) -> create-room (theme) -> room (3D + UI)
  *                                                     -> join (via invite URL)
  * Demo mode: welcome -> lobby -> theme-select -> room (no call)
+ * 
+ * Phase 8: Engine integration, social features, activities
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -21,9 +23,14 @@ import { RoomSettingsPanel } from './components/ui/RoomSettingsPanel';
 import { ReactionBar } from './components/three/EmojiReactions';
 import { TextChat } from './components/ui/TextChat';
 import { EmoteBar } from './components/ui/EmoteBar';
+import { StatusOverlay } from './components/ui/StatusOverlay';
+import { NotificationToast } from './components/ui/NotificationToast';
+import { ActivityPanel } from './components/ui/ActivityPanel';
+import { SocialPanel } from './components/ui/SocialPanel';
 import { useUserStore } from './store/useUserStore';
 import { useRoomStore } from './store/useRoomStore';
 import { useAjitStore } from './store/useAjitStore';
+import { useEngineStore } from './store/useEngineStore';
 import { startAmbience, stopAmbience } from './engine/voice/AmbientSounds';
 import type { RoomTheme } from './types/cocoro';
 
@@ -33,14 +40,24 @@ export default function App() {
   const user = useUserStore(s => s.user);
   const isLoggedIn = useUserStore(s => s.isLoggedIn);
   const isDemo = useUserStore(s => s.isDemo);
-  const enterDemoMode = useUserStore(s => s.enterDemoMode);
   const createRoom = useRoomStore(s => s.createRoom);
   const joinByInviteCode = useRoomStore(s => s.joinByInviteCode);
   const currentRoom = useRoomStore(s => s.currentRoom);
+  const initEngine = useEngineStore(s => s.initForUser);
+  const recordAction = useEngineStore(s => s.recordAction);
 
   const [screen, setScreen] = useState<AppScreen>('register');
   const [showInvite, setShowInvite] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
+  const [showSocial, setShowSocial] = useState(false);
+
+  // Initialize engine when user is available
+  useEffect(() => {
+    if (user?.id) {
+      initEngine(user.id);
+    }
+  }, [user?.id, initEngine]);
 
   // Check for invite URL parameter
   useEffect(() => {
@@ -76,11 +93,6 @@ export default function App() {
     setScreen('lobby');
   }, []);
 
-  const handleDemoMode = useCallback(() => {
-    enterDemoMode();
-    setScreen('lobby');
-  }, [enterDemoMode]);
-
   const handleEnterRoom = useCallback(() => {
     setScreen('theme-select');
   }, []);
@@ -90,11 +102,13 @@ export default function App() {
     if (!u) return;
     createRoom(u.id, u.name, theme);
     setScreen('room');
-  }, [createRoom]);
+    recordAction('joinSession');
+  }, [createRoom, recordAction]);
 
   const handleSkipRoom = useCallback(() => {
     setScreen('room');
-  }, []);
+    recordAction('joinSession');
+  }, [recordAction]);
 
   // Start/stop ambient sounds based on room theme
   useEffect(() => {
@@ -109,7 +123,6 @@ export default function App() {
     return (
       <RegisterScreen
         onComplete={handleRegisterComplete}
-        onDemo={handleDemoMode}
       />
     );
   }
@@ -135,6 +148,12 @@ export default function App() {
       <AjitCanvas />
       <CapacityBar />
       <HUD />
+
+      {/* Status Overlay — Level, Trust Badge */}
+      <StatusOverlay />
+
+      {/* Notification Toasts */}
+      <NotificationToast />
 
       {/* 通話コントロール — デモモードでは非表示 */}
       {!isDemo && <CallControls />}
@@ -181,6 +200,20 @@ export default function App() {
         >
           {'🔨'}
         </button>
+        <button
+          className="room-action-btn"
+          onClick={() => setShowActivity(true)}
+          title={'アクティビティ'}
+        >
+          {'🎮'}
+        </button>
+        <button
+          className="room-action-btn"
+          onClick={() => setShowSocial(true)}
+          title={'ソーシャル'}
+        >
+          {'👥'}
+        </button>
         {currentRoom && !isDemo && (
           <>
             <button
@@ -200,6 +233,12 @@ export default function App() {
           </>
         )}
       </div>
+
+      {/* Activity overlay */}
+      {showActivity && <ActivityPanel onClose={() => setShowActivity(false)} />}
+
+      {/* Social overlay */}
+      {showSocial && <SocialPanel onClose={() => setShowSocial(false)} />}
 
       {/* Invite overlay */}
       {showInvite && currentRoom && (
