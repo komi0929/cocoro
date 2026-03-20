@@ -135,6 +135,31 @@ const themeAmbience: Record<RoomTheme, () => void> = {
     // Subtle static
     createNoise(ac, 5000, 0.008, 'highpass').start();
   },
+
+  aquarium: () => {
+    const ac = getCtx();
+    // Deep underwater currents
+    createNoise(ac, 600, 0.025, 'lowpass').start();
+    createNoise(ac, 1200, 0.01, 'bandpass').start();
+    // Gentle water bubbles (high sine pings)
+    createDrone(ac, 800, 0.006, 'sine').start();
+    createDrone(ac, 1000, 0.004, 'sine').start();
+    // Deep ocean hum
+    createDrone(ac, 65, 0.025, 'sine').start();
+  },
+
+  volcano: () => {
+    const ac = getCtx();
+    // Deep magma rumble
+    createDrone(ac, 35, 0.05, 'sine').start();
+    createDrone(ac, 50, 0.03, 'sawtooth').start();
+    // Lava crackle
+    createNoise(ac, 400, 0.025, 'lowpass').start();
+    // Distant explosions
+    createNoise(ac, 150, 0.015, 'lowpass').start();
+    // Heat hiss
+    createNoise(ac, 6000, 0.005, 'highpass').start();
+  },
 };
 
 export function startAmbience(theme: RoomTheme): void {

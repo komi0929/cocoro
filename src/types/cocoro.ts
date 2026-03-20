@@ -334,7 +334,7 @@ export interface UserAccount {
 // Room Theme & Access (Phase 6)
 // ============================================================
 
-export type RoomTheme = 'underground' | 'loft' | 'treehouse' | 'beach' | 'rooftop' | 'space';
+export type RoomTheme = 'underground' | 'loft' | 'treehouse' | 'beach' | 'rooftop' | 'space' | 'aquarium' | 'volcano';
 export type AccessMode = 'open' | 'permission' | 'key';
 
 export interface RoomDef {
@@ -351,8 +351,36 @@ export interface RoomDef {
 }
 
 export const ROOM_THEME_LIST: RoomTheme[] = [
-  'underground', 'loft', 'treehouse', 'beach', 'rooftop', 'space',
+  'underground', 'loft', 'treehouse', 'beach', 'rooftop', 'space', 'aquarium', 'volcano',
 ];
+
+/** テーマ固有パーティクル設定 */
+export interface ThemeParticleConfig {
+  /** パーティクル色 */
+  color: string;
+  /** パーティクル数 */
+  count: number;
+  /** パーティクルサイズ */
+  size: number;
+  /** 動き速度 */
+  speed: number;
+  /** 動きのパターン */
+  pattern: 'float' | 'fall' | 'rise' | 'orbit' | 'drift' | 'flicker';
+  /** 放射形状 */
+  shape: 'box' | 'sphere';
+}
+
+/** テーマ固有ライティング設定 */
+export interface ThemeSpecialLighting {
+  /** スポットライト色 */
+  spotColor: string;
+  /** スポットライト強度 */
+  spotIntensity: number;
+  /** 点滅/揺らぎ */
+  flicker: boolean;
+  /** ゴッドレイ色 */
+  godRayColor?: string;
+}
 
 export interface RoomThemeDef {
   id: RoomTheme;
@@ -368,68 +396,150 @@ export interface RoomThemeDef {
   neonColor: string;
   fogColor: string;
   fogDensity: number;
+  /** 環境マップ */
+  environmentPreset: 'sunset' | 'night' | 'dawn' | 'warehouse' | 'forest' | 'apartment' | 'studio' | 'city' | 'park' | 'lobby';
+  /** テーマ固有パーティクル */
+  particles?: ThemeParticleConfig;
+  /** テーマ固有ライティング */
+  specialLighting?: ThemeSpecialLighting;
+  /** 床パターン */
+  floorPattern: 'solid' | 'wood' | 'stone' | 'sand' | 'metal' | 'grass' | 'tile' | 'lava';
+  /** 壁パターン */
+  wallPattern: 'solid' | 'brick' | 'wood' | 'glass' | 'rock' | 'coral' | 'obsidian' | 'panel';
+  /** 装飾種別リスト */
+  decorations: string[];
+  /** セカンダリアクセントカラー */
+  secondaryAccent: string;
 }
 
 export const ROOM_THEMES: Record<RoomTheme, RoomThemeDef> = {
   underground: {
     id: 'underground',
-    name: '\u5730\u4E0B\u5BA4',
-    emoji: '\u{1F5FF}',
-    description: '\u30C0\u30FC\u30AF\u00D7\u30CD\u30AA\u30F3\u306E\u79D8\u5BC6\u57FA\u5730',
+    name: '地下室',
+    emoji: '🗿',
+    description: 'ダーク×ネオンの秘密基地',
     floorColor: '#1a1a2e', wallColor: '#2d2020', ceilingColor: '#111',
     ambientColor: '#c4b5fd', ambientIntensity: 0.3,
     accentColor: '#7c3aed', neonColor: '#06b6d4',
     fogColor: '#0a0a1a', fogDensity: 0.08,
+    environmentPreset: 'night',
+    floorPattern: 'stone', wallPattern: 'rock',
+    secondaryAccent: '#a855f7',
+    decorations: ['crystal', 'pipe', 'glow_moss', 'stalactite'],
+    particles: { color: '#c4b5fd', count: 30, size: 0.04, speed: 0.3, pattern: 'float', shape: 'box' },
+    specialLighting: { spotColor: '#7c3aed', spotIntensity: 2, flicker: true },
   },
   loft: {
     id: 'loft',
-    name: '\u30ED\u30D5\u30C8',
-    emoji: '\u{1F3E0}',
-    description: '\u6696\u304B\u3044\u6728\u76EE\u8ABF\u306E\u304A\u3057\u3083\u308C\u90E8\u5C4B',
+    name: 'ロフト',
+    emoji: '🏠',
+    description: '暖かい木目調のおしゃれ部屋',
     floorColor: '#8B6914', wallColor: '#F5F0E1', ceilingColor: '#E8E0D0',
     ambientColor: '#FFE4B5', ambientIntensity: 0.7,
     accentColor: '#D4A574', neonColor: '#FFD700',
     fogColor: '#FFF8E7', fogDensity: 0.02,
+    environmentPreset: 'apartment',
+    floorPattern: 'wood', wallPattern: 'brick',
+    secondaryAccent: '#E8A87C',
+    decorations: ['window_frame', 'bookshelf', 'fireplace', 'hanging_plant'],
+    particles: { color: '#FFD700', count: 15, size: 0.02, speed: 0.1, pattern: 'drift', shape: 'box' },
+    specialLighting: { spotColor: '#FFE4B5', spotIntensity: 1.5, flicker: true, godRayColor: '#FFF8DC' },
   },
   treehouse: {
     id: 'treehouse',
-    name: '\u30C4\u30EA\u30FC\u30CF\u30A6\u30B9',
-    emoji: '\u{1F333}',
-    description: '\u68EE\u306E\u4E2D\u306E\u79D8\u5BC6\u306E\u5C0F\u5C4B',
+    name: 'ツリーハウス',
+    emoji: '🌳',
+    description: '森の中の秘密の小屋',
     floorColor: '#6B4226', wallColor: '#5C3D1E', ceilingColor: '#3A5F3A',
     ambientColor: '#90EE90', ambientIntensity: 0.6,
     accentColor: '#228B22', neonColor: '#ADFF2F',
     fogColor: '#2E5D2E', fogDensity: 0.04,
+    environmentPreset: 'forest',
+    floorPattern: 'wood', wallPattern: 'wood',
+    secondaryAccent: '#32CD32',
+    decorations: ['branch', 'leaf_cluster', 'bird_nest', 'vine', 'lantern'],
+    particles: { color: '#90EE90', count: 40, size: 0.03, speed: 0.5, pattern: 'fall', shape: 'box' },
+    specialLighting: { spotColor: '#ADFF2F', spotIntensity: 0.8, flicker: false, godRayColor: '#90EE9044' },
   },
   beach: {
     id: 'beach',
-    name: '\u30D3\u30FC\u30C1\u30CF\u30A6\u30B9',
-    emoji: '\u{1F3D6}\uFE0F',
-    description: '\u6D77\u8FBA\u306E\u958B\u653E\u7684\u306A\u30CF\u30A6\u30B9',
+    name: 'ビーチハウス',
+    emoji: '🏖️',
+    description: '海辺の開放的なハウス',
     floorColor: '#F5DEB3', wallColor: '#E0F7FA', ceilingColor: '#B3E5FC',
     ambientColor: '#87CEEB', ambientIntensity: 1.0,
     accentColor: '#00BCD4', neonColor: '#00E5FF',
     fogColor: '#E0F2FF', fogDensity: 0.01,
+    environmentPreset: 'sunset',
+    floorPattern: 'sand', wallPattern: 'glass',
+    secondaryAccent: '#FF7043',
+    decorations: ['palm_shadow', 'shell', 'wave_edge', 'surfboard', 'starfish'],
+    particles: { color: '#87CEEB', count: 20, size: 0.015, speed: 0.2, pattern: 'drift', shape: 'sphere' },
+    specialLighting: { spotColor: '#FFA726', spotIntensity: 1.8, flicker: false, godRayColor: '#FFD54F' },
   },
   rooftop: {
     id: 'rooftop',
-    name: '\u5C4B\u4E0A',
-    emoji: '\u{1F307}',
-    description: '\u5915\u713C\u3051\u306E\u898B\u3048\u308B\u5C4B\u4E0A',
+    name: '屋上',
+    emoji: '🌇',
+    description: '夕焼けの見える屋上',
     floorColor: '#696969', wallColor: '#808080', ceilingColor: '#FF7F50',
     ambientColor: '#FF8C00', ambientIntensity: 0.8,
     accentColor: '#FF4500', neonColor: '#FFD700',
     fogColor: '#FFA07A', fogDensity: 0.03,
+    environmentPreset: 'sunset',
+    floorPattern: 'metal', wallPattern: 'panel',
+    secondaryAccent: '#FF6B35',
+    decorations: ['fence', 'antenna', 'distant_buildings', 'water_tower', 'string_lights'],
+    particles: { color: '#FFD700', count: 10, size: 0.01, speed: 0.15, pattern: 'drift', shape: 'box' },
+    specialLighting: { spotColor: '#FF4500', spotIntensity: 1.2, flicker: false, godRayColor: '#FF7F5088' },
   },
   space: {
     id: 'space',
-    name: '\u5B87\u5B99\u30B9\u30C6\u30FC\u30B7\u30E7\u30F3',
-    emoji: '\u{1F680}',
-    description: '\u8FD1\u672A\u6765SF\u306E\u5B87\u5B99\u57FA\u5730',
+    name: '宇宙ステーション',
+    emoji: '🚀',
+    description: '近未来SFの宇宙基地',
     floorColor: '#2C2C3A', wallColor: '#1A1A2E', ceilingColor: '#0D0D1A',
     ambientColor: '#6366f1', ambientIntensity: 0.4,
     accentColor: '#818cf8', neonColor: '#22d3ee',
     fogColor: '#0a0a2e', fogDensity: 0.06,
+    environmentPreset: 'night',
+    floorPattern: 'metal', wallPattern: 'panel',
+    secondaryAccent: '#a78bfa',
+    decorations: ['star_field', 'space_window', 'hologram_planet', 'control_panel', 'antenna_dish'],
+    particles: { color: '#ffffff', count: 80, size: 0.008, speed: 0.1, pattern: 'flicker', shape: 'sphere' },
+    specialLighting: { spotColor: '#22d3ee', spotIntensity: 1.5, flicker: true },
+  },
+  aquarium: {
+    id: 'aquarium',
+    name: '深海アクアリウム',
+    emoji: '🐠',
+    description: '神秘的な深海の水族館',
+    floorColor: '#0D3B66', wallColor: '#0A2E52', ceilingColor: '#061A33',
+    ambientColor: '#00CED1', ambientIntensity: 0.45,
+    accentColor: '#00BCD4', neonColor: '#40E0D0',
+    fogColor: '#0A2E52', fogDensity: 0.07,
+    environmentPreset: 'night',
+    floorPattern: 'tile', wallPattern: 'coral',
+    secondaryAccent: '#7B68EE',
+    decorations: ['coral_reef', 'jellyfish', 'seaweed', 'treasure_chest', 'porthole'],
+    particles: { color: '#E0FFFF', count: 60, size: 0.025, speed: 0.4, pattern: 'rise', shape: 'sphere' },
+    specialLighting: { spotColor: '#00CED1', spotIntensity: 1.8, flicker: true, godRayColor: '#40E0D044' },
+  },
+  volcano: {
+    id: 'volcano',
+    name: '火山の洞窟',
+    emoji: '🌋',
+    description: '溶岩が流れる灼熱の隠れ家',
+    floorColor: '#1A0A00', wallColor: '#2D1810', ceilingColor: '#0D0500',
+    ambientColor: '#FF6B35', ambientIntensity: 0.35,
+    accentColor: '#FF4500', neonColor: '#FF6347',
+    fogColor: '#1A0500', fogDensity: 0.09,
+    environmentPreset: 'night',
+    floorPattern: 'lava', wallPattern: 'obsidian',
+    secondaryAccent: '#FFD700',
+    decorations: ['lava_stream', 'ember_vent', 'obsidian_pillar', 'magma_crack', 'heat_vent'],
+    particles: { color: '#FF4500', count: 50, size: 0.03, speed: 0.6, pattern: 'rise', shape: 'box' },
+    specialLighting: { spotColor: '#FF4500', spotIntensity: 2.5, flicker: true },
   },
 };
 
