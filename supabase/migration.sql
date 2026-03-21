@@ -102,15 +102,24 @@ ALTER TABLE room_allowed_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE room_visits ENABLE ROW LEVEL SECURITY;
 
 -- profiles: 自分のprofileは読み書き可、他人は読み取りのみ
+DROP POLICY IF EXISTS "profiles_select" ON profiles;
+DROP POLICY IF EXISTS "profiles_update" ON profiles;
 CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (true);
 CREATE POLICY "profiles_update" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- rooms: 誰でも読める、作成はログインユーザー、更新は所有者のみ
+DROP POLICY IF EXISTS "rooms_select" ON rooms;
+DROP POLICY IF EXISTS "rooms_insert" ON rooms;
+DROP POLICY IF EXISTS "rooms_update" ON rooms;
 CREATE POLICY "rooms_select" ON rooms FOR SELECT USING (true);
 CREATE POLICY "rooms_insert" ON rooms FOR INSERT WITH CHECK (auth.uid() = owner_id);
 CREATE POLICY "rooms_update" ON rooms FOR UPDATE USING (auth.uid() = owner_id);
 
 -- furniture: 部屋の家具は誰でも見える、追加/更新/削除は部屋所有者
+DROP POLICY IF EXISTS "furniture_select" ON furniture;
+DROP POLICY IF EXISTS "furniture_insert" ON furniture;
+DROP POLICY IF EXISTS "furniture_update" ON furniture;
+DROP POLICY IF EXISTS "furniture_delete" ON furniture;
 CREATE POLICY "furniture_select" ON furniture FOR SELECT USING (true);
 CREATE POLICY "furniture_insert" ON furniture FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = room_id AND rooms.owner_id = auth.uid()));
@@ -120,10 +129,15 @@ CREATE POLICY "furniture_delete" ON furniture FOR DELETE
   USING (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = room_id AND rooms.owner_id = auth.uid()));
 
 -- messages: 部屋のメッセージは誰でも読める、送信はログインユーザー
+DROP POLICY IF EXISTS "messages_select" ON messages;
+DROP POLICY IF EXISTS "messages_insert" ON messages;
 CREATE POLICY "messages_select" ON messages FOR SELECT USING (true);
 CREATE POLICY "messages_insert" ON messages FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- room_allowed_users: 誰でも読める、追加/削除は部屋所有者
+DROP POLICY IF EXISTS "allowed_select" ON room_allowed_users;
+DROP POLICY IF EXISTS "allowed_insert" ON room_allowed_users;
+DROP POLICY IF EXISTS "allowed_delete" ON room_allowed_users;
 CREATE POLICY "allowed_select" ON room_allowed_users FOR SELECT USING (true);
 CREATE POLICY "allowed_insert" ON room_allowed_users FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = room_id AND rooms.owner_id = auth.uid()));
@@ -131,6 +145,9 @@ CREATE POLICY "allowed_delete" ON room_allowed_users FOR DELETE
   USING (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = room_id AND rooms.owner_id = auth.uid()));
 
 -- room_visits: 自分の訪問履歴のみ
+DROP POLICY IF EXISTS "visits_select" ON room_visits;
+DROP POLICY IF EXISTS "visits_insert" ON room_visits;
+DROP POLICY IF EXISTS "visits_update" ON room_visits;
 CREATE POLICY "visits_select" ON room_visits FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "visits_insert" ON room_visits FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "visits_update" ON room_visits FOR UPDATE USING (auth.uid() = user_id);
