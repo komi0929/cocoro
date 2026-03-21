@@ -1,4 +1,4 @@
-﻿/**
+/**
  * cocoro — Theme Decorations (Phase 7 — High-Poly Voxel)
  * 8テーマ固有の3D装飾オブジェクト群
  * NoisyBox/NoisyCylinder/NoisySphere/EmissiveBox + アニメーション付き高セグメントジオメトリ
@@ -16,7 +16,7 @@ const ROOM_D = 8;
 const ROOM_H = 3.5;
 
 // =================================================================
-// Underground (地下室) — crystal, pipe, glow_moss, stalactite
+// Underground (地下室) — HIGH-POLY VOXEL
 // =================================================================
 function UndergroundDecorations() {
   const crystalRef = useRef<THREE.Group>(null);
@@ -38,68 +38,123 @@ function UndergroundDecorations() {
 
   return (
     <group>
-      {/* Crystals (animated emissive — keep raw mesh for ref access) */}
+      {/* === Crystal formations (multi-block clusters) === */}
       <group ref={crystalRef}>
         {[
-          { pos: [-3.5, 0, -3.5] as const, scale: 1.2, rot: 0.3 },
-          { pos: [3.2, 0, -3.2] as const, scale: 0.8, rot: -0.5 },
-          { pos: [-2, 0, 2.5] as const, scale: 0.6, rot: 0.7 },
-          { pos: [2.8, 0, 1.5] as const, scale: 1.0, rot: -0.2 },
+          { pos: [-3.5, 0, -3.5], scale: 1.2, rot: 0.3 },
+          { pos: [3.2, 0, -3.2], scale: 0.8, rot: -0.5 },
+          { pos: [-2, 0, 2.5], scale: 0.6, rot: 0.7 },
+          { pos: [2.8, 0, 1.5], scale: 1.0, rot: -0.2 },
+          { pos: [-1, 0, -1.5], scale: 0.7, rot: 0.4 },
+          { pos: [1.5, 0, 3], scale: 0.5, rot: -0.6 },
         ].map((c, i) => (
-          <mesh key={`crystal-${i}`} position={[c.pos[0], c.scale * 0.5, c.pos[2]]} rotation={[0, c.rot, 0.1]}>
-            <coneGeometry args={[0.15 * c.scale, c.scale * 1.2, 8]} />
-            <meshStandardMaterial
-              color="#9b59b6" emissive="#7c3aed" emissiveIntensity={2}
-              transparent opacity={0.8} roughness={0.08} metalness={0.55}
-            />
-          </mesh>
-        ))}
-        {/* Small crystal clusters around base */}
-        {[
-          [-3.7, 0, -3.3], [-3.3, 0, -3.7], [3.0, 0, -3.0], [3.4, 0, -3.4],
-          [-2.2, 0, 2.3], [2.6, 0, 1.3], [3.0, 0, 1.7],
-        ].map(([x, , z], i) => (
-          <mesh key={`mini-crystal-${i}`} position={[x!, 0.15, z!]} rotation={[0, i * 0.9, 0.2 + i * 0.1]}>
-            <coneGeometry args={[0.05 + i * 0.01, 0.3 + i * 0.04, 6]} />
-            <meshStandardMaterial color="#c084fc" emissive="#a855f7" emissiveIntensity={1.5} transparent opacity={0.7} roughness={0.1} metalness={0.5} />
-          </mesh>
+          <group key={`crystal-group-${i}`} position={[c.pos[0], 0, c.pos[2]]} rotation={[0, c.rot, 0]}>
+            {/* Main crystal — 3 stacked blocks tapering upward */}
+            <NoisyBox size={[0.12 * c.scale, 0.3 * c.scale, 0.12 * c.scale]}
+              position={[0, 0.15 * c.scale, 0]} rotation={[0, 0, 0.05]}
+              color="#9b59b6" roughness={0.08} metalness={0.55} seed={3000 + i * 3}
+              bevel={0.01} lightnessSpread={0.15} />
+            <NoisyBox size={[0.08 * c.scale, 0.25 * c.scale, 0.08 * c.scale]}
+              position={[0, 0.42 * c.scale, 0]} rotation={[0, 0.3, 0.08]}
+              color="#7c3aed" roughness={0.06} metalness={0.6} seed={3001 + i * 3}
+              bevel={0.008} lightnessSpread={0.12} />
+            <NoisyBox size={[0.05 * c.scale, 0.18 * c.scale, 0.05 * c.scale]}
+              position={[0, 0.65 * c.scale, 0]} rotation={[0, 0.1, 0.1]}
+              color="#a855f7" roughness={0.05} metalness={0.65} seed={3002 + i * 3}
+              bevel={0.006} />
+            {/* Side crystals */}
+            <NoisyBox size={[0.06 * c.scale, 0.2 * c.scale, 0.06 * c.scale]}
+              position={[0.1 * c.scale, 0.1 * c.scale, 0.05 * c.scale]} rotation={[0.2, 0.5, 0.15]}
+              color="#c084fc" roughness={0.07} metalness={0.5} seed={3050 + i}
+              bevel={0.005} />
+            <NoisyBox size={[0.04 * c.scale, 0.15 * c.scale, 0.04 * c.scale]}
+              position={[-0.08 * c.scale, 0.08 * c.scale, -0.06 * c.scale]} rotation={[-0.1, -0.3, -0.2]}
+              color="#d8b4fe" roughness={0.06} metalness={0.55} seed={3060 + i}
+              bevel={0.004} />
+          </group>
         ))}
       </group>
 
-      {/* Pipes along ceiling */}
+      {/* === Pipes along ceiling with valves === */}
       {[0.8, -0.8].map((z, i) => (
-        <NoisyCylinder key={`pipe-${i}`} args={[0.06, 0.06, ROOM_W - 1]} position={[0, ROOM_H - 0.3, z * 3]} rotation={[0, 0, Math.PI / 2]} color="#555" roughness={0.2} metalness={0.9} seed={3000 + i} />
+        <group key={`pipe-${i}`}>
+          <NoisyCylinder args={[0.07, 0.07, ROOM_W - 1]} position={[0, ROOM_H - 0.3, z * 3]}
+            rotation={[0, 0, Math.PI / 2]} color="#555" roughness={0.2} metalness={0.9} seed={3070 + i} />
+          {/* Pipe joints */}
+          {[-2, 0, 2].map((x, j) => (
+            <group key={`joint-${i}-${j}`}>
+              <NoisyCylinder args={[0.1, 0.1, 0.08]} position={[x, ROOM_H - 0.3, z * 3]}
+                rotation={[0, 0, Math.PI / 2]} color="#666" metalness={0.85} roughness={0.25} seed={3080 + i * 3 + j} />
+              {/* Valve wheel */}
+              {j === 1 && (
+                <NoisyBox size={[0.06, 0.06, 0.02]} position={[x, ROOM_H - 0.15, z * 3]}
+                  color="#FF4444" roughness={0.3} metalness={0.7} seed={3090 + i} bevel={0.005} />
+              )}
+            </group>
+          ))}
+        </group>
       ))}
-      {/* Pipe joints */}
-      {[0.8, -0.8].map((z, i) =>
-        [-2, 0, 2].map((x, j) => (
-          <NoisyCylinder key={`joint-${i}-${j}`} args={[0.09, 0.09, 0.08]} position={[x, ROOM_H - 0.3, z * 3]} rotation={[0, 0, Math.PI / 2]} color="#666" metalness={0.85} roughness={0.25} seed={3010 + i * 3 + j} />
-        ))
-      )}
 
-      {/* Glow moss patches on walls (animated) */}
-      <mesh ref={mossRef} position={[-ROOM_W / 2 + 0.12, 0.8, -1.5]}>
-        <sphereGeometry args={[0.3, 16, 12]} />
-        <meshStandardMaterial color="#2d6a4f" emissive="#4ade80" emissiveIntensity={0.3} roughness={1} transparent opacity={0.7} />
-      </mesh>
-      {/* Additional moss patches */}
-      <NoisySphere args={[0.2]} position={[-ROOM_W / 2 + 0.14, 1.5, 1.0]} color="#3a7d5e" roughness={0.95} seed={3020} />
-      <NoisySphere args={[0.15]} position={[ROOM_W / 2 - 0.14, 0.6, -2.0]} color="#2d8659" roughness={0.95} seed={3021} />
-
-      {/* Stalactites from ceiling */}
+      {/* === Glow moss clusters (enhanced) === */}
       {[
-        [-1.5, -2], [0.5, -1], [2, -3], [-2.5, 0.5], [1.5, 2.5],
-      ].map(([x, z], i) => (
-        <NoisyCylinder key={`stalactite-${i}`} args={[0.02, 0.08 + i * 0.02, 0.4 + i * 0.15]} position={[x!, ROOM_H - 0.2 - (0.4 + i * 0.15) / 2, z!]} color="#4a3728" roughness={0.85} seed={3030 + i} />
+        [-ROOM_W / 2 + 0.12, 0.8, -1.5], [-ROOM_W / 2 + 0.14, 1.5, 1.0],
+        [ROOM_W / 2 - 0.14, 0.6, -2.0], [-ROOM_W / 2 + 0.12, 2.0, 0],
+        [ROOM_W / 2 - 0.14, 1.2, 1.5],
+      ].map(([x, y, z], i) => (
+        <group key={`moss-cluster-${i}`} position={[x!, y!, z!]}>
+          <mesh ref={i === 0 ? mossRef : undefined}>
+            <sphereGeometry args={[0.15 + i * 0.02, 16, 12]} />
+            <meshStandardMaterial color="#2d6a4f" emissive="#4ade80" emissiveIntensity={0.3}
+              roughness={1} transparent opacity={0.7} />
+          </mesh>
+          {/* Surrounding smaller moss spots */}
+          {[0, 1, 2].map(j => {
+            const a = j * Math.PI * 2 / 3;
+            return (
+              <NoisySphere key={`ms-${j}`} args={[0.06 + j * 0.01]}
+                position={[Math.cos(a) * 0.12, Math.sin(a) * 0.06, Math.sin(a) * 0.08]}
+                color={j % 2 === 0 ? '#3a7d5e' : '#2d8659'} roughness={0.95} seed={3100 + i * 3 + j} />
+            );
+          })}
+        </group>
       ))}
 
-      {/* Rock formations on floor */}
-      <NoisyBox size={[0.6, 0.25, 0.5]} position={[-1, 0.125, 3]} color="#3d2b1f" roughness={0.95} seed={3040} bevel={0.03} />
-      <NoisyBox size={[0.4, 0.3, 0.35]} position={[2, 0.15, -1]} color="#4a3728" roughness={0.9} seed={3041} bevel={0.02} />
+      {/* === Stalactites (more, varying sizes) === */}
+      {[
+        [-1.5, -2, 0.5], [0.5, -1, 0.4], [2, -3, 0.6], [-2.5, 0.5, 0.35],
+        [1.5, 2.5, 0.45], [-0.5, -2.5, 0.3], [3, 1, 0.5], [-3, -1.5, 0.55],
+      ].map(([x, z, h], i) => (
+        <group key={`stalactite-${i}`} position={[x!, ROOM_H - 0.1, z!]}>
+          <NoisyBox size={[0.06 + i * 0.005, (h as number), 0.06 + i * 0.005]}
+            position={[0, -(h as number) / 2, 0]}
+            color="#4a3728" roughness={0.85} seed={3120 + i} bevel={0.008} lightnessSpread={0.12} />
+          <NoisyBox size={[0.04, (h as number) * 0.6, 0.04]}
+            position={[0, -(h as number) * 0.8, 0]}
+            color="#3d2b1f" roughness={0.88} seed={3130 + i} bevel={0.005} />
+        </group>
+      ))}
 
-      {/* Crystal point lights */}
+      {/* === Rock formations on floor (more variety) === */}
+      {[
+        [-1, 0, 3, 0.5, 0.3], [2, 0, -1, 0.4, 0.35], [-2.5, 0, -0.5, 0.35, 0.2],
+        [1, 0, 1, 0.3, 0.25], [3, 0, 2.5, 0.45, 0.28],
+      ].map(([x, , z, w, h], i) => (
+        <group key={`rock-${i}`} position={[x as number, 0, z as number]}>
+          <NoisyBox size={[(w as number), (h as number), (w as number) * 0.8]}
+            position={[0, (h as number) / 2, 0]}
+            color={i % 2 === 0 ? '#3d2b1f' : '#4a3728'} roughness={0.95} seed={3140 + i}
+            bevel={0.015} lightnessSpread={0.15} />
+          {/* Small rock fragments nearby */}
+          <NoisyBox size={[(w as number) * 0.3, (h as number) * 0.5, (w as number) * 0.3]}
+            position={[(w as number) * 0.5, (h as number) * 0.25, 0]}
+            color="#5C4033" roughness={0.9} seed={3145 + i} bevel={0.01} />
+        </group>
+      ))}
+
+      {/* === Crystal point lights === */}
       <pointLight position={[-3.5, 0.8, -3.5]} color="#7c3aed" intensity={1.5} distance={3} decay={2} />
       <pointLight position={[3.2, 0.6, -3.2]} color="#a855f7" intensity={1} distance={2.5} decay={2} />
+      <pointLight position={[-1, 0.5, -1.5]} color="#c084fc" intensity={0.8} distance={2} decay={2} />
     </group>
   );
 }
@@ -190,83 +245,310 @@ function LoftDecorations() {
 }
 
 // =================================================================
-// Treehouse (ツリーハウス) — branch, leaf_cluster, bird_nest, vine, lantern
+// Treehouse (ツリーハウス) — HIGH-POLY VOXEL
 // =================================================================
 function TreehouseDecorations() {
   const lanternRef = useRef<THREE.PointLight>(null);
+  const vineSwayRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
     if (lanternRef.current) {
-      const t = clock.getElapsedTime();
       lanternRef.current.intensity = 2 + Math.sin(t * 3) * 0.3;
+    }
+    if (vineSwayRef.current) {
+      vineSwayRef.current.rotation.z = Math.sin(t * 0.4) * 0.03;
     }
   });
 
   return (
     <group>
-      {/* Thick branches coming through walls */}
+      {/* === Thick branches (multi-segment blocky) === */}
       {[
-        { start: [-ROOM_W / 2, 2.5, -2] as [number,number,number], rot: [0.2, 0, 0.6] as [number,number,number], len: 3 },
-        { start: [ROOM_W / 2, 1.8, 1] as [number,number,number], rot: [-0.1, Math.PI, -0.5] as [number,number,number], len: 2.5 },
-        { start: [-ROOM_W / 2, 1, 2] as [number,number,number], rot: [0, 0, 0.4] as [number,number,number], len: 2 },
-      ].map((b, i) => (
-        <NoisyCylinder key={`branch-${i}`} args={[0.08, 0.15, b.len]} position={b.start} rotation={b.rot} color="#5C3D1E" roughness={0.9} seed={3200 + i} lightnessSpread={0.12} />
+        { start: [-ROOM_W / 2, 2.5, -2] as [number,number,number], rot: [0.2, 0, 0.6] as [number,number,number], segs: 6, w: 0.14 },
+        { start: [ROOM_W / 2, 1.8, 1] as [number,number,number], rot: [-0.1, Math.PI, -0.5] as [number,number,number], segs: 5, w: 0.12 },
+        { start: [-ROOM_W / 2, 1, 2] as [number,number,number], rot: [0, 0, 0.4] as [number,number,number], segs: 4, w: 0.1 },
+        { start: [0, ROOM_H, -3] as [number,number,number], rot: [0.3, 0.5, 0] as [number,number,number], segs: 3, w: 0.08 },
+      ].map((b, bi) => (
+        <group key={`branch-${bi}`} position={b.start} rotation={b.rot}>
+          {Array.from({ length: b.segs }).map((_, si) => {
+            const t = si / b.segs;
+            const w = b.w * (1 - t * 0.3);
+            return (
+              <group key={`bs-${si}`}>
+                <NoisyBox size={[w, 0.35, w]} position={[si * 0.06, si * 0.35, si * 0.03]}
+                  rotation={[0, si * 0.15, 0]}
+                  color={si % 2 === 0 ? '#5C3D1E' : '#6B4E32'} roughness={0.9} seed={3200 + bi * 10 + si}
+                  bevel={0.012} lightnessSpread={0.15} />
+                {/* Bark texture */}
+                {si > 0 && (
+                  <NoisyBox size={[w + 0.02, 0.015, w + 0.02]}
+                    position={[si * 0.06, si * 0.35 - 0.16, si * 0.03]}
+                    color="#4A3320" roughness={0.95} seed={3250 + bi * 10 + si} bevel={0.005} />
+                )}
+              </group>
+            );
+          })}
+          {/* Sub-branches at tips */}
+          <NoisyBox size={[b.w * 0.5, 0.2, b.w * 0.5]}
+            position={[b.segs * 0.06 + 0.1, b.segs * 0.35 + 0.1, b.segs * 0.03 + 0.05]}
+            rotation={[0.3, 0.5, 0.2]}
+            color="#7A5C3A" roughness={0.88} seed={3260 + bi} bevel={0.008} />
+        </group>
       ))}
 
-      {/* Leaf clusters */}
+      {/* === Dense leaf clusters (many small blocks) === */}
       {[
-        [-2, 2.8, -2], [1, 3, 0], [-1, ROOM_H - 0.2, 2], [3, 2.5, -1],
-        [-3, 2.2, 1.5], [0, ROOM_H, -3], [2, 2.6, 2.5],
-      ].map(([x, y, z], i) => (
-        <NoisySphere key={`leaf-${i}`} args={[0.2 + i * 0.02]} position={[x!, y!, z!]} color={i % 2 === 0 ? '#228B22' : '#32CD32'} roughness={0.9} seed={3210 + i} lightnessSpread={0.12} />
+        [-2, 2.8, -2, 0.25], [1, 3, 0, 0.3], [-1, ROOM_H - 0.2, 2, 0.22],
+        [3, 2.5, -1, 0.2], [-3, 2.2, 1.5, 0.28], [0, ROOM_H, -3, 0.18],
+        [2, 2.6, 2.5, 0.2], [-1.5, 2.5, -3, 0.15], [3.5, 2.8, 0.5, 0.22],
+        [-2.5, ROOM_H - 0.1, 0, 0.2], [0.5, 2.4, 3, 0.18], [1.5, ROOM_H, -2, 0.16],
+      ].map(([x, y, z, size], i) => (
+        <group key={`leaf-cluster-${i}`} position={[x!, y!, z!]}>
+          {/* Core sphere */}
+          <NoisyBox size={[size!, size! * 0.8, size!]} position={[0, 0, 0]}
+            color={['#228B22', '#2E8B57', '#32CD32', '#1B5E20', '#4CAF50', '#388E3C'][i % 6]!}
+            roughness={0.88} seed={3210 + i} bevel={0.02} lightnessSpread={0.2} />
+          {/* Surrounding smaller blocks */}
+          {[0, 1, 2, 3].map(j => {
+            const a = j * Math.PI / 2;
+            return (
+              <NoisyBox key={`lsub-${j}`}
+                size={[size! * 0.5, size! * 0.4, size! * 0.5]}
+                position={[Math.cos(a) * size! * 0.5, (j % 2 === 0 ? 0.03 : -0.03), Math.sin(a) * size! * 0.5]}
+                color={j % 2 === 0 ? '#2E7D32' : '#43A047'}
+                roughness={0.85} seed={3210 + i * 4 + j + 50} bevel={0.015} lightnessSpread={0.18} />
+            );
+          })}
+        </group>
       ))}
 
-      {/* Bird nest */}
+      {/* === Bird nest (detailed) === */}
       <group position={[2, 2.8, -2.5]}>
-        <NoisyCylinder args={[0.18, 0.12, 0.08]} color="#8B7355" roughness={0.95} seed={3220} />
+        {/* Nest bowl - stacked rings */}
+        <NoisyCylinder args={[0.2, 0.14, 0.06]} color="#8B7355" roughness={0.95} seed={3220} />
+        <NoisyCylinder args={[0.22, 0.16, 0.03]} position={[0, 0.04, 0]} color="#7A6544" roughness={0.95} seed={3221} />
+        {/* Twigs sticking out */}
+        {[0, 1, 2, 3, 4].map(i => {
+          const a = i * Math.PI * 2 / 5;
+          return (
+            <NoisyBox key={`twig-${i}`} size={[0.01, 0.01, 0.1]}
+              position={[Math.cos(a) * 0.15, 0.03, Math.sin(a) * 0.15]}
+              rotation={[0.3, a, Math.random() * 0.3]}
+              color="#6B5B43" roughness={0.9} seed={3222 + i} bevel={0.002} />
+          );
+        })}
+        {/* Eggs */}
         {[0, 1, 2].map(i => (
-          <NoisySphere key={`egg-${i}`} args={[0.025]} position={[Math.sin(i * 2.1) * 0.06, 0.06, Math.cos(i * 2.1) * 0.06]} color="#F5F5DC" roughness={0.6} seed={3225 + i} />
+          <NoisySphere key={`egg-${i}`} args={[0.03]} position={[Math.sin(i * 2.1) * 0.06, 0.06, Math.cos(i * 2.1) * 0.06]}
+            color="#F5F5DC" roughness={0.5} seed={3225 + i} />
         ))}
       </group>
 
-      {/* Vines hanging from ceiling */}
-      {[
-        [-1, 0.5], [1.5, -1.5], [-2.5, 2], [3, 0],
-      ].map(([x, z], i) => (
-        <group key={`vine-${i}`} position={[x!, ROOM_H, z!]}>
-          {Array.from({ length: 4 + i }).map((_, j) => (
-            <NoisyCylinder key={`vs-${j}`} args={[0.018, 0.015, 0.25]} position={[Math.sin(j * 0.5) * 0.05, -j * 0.25, Math.cos(j * 0.3) * 0.03]} color="#2E5D2E" roughness={0.85} seed={3230 + i * 5 + j} />
-          ))}
-          {/* Small leaves on vines */}
-          {Array.from({ length: 2 + i }).map((_, j) => (
-            <NoisyBox key={`vleaf-${j}`} size={[0.04, 0.025, 0.03]} position={[Math.sin(j * 1.2) * 0.08, -j * 0.3 - 0.12, Math.cos(j * 1.2) * 0.06]} color="#3CB371" roughness={0.85} seed={3260 + i * 3 + j} bevel={0.005} />
-          ))}
-        </group>
-      ))}
-
-      {/* Lantern */}
-      <group position={[0, 2.2, 0]}>
-        <NoisyCylinder args={[0.1, 0.1, 0.22]} color="#B8860B" roughness={0.4} metalness={0.3} seed={3280} />
-        <EmissiveBox size={[0.08, 0.12, 0.08]} position={[0, 0, 0]} color="#FFAA00" emissiveIntensity={1.5} />
-        <pointLight ref={lanternRef} position={[0, 0, 0]} color="#FFAA00" intensity={2} distance={4} decay={2} />
-        {/* Chain */}
-        <NoisyCylinder args={[0.008, 0.008, 0.3]} position={[0, 0.25, 0]} color="#8B7355" roughness={0.5} metalness={0.4} seed={3281} />
+      {/* === Vines (thick, with leaves) === */}
+      <group ref={vineSwayRef}>
+        {[
+          [-1, 0.5], [1.5, -1.5], [-2.5, 2], [3, 0], [-0.5, -2.5], [2, 2],
+        ].map(([x, z], i) => (
+          <group key={`vine-${i}`} position={[x!, ROOM_H, z!]}>
+            {Array.from({ length: 5 + i % 2 }).map((_, j) => (
+              <group key={`vseg-${j}`}>
+                {/* Vine stem segment */}
+                <NoisyBox size={[0.025, 0.22, 0.025]}
+                  position={[Math.sin(j * 0.6) * 0.04, -j * 0.22 - 0.11, Math.cos(j * 0.4) * 0.03]}
+                  color="#2E5D2E" roughness={0.85} seed={3230 + i * 7 + j} bevel={0.004} />
+                {/* Leaves on vine */}
+                {j % 2 === 0 && (
+                  <NoisyBox size={[0.06, 0.04, 0.02]}
+                    position={[Math.sin(j * 0.6) * 0.04 + 0.04, -j * 0.22 - 0.11, Math.cos(j * 0.4) * 0.03]}
+                    rotation={[0, j * 0.8, 0.3]}
+                    color={j % 4 === 0 ? '#3CB371' : '#2E8B57'}
+                    roughness={0.82} seed={3280 + i * 5 + j} bevel={0.005} lightnessSpread={0.15} />
+                )}
+              </group>
+            ))}
+          </group>
+        ))}
       </group>
 
-      {/* Mushrooms on floor */}
-      {[[-2, 0, 1], [1, 0, 3], [-3, 0, -2]].map(([x, , z], i) => (
-        <group key={`mushroom-${i}`} position={[x!, 0, z!]}>
-          <NoisyCylinder args={[0.02, 0.025, 0.06 + i * 0.02]} position={[0, 0.03, 0]} color="#F5DEB3" roughness={0.8} seed={3290 + i} />
-          <NoisySphere args={[0.04 + i * 0.008]} position={[0, 0.06 + i * 0.01, 0]} color={['#FF6347', '#FFD700', '#FF69B4'][i]!} roughness={0.7} seed={3293 + i} />
+      {/* === Lantern (enhanced) === */}
+      <group position={[0, 2.2, 0]}>
+        {/* Chain links */}
+        {[0, 1, 2].map(i => (
+          <NoisyBox key={`chain-${i}`} size={[0.02, 0.06, 0.02]}
+            position={[0, 0.2 + i * 0.08, 0]}
+            color="#8B7355" roughness={0.5} metalness={0.4} seed={3281 + i} bevel={0.003} />
+        ))}
+        {/* Lantern body */}
+        <NoisyBox size={[0.12, 0.16, 0.12]} position={[0, 0, 0]}
+          color="#B8860B" roughness={0.4} metalness={0.3} seed={3280} bevel={0.012} />
+        <EmissiveBox size={[0.08, 0.1, 0.08]} position={[0, 0, 0]} color="#FFAA00" emissiveIntensity={1.5} />
+        {/* Cap */}
+        <NoisyBox size={[0.14, 0.03, 0.14]} position={[0, 0.09, 0]}
+          color="#DAA520" roughness={0.4} metalness={0.4} seed={3285} bevel={0.006} />
+        <pointLight ref={lanternRef} position={[0, 0, 0]} color="#FFAA00" intensity={2} distance={4} decay={2} />
+      </group>
+
+      {/* === Mushrooms (detailed, various sizes) === */}
+      {[
+        [-2, 0, 1, '#FF6347', 0.04, 0.07], [1, 0, 3, '#FFD700', 0.05, 0.09],
+        [-3, 0, -2, '#FF69B4', 0.035, 0.06], [0.5, 0, -1.5, '#E0E0E0', 0.03, 0.05],
+        [-1, 0, 2.5, '#FF8A65', 0.045, 0.08], [3, 0, -0.5, '#CE93D8', 0.038, 0.07],
+      ].map(([x, , z, capColor, stemR, capR], i) => (
+        <group key={`mushroom-${i}`} position={[x as number, 0, z as number]}>
+          {/* Stem */}
+          <NoisyBox size={[(stemR as number) * 2, 0.08 + i * 0.01, (stemR as number) * 2]}
+            position={[0, 0.04 + i * 0.005, 0]}
+            color="#F5DEB3" roughness={0.75} seed={3290 + i} bevel={0.006} />
+          {/* Cap */}
+          <NoisyBox size={[(capR as number) * 2, 0.04, (capR as number) * 2]}
+            position={[0, 0.09 + i * 0.01, 0]}
+            color={capColor as string} roughness={0.65} seed={3296 + i} bevel={0.01} lightnessSpread={0.15} />
+          {/* Cap top detail */}
+          <NoisyBox size={[(capR as number) * 1.2, 0.02, (capR as number) * 1.2]}
+            position={[0, 0.12 + i * 0.01, 0]}
+            color={capColor as string} roughness={0.6} seed={3302 + i} bevel={0.008} lightnessSpread={0.2} />
+          {/* Spots on cap */}
+          {i % 2 === 0 && (
+            <NoisySphere args={[0.01]} position={[0.02, 0.12 + i * 0.01, 0.01]}
+              color="#FFFFFF" roughness={0.5} seed={3308 + i} />
+          )}
         </group>
       ))}
+
+      {/* === Moss patches on floor === */}
+      {[[-1.5, 0.005, 0.5], [2, 0.005, -1], [-2, 0.005, -2.5], [0, 0.005, 2]].map(([mx, my, mz], mi) => (
+        <NoisyBox key={`moss-${mi}`} size={[0.3 + mi * 0.05, 0.015, 0.25 + mi * 0.04]}
+          position={[mx!, my!, mz!]}
+          color={mi % 2 === 0 ? '#2E7D32' : '#1B5E20'} roughness={0.95} seed={3310 + mi}
+          bevel={0.01} lightnessSpread={0.2} />
+      ))}
+
+      {/* === Extra lighting === */}
+      <pointLight position={[-2, 1.5, 1]} color="#90EE90" intensity={0.5} distance={3} decay={2} />
+      <pointLight position={[2, 2, -1.5]} color="#ADFF2F" intensity={0.4} distance={3} decay={2} />
     </group>
   );
 }
 
 // =================================================================
-// Beach (ビーチハウス)
+// Beach (ビーチハウス) — HIGH-POLY VOXEL
 // =================================================================
+
+/** Voxel-style palm tree with blocky segmented trunk and dense leaf clusters */
+function VoxelPalmTree({ position, lean = 0.08, seed = 3340, scale = 1 }: {
+  position: [number, number, number]; lean?: number; seed?: number; scale?: number;
+}) {
+  // Trunk: 10 stacked cubes with slight rotation offsets for organic feel
+  const trunkSegs = 10;
+  const segH = 0.22 * scale;
+  const baseW = 0.18 * scale;
+  const topW = 0.12 * scale;
+
+  // Bark ring textures at trunk joints
+  const barkColors = ['#8B6B4A', '#7A5C3A', '#8B7355', '#6B4E32', '#7A5C3A',
+                      '#8B6B4A', '#7A5C3A', '#6B4E32', '#8B7355', '#7A5C3A'];
+
+  // Leaf fronds: 7 fronds, each made of 5 graduated blocks
+  const frondCount = 7;
+  const frondSeeds = Array.from({ length: frondCount }, (_, i) => seed + 100 + i);
+
+  return (
+    <group position={position}>
+      {/* Trunk segments — stacked blocks with offsets */}
+      {Array.from({ length: trunkSegs }).map((_, i) => {
+        const t = i / (trunkSegs - 1);
+        const w = baseW + (topW - baseW) * t;
+        const y = i * segH + segH / 2;
+        const xOff = Math.sin(i * 0.6) * 0.02 * scale + lean * i * 0.12;
+        const zOff = Math.cos(i * 0.8) * 0.015 * scale;
+        return (
+          <group key={`trunk-${i}`}>
+            <NoisyBox size={[w, segH * 0.95, w]} position={[xOff, y, zOff]}
+              rotation={[0, i * 0.2, 0]}
+              color={barkColors[i]!} roughness={0.88} seed={seed + i}
+              bevel={0.01 * scale} lightnessSpread={0.15} />
+            {/* Bark ring at joint */}
+            {i > 0 && i < trunkSegs - 1 && (
+              <NoisyBox size={[w + 0.03 * scale, 0.02 * scale, w + 0.03 * scale]}
+                position={[xOff, i * segH, zOff]}
+                color="#5C3D1E" roughness={0.9} seed={seed + 50 + i}
+                bevel={0.005 * scale} />
+            )}
+          </group>
+        );
+      })}
+
+      {/* Leaf crown — dense fronds */}
+      <group position={[lean * trunkSegs * 0.12, trunkSegs * segH, 0]}>
+        {/* Center top cluster */}
+        <NoisyBox size={[0.15 * scale, 0.12 * scale, 0.15 * scale]} position={[0, 0.05 * scale, 0]}
+          color="#2D8B2D" roughness={0.85} seed={seed + 200} bevel={0.02 * scale} lightnessSpread={0.2} />
+
+        {/* Fronds radiating outward */}
+        {Array.from({ length: frondCount }).map((_, fi) => {
+          const angle = (fi / frondCount) * Math.PI * 2;
+          const droop = 0.4 + fi * 0.05;
+          return (
+            <group key={`frond-${fi}`} rotation={[droop, angle, 0]}>
+              {/* Each frond = 5 blocks getting smaller, going outward */}
+              {[0, 1, 2, 3, 4].map(seg => {
+                const segScale = 1 - seg * 0.15;
+                const w = 0.1 * scale * segScale;
+                const h = 0.04 * scale;
+                const d = 0.2 * scale * segScale;
+                const y = seg * 0.18 * scale;
+                return (
+                  <NoisyBox key={`fs-${seg}`}
+                    size={[w, h, d]}
+                    position={[0, y, 0]}
+                    rotation={[seg * 0.12, 0, 0]}
+                    color={seg % 2 === 0 ? '#228B22' : '#32CD32'}
+                    roughness={0.82} seed={frondSeeds[fi]! + seg}
+                    bevel={0.006 * scale} lightnessSpread={0.18} />
+                );
+              })}
+              {/* Leaf tip */}
+              <NoisyBox size={[0.04 * scale, 0.025 * scale, 0.08 * scale]}
+                position={[0, 0.9 * scale, 0]} rotation={[0.3, 0, 0]}
+                color="#3CB371" roughness={0.8} seed={frondSeeds[fi]! + 10}
+                bevel={0.004 * scale} />
+            </group>
+          );
+        })}
+
+        {/* Coconuts */}
+        {[[-0.06, -0.02, 0.06], [0.05, -0.03, -0.04], [0.0, -0.01, 0.08]].map(([cx, cy, cz], ci) => (
+          <NoisySphere key={`coconut-${ci}`} args={[0.04 * scale]}
+            position={[cx! * scale, cy! * scale, cz! * scale]}
+            color="#5C3D1E" roughness={0.7} seed={seed + 300 + ci} />
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/** Voxel tropical flower cluster */
+function VoxelTropicalFlower({ position, color, seed }: {
+  position: [number, number, number]; color: string; seed: number;
+}) {
+  return (
+    <group position={position}>
+      <NoisyCylinder args={[0.015, 0.02, 0.12]} position={[0, 0.06, 0]} color="#228B22" roughness={0.85} seed={seed} />
+      {[0, 1, 2, 3, 4].map(i => {
+        const a = (i / 5) * Math.PI * 2;
+        return (
+          <NoisyBox key={`petal-${i}`} size={[0.04, 0.015, 0.03]}
+            position={[Math.cos(a) * 0.03, 0.13, Math.sin(a) * 0.03]}
+            rotation={[0.3, a, 0]}
+            color={color} roughness={0.7} seed={seed + i + 1} bevel={0.004} />
+        );
+      })}
+      <NoisySphere args={[0.015]} position={[0, 0.14, 0]} color="#FFD700" roughness={0.6} seed={seed + 10} />
+    </group>
+  );
+}
+
 function BeachDecorations() {
   const waveRef = useRef<THREE.Mesh>(null);
 
@@ -282,57 +564,102 @@ function BeachDecorations() {
 
   return (
     <group>
-      {/* Surfboard leaning on wall */}
-      <group position={[ROOM_W / 2 - 0.3, 0.8, -2]} rotation={[0, -0.3, 0.15]}>
-        <NoisyCylinder args={[0.12, 0.02, 1.8]} color="#FF6347" roughness={0.35} seed={3300} lightnessSpread={0.1} />
-        <NoisyCylinder args={[0.05, 0.01, 1.6]} position={[0.05, 0, 0]} color="#FFD700" roughness={0.35} seed={3301} />
-        {/* Fin */}
-        <NoisyBox size={[0.04, 0.08, 0.06]} position={[0, -0.7, 0.08]} color="#333" roughness={0.3} metalness={0.4} seed={3302} bevel={0.008} />
+      {/* === TWO VOXEL PALM TREES === */}
+      <VoxelPalmTree position={[-3, 0, 2]} lean={0.06} seed={3340} scale={1} />
+      <VoxelPalmTree position={[2.5, 0, -2.5]} lean={-0.04} seed={3370} scale={0.85} />
+
+      {/* === Surfboard (detailed) leaning on wall === */}
+      <group position={[ROOM_W / 2 - 0.25, 0, -2]} rotation={[0, -0.3, 0.12]}>
+        {/* Board body — stacked layers for thickness */}
+        <NoisyBox size={[0.2, 1.6, 0.04]} position={[0, 0.85, 0]} color="#FF6347" roughness={0.3} seed={3300} bevel={0.015} lightnessSpread={0.12} />
+        <NoisyBox size={[0.16, 1.4, 0.02]} position={[0.01, 0.85, 0.02]} color="#FFD700" roughness={0.3} seed={3301} bevel={0.01} />
+        {/* Stripe */}
+        <NoisyBox size={[0.18, 0.06, 0.005]} position={[0, 1.0, 0.025]} color="#00BCD4" roughness={0.35} seed={3303} bevel={0.004} />
+        <NoisyBox size={[0.18, 0.06, 0.005]} position={[0, 0.7, 0.025]} color="#00BCD4" roughness={0.35} seed={3304} bevel={0.004} />
+        {/* Fins */}
+        <NoisyBox size={[0.03, 0.07, 0.06]} position={[0, 0.12, -0.03]} color="#333" roughness={0.3} metalness={0.4} seed={3302} bevel={0.006} />
+        <NoisyBox size={[0.025, 0.05, 0.04]} position={[0.04, 0.15, -0.02]} color="#444" roughness={0.3} metalness={0.3} seed={3305} bevel={0.005} />
       </group>
 
-      {/* Shells scattered on floor */}
+      {/* === Shells (more variety) === */}
       {[
-        [-2, 0.02, 1.5], [1, 0.02, 2.5], [-0.5, 0.02, -2], [3, 0.02, 0.5], [-3, 0.02, -1],
+        [-2, 0.015, 1.5], [1, 0.015, 2.5], [-0.5, 0.015, -2],
+        [3, 0.015, 0.5], [-3, 0.015, -1], [0.5, 0.015, 3],
+        [-1.5, 0.015, -0.5], [2, 0.015, 1],
       ].map(([x, y, z], i) => (
-        <NoisySphere key={`shell-${i}`} args={[0.05 + i * 0.005]} position={[x!, y!, z!]} color={i % 2 === 0 ? '#FFF5EE' : '#FFE4C4'} roughness={0.25} metalness={0.25} seed={3310 + i} />
-      ))}
-
-      {/* Starfish */}
-      {[
-        [2.5, 0.02, 2] as const,
-        [-1.5, 0.02, 3] as const,
-      ].map(([x, y, z], i) => (
-        <group key={`star-${i}`} position={[x, y, z]} rotation={[-Math.PI / 2, 0, i * 0.8]}>
-          {[0, 1, 2, 3, 4].map(arm => (
-            <NoisyBox key={`arm-${arm}`} size={[0.02, 0.09, 0.012]}
-              position={[Math.cos(arm * Math.PI * 2 / 5) * 0.06, Math.sin(arm * Math.PI * 2 / 5) * 0.06, 0]}
-              rotation={[0, 0, arm * Math.PI * 2 / 5]}
-              color="#FF7043" roughness={0.75} seed={3320 + i * 5 + arm} bevel={0.004} />
-          ))}
-          <NoisySphere args={[0.02]} position={[0, 0, 0.005]} color="#FF5722" roughness={0.7} seed={3335 + i} />
+        <group key={`shell-${i}`} position={[x!, y!, z!]} rotation={[-Math.PI / 2, 0, i * 1.1]}>
+          <NoisyBox size={[0.04 + i * 0.003, 0.03 + i * 0.002, 0.015]}
+            color={['#FFF5EE', '#FFE4C4', '#FFDAB9', '#FFE0B2', '#FFF8E1', '#FFCCBC', '#F5F5DC', '#FFE4E1'][i]!}
+            roughness={0.25} metalness={0.2} seed={3310 + i} bevel={0.003} />
         </group>
       ))}
 
-      {/* Palm tree */}
-      <group position={[-3, 0, 2]}>
-        <NoisyCylinder args={[0.08, 0.12, 2.2]} position={[0, 1.1, 0]} rotation={[0.05, 0, 0.08]} color="#8B7355" roughness={0.85} seed={3340} lightnessSpread={0.1} />
-        {[0, 1, 2, 3, 4].map(i => (
-          <NoisyBox key={`frond-${i}`} size={[0.08, 0.6, 0.03]}
-            position={[Math.cos(i * Math.PI * 2 / 5) * 0.3, 2.4, Math.sin(i * Math.PI * 2 / 5) * 0.3]}
-            rotation={[0.7, i * Math.PI * 2 / 5, 0]}
-            color="#228B22" roughness={0.8} seed={3345 + i} bevel={0.006} />
-        ))}
+      {/* === Starfish (enhanced detail) === */}
+      {[
+        [2.5, 0.02, 2] as const,
+        [-1.5, 0.02, 3] as const,
+        [0.5, 0.02, -3] as const,
+      ].map(([x, y, z], i) => (
+        <group key={`star-${i}`} position={[x, y, z]} rotation={[-Math.PI / 2, 0, i * 0.8]}>
+          {[0, 1, 2, 3, 4].map(arm => {
+            const a = arm * Math.PI * 2 / 5;
+            return (
+              <group key={`arm-${arm}`}>
+                <NoisyBox size={[0.025, 0.08, 0.015]}
+                  position={[Math.cos(a) * 0.05, Math.sin(a) * 0.05, 0]}
+                  rotation={[0, 0, a]}
+                  color={['#FF7043', '#FF5722', '#E64A19'][i]!} roughness={0.7} seed={3320 + i * 5 + arm} bevel={0.004} />
+                <NoisyBox size={[0.015, 0.04, 0.012]}
+                  position={[Math.cos(a) * 0.1, Math.sin(a) * 0.1, 0]}
+                  rotation={[0, 0, a]}
+                  color={['#FF8A65', '#FF7043', '#FF5722'][i]!} roughness={0.7} seed={3330 + i * 5 + arm} bevel={0.003} />
+              </group>
+            );
+          })}
+          <NoisySphere args={[0.025]} position={[0, 0, 0.005]} color="#FF5722" roughness={0.65} seed={3335 + i} />
+        </group>
+      ))}
+
+      {/* === Tropical flowers === */}
+      <VoxelTropicalFlower position={[-2, 0, 1]} color="#FF69B4" seed={3350} />
+      <VoxelTropicalFlower position={[1.5, 0, 3]} color="#FF4081" seed={3355} />
+      <VoxelTropicalFlower position={[-1, 0, -1.5]} color="#FFD740" seed={3360} />
+
+      {/* === Grass tufts around palm bases === */}
+      {[[-3.2, 0, 2.2], [-2.8, 0, 1.8], [-3, 0, 2.4], [2.3, 0, -2.3], [2.7, 0, -2.7]].map(([gx, , gz], gi) => (
+        <NoisyBox key={`grass-${gi}`} size={[0.06, 0.08, 0.03]}
+          position={[gx!, 0.04, gz!]} rotation={[0, gi * 1.3, 0]}
+          color={gi % 2 === 0 ? '#2E7D32' : '#4CAF50'} roughness={0.9} seed={3360 + gi} bevel={0.005} />
+      ))}
+
+      {/* === Sand ripple mounds === */}
+      {[[-1, 0.03, 0], [2, 0.025, 1.5], [-2, 0.02, -2]].map(([sx, sy, sz], si) => (
+        <NoisyBox key={`mound-${si}`} size={[0.6 + si * 0.1, 0.04, 0.4 + si * 0.05]}
+          position={[sx!, sy!, sz!]}
+          color="#F5DEB3" roughness={1} seed={3380 + si} bevel={0.015} lightnessSpread={0.1} />
+      ))}
+
+      {/* === Driftwood === */}
+      <group position={[1, 0.04, 1.5]} rotation={[0, 0.5, 0.08]}>
+        <NoisyBox size={[0.06, 0.04, 0.5]} position={[0, 0, 0]} color="#9E9E9E" roughness={0.9} seed={3385} bevel={0.008} lightnessSpread={0.15} />
+        <NoisyBox size={[0.04, 0.03, 0.15]} position={[0.03, 0.02, 0.2]} rotation={[0, 0.4, 0.2]} color="#BDBDBD" roughness={0.9} seed={3386} bevel={0.006} />
       </group>
 
-      {/* Wave edge (animated) */}
+      {/* === Wave edge (animated) === */}
       <mesh ref={waveRef} position={[0, 0.01, ROOM_D / 2 - 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[ROOM_W, 1]} />
         <meshStandardMaterial color="#00BCD4" transparent opacity={0.3} emissive="#00E5FF" emissiveIntensity={0.3} />
       </mesh>
+      {/* Foam line */}
+      <mesh position={[0, 0.015, ROOM_D / 2 - 0.9]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[ROOM_W - 0.5, 0.15]} />
+        <meshStandardMaterial color="#E0F7FA" transparent opacity={0.5} emissive="#E0F7FA" emissiveIntensity={0.2} />
+      </mesh>
 
-      {/* Sun glow */}
+      {/* === Lighting === */}
       <pointLight position={[2, ROOM_H, ROOM_D / 2]} color="#FFA726" intensity={4} distance={8} decay={2} />
       <pointLight position={[-2, 2, ROOM_D / 2]} color="#FFD54F" intensity={2} distance={6} decay={2} />
+      <pointLight position={[-3, 2.5, 2]} color="#FFEE58" intensity={1} distance={4} decay={2} />
     </group>
   );
 }
