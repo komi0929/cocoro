@@ -160,7 +160,7 @@ function UndergroundDecorations() {
 }
 
 // =================================================================
-// Loft (ロフト) — window_frame, bookshelf, fireplace, hanging_plant
+// Loft (ロフト) — HIGH-POLY VOXEL
 // =================================================================
 function LoftDecorations() {
   const fireRef = useRef<THREE.PointLight>(null);
@@ -174,75 +174,111 @@ function LoftDecorations() {
 
   return (
     <group>
-      {/* Window frame on back wall */}
+      {/* === Window frame (enhanced with curtains) === */}
       <group position={[1.5, 1.8, -ROOM_D / 2 + 0.12]}>
-        {/* Window glass */}
         <mesh>
           <planeGeometry args={[1.2, 1.5]} />
           <meshStandardMaterial color="#87CEEB" transparent opacity={0.3} emissive="#FFF8DC" emissiveIntensity={0.5} />
         </mesh>
-        {/* Frame */}
         {[
-          { pos: [0, 0.75, 0.01] as [number,number,number], size: [1.3, 0.06, 0.05] as [number,number,number] },
-          { pos: [0, -0.75, 0.01] as [number,number,number], size: [1.3, 0.06, 0.05] as [number,number,number] },
-          { pos: [-0.6, 0, 0.01] as [number,number,number], size: [0.06, 1.5, 0.05] as [number,number,number] },
-          { pos: [0.6, 0, 0.01] as [number,number,number], size: [0.06, 1.5, 0.05] as [number,number,number] },
-          { pos: [0, 0, 0.01] as [number,number,number], size: [0.04, 1.5, 0.05] as [number,number,number] },
+          { pos: [0, 0.75, 0.01] as [number,number,number], size: [1.35, 0.08, 0.06] as [number,number,number] },
+          { pos: [0, -0.75, 0.01] as [number,number,number], size: [1.35, 0.08, 0.06] as [number,number,number] },
+          { pos: [-0.63, 0, 0.01] as [number,number,number], size: [0.08, 1.6, 0.06] as [number,number,number] },
+          { pos: [0.63, 0, 0.01] as [number,number,number], size: [0.08, 1.6, 0.06] as [number,number,number] },
+          { pos: [0, 0, 0.01] as [number,number,number], size: [0.05, 1.5, 0.06] as [number,number,number] },
+          { pos: [0, 0, 0.01] as [number,number,number], size: [1.2, 0.05, 0.06] as [number,number,number] },
         ].map((f, i) => (
-          <NoisyBox key={`wf-${i}`} size={f.size} position={f.pos} color="#8B6914" roughness={0.55} seed={3100 + i} bevel={0.01} />
+          <NoisyBox key={`wf-${i}`} size={f.size} position={f.pos} color="#8B6914" roughness={0.55} seed={3100 + i} bevel={0.012} lightnessSpread={0.12} />
         ))}
-        <spotLight position={[0, 0, 0.5]} target-position={[0.5, -2, 2]} angle={0.6} penumbra={1}
-          intensity={2} color="#FFF8DC" distance={6} castShadow />
+        <NoisyBox size={[0.3, 1.4, 0.02]} position={[-0.78, 0, 0.03]} color="#8B4513" roughness={0.85} seed={3106} bevel={0.008} lightnessSpread={0.15} />
+        <NoisyBox size={[0.3, 1.4, 0.02]} position={[0.78, 0, 0.03]} color="#8B4513" roughness={0.85} seed={3107} bevel={0.008} lightnessSpread={0.15} />
+        <NoisyCylinder args={[0.015, 0.015, 1.8]} position={[0, 0.82, 0.03]} rotation={[0, 0, Math.PI / 2]} color="#DAA520" metalness={0.5} roughness={0.3} seed={3108} />
+        <spotLight position={[0, 0, 0.5]} angle={0.6} penumbra={1} intensity={2} color="#FFF8DC" distance={6} castShadow />
       </group>
 
-      {/* Bookshelf on left wall */}
+      {/* === Bookshelf (enhanced) === */}
       <group position={[-ROOM_W / 2 + 0.25, 0, -1]}>
-        {/* Shelves */}
+        <NoisyBox size={[0.03, 2.3, 1.08]} position={[-0.08, 1.35, 0]} color="#4A2F15" roughness={0.85} seed={3109} bevel={0.004} />
         {[0.3, 1.0, 1.7, 2.4].map((y, i) => (
-          <NoisyBox key={`shelf-${i}`} size={[0.25, 0.05, 1.0]} position={[0, y, 0]} color="#654321" roughness={0.75} seed={3110 + i} bevel={0.008} />
+          <NoisyBox key={`shelf-${i}`} size={[0.27, 0.06, 1.05]} position={[0, y, 0]} color="#654321" roughness={0.7} seed={3110 + i} bevel={0.01} lightnessSpread={0.1} />
         ))}
-        {/* Side panels */}
-        <NoisyBox size={[0.2, 2.2, 0.04]} position={[0, 1.3, -0.48]} color="#5c3a1e" roughness={0.8} seed={3115} bevel={0.006} />
-        <NoisyBox size={[0.2, 2.2, 0.04]} position={[0, 1.3, 0.48]} color="#5c3a1e" roughness={0.8} seed={3116} bevel={0.006} />
-        {/* Books */}
+        <NoisyBox size={[0.22, 2.25, 0.05]} position={[0, 1.35, -0.5]} color="#5c3a1e" roughness={0.78} seed={3115} bevel={0.008} />
+        <NoisyBox size={[0.22, 2.25, 0.05]} position={[0, 1.35, 0.5]} color="#5c3a1e" roughness={0.78} seed={3116} bevel={0.008} />
+        <NoisyBox size={[0.28, 0.04, 1.1]} position={[0, 2.47, 0]} color="#7A5530" roughness={0.6} seed={3117} bevel={0.006} />
         {[0.3, 1.0, 1.7].map((y, si) => (
-          <group key={`books-${si}`} position={[0, y + 0.15, 0]}>
-            {Array.from({ length: 6 }).map((_, bi) => (
-              <NoisyBox key={`b-${si}-${bi}`} size={[0.15, 0.2 + bi * 0.012, 0.08]} position={[0, 0, -0.35 + bi * 0.12]}
-                color={['#8B0000', '#00008B', '#006400', '#8B4513', '#4B0082', '#B8860B'][bi]!}
-                roughness={0.85} seed={3120 + si * 6 + bi} bevel={0.006} />
+          <group key={`books-${si}`} position={[0, y + 0.03, 0]}>
+            {Array.from({ length: 8 }).map((_, bi) => (
+              <NoisyBox key={`b-${si}-${bi}`}
+                size={[0.14, 0.18 + (bi % 3) * 0.015, 0.06 + bi * 0.005]}
+                position={[0.03, 0.1, -0.38 + bi * 0.1]}
+                color={['#8B0000', '#00008B', '#006400', '#8B4513', '#4B0082', '#B8860B', '#2F4F4F', '#800020'][bi]!}
+                roughness={0.85} seed={3120 + si * 8 + bi} bevel={0.005} lightnessSpread={0.12} />
             ))}
           </group>
         ))}
       </group>
 
-      {/* Fireplace */}
+      {/* === Fireplace (detailed with bricks, logs, flames) === */}
       <group position={[0, 0, -ROOM_D / 2 + 0.3]}>
-        <NoisyBox size={[1.2, 0.7, 0.5]} position={[0, 0.35, 0]} color="#8B4513" roughness={0.85} seed={3150} bevel={0.02} />
-        <NoisyBox size={[0.8, 0.5, 0.3]} position={[0, 0.35, 0.1]} color="#1a0a00" roughness={0.95} seed={3151} bevel={0.01} />
-        {/* Mantle */}
-        <NoisyBox size={[1.4, 0.07, 0.55]} position={[0, 0.72, 0]} color="#654321" roughness={0.65} seed={3152} bevel={0.012} />
-        {/* Decorative items on mantle */}
-        <NoisyCylinder args={[0.03, 0.03, 0.08]} position={[-0.4, 0.8, 0]} color="#DAA520" metalness={0.5} roughness={0.3} seed={3153} />
-        <NoisyBox size={[0.1, 0.12, 0.04]} position={[0.4, 0.82, 0]} color="#2196F3" roughness={0.8} seed={3154} bevel={0.008} />
+        <NoisyBox size={[1.3, 0.75, 0.55]} position={[0, 0.375, 0]} color="#8B4513" roughness={0.88} seed={3150} bevel={0.02} lightnessSpread={0.12} />
+        {[0.12, 0.24, 0.36, 0.48, 0.6].map((y, i) => (
+          <NoisyBox key={`brick-${i}`} size={[1.25, 0.02, 0.5]}
+            position={[i % 2 === 0 ? 0.03 : -0.03, y, 0.01]}
+            color={i % 2 === 0 ? '#7A3B20' : '#8B4513'} roughness={0.92} seed={3155 + i} bevel={0.003} />
+        ))}
+        <NoisyBox size={[0.75, 0.5, 0.35]} position={[0, 0.3, 0.12]} color="#1a0a00" roughness={0.95} seed={3151} bevel={0.015} />
+        <NoisyCylinder args={[0.04, 0.04, 0.5]} position={[-0.1, 0.12, 0.2]} rotation={[0, 0.3, Math.PI / 2]} color="#5C3D1E" roughness={0.9} seed={3160} lightnessSpread={0.2} />
+        <NoisyCylinder args={[0.035, 0.035, 0.45]} position={[0.05, 0.1, 0.18]} rotation={[0, -0.2, Math.PI / 2]} color="#6B4E32" roughness={0.9} seed={3161} />
+        <EmissiveBox size={[0.08, 0.12, 0.05]} position={[-0.05, 0.2, 0.2]} color="#FF6B35" emissiveIntensity={2} />
+        <EmissiveBox size={[0.06, 0.1, 0.04]} position={[0.05, 0.22, 0.18]} color="#FF4500" emissiveIntensity={2.5} />
+        <EmissiveBox size={[0.04, 0.08, 0.03]} position={[0, 0.25, 0.2]} color="#FFD700" emissiveIntensity={1.8} />
+        <NoisyBox size={[1.5, 0.08, 0.6]} position={[0, 0.77, 0]} color="#654321" roughness={0.6} seed={3152} bevel={0.015} />
+        <NoisyCylinder args={[0.025, 0.025, 0.12]} position={[-0.5, 0.87, 0]} color="#DAA520" metalness={0.5} roughness={0.3} seed={3153} />
+        <EmissiveBox size={[0.02, 0.06, 0.02]} position={[-0.5, 0.95, 0]} color="#FF6B35" emissiveIntensity={1} />
+        <NoisyBox size={[0.1, 0.12, 0.04]} position={[0.5, 0.87, 0]} color="#2196F3" roughness={0.8} seed={3154} bevel={0.008} />
+        <NoisyBox size={[1.5, 0.05, 0.15]} position={[0, 0.025, 0.35]} color="#696969" roughness={0.8} metalness={0.1} seed={3157} bevel={0.008} />
         <pointLight ref={fireRef} position={[0, 0.3, 0.2]} color="#FF6B35" intensity={3} distance={4} decay={2} />
       </group>
 
-      {/* Hanging plants */}
+      {/* === Hanging plants (with cascading foliage) === */}
       {[
         [2, ROOM_H - 0.3, -2] as const,
         [-1.5, ROOM_H - 0.3, 2] as const,
+        [3, ROOM_H - 0.3, 1] as const,
       ].map(([x, y, z], i) => (
         <group key={`plant-${i}`} position={[x, y, z]}>
-          <NoisyCylinder args={[0.12, 0.08, 0.15]} color="#CD853F" roughness={0.75} seed={3160 + i} />
-          {[0, 1, 2].map(j => (
-            <NoisySphere key={`vine-${j}`} args={[0.07]} position={[Math.sin(j * 2.1) * 0.1, -0.15 - j * 0.14, Math.cos(j * 2.1) * 0.1]} color="#228B22" roughness={0.88} seed={3165 + i * 3 + j} />
-          ))}
+          <NoisyBox size={[0.14, 0.12, 0.14]} position={[0, 0, 0]} color="#CD853F" roughness={0.7} seed={3170 + i} bevel={0.01} />
+          <NoisyBox size={[0.015, 0.15, 0.015]} position={[0, 0.12, 0]} color="#8B7355" roughness={0.5} metalness={0.3} seed={3175 + i} bevel={0.003} />
+          {[0, 1, 2, 3, 4].map(j => {
+            const a = j * Math.PI * 2 / 5;
+            return (
+              <NoisyBox key={`foliage-${j}`} size={[0.08, 0.06, 0.06]}
+                position={[Math.cos(a) * 0.1, -0.08 - j * 0.08, Math.sin(a) * 0.1]}
+                color={j % 2 === 0 ? '#228B22' : '#2E8B57'} roughness={0.85} seed={3180 + i * 5 + j} bevel={0.006} lightnessSpread={0.18} />
+            );
+          })}
         </group>
       ))}
+
+      {/* === Area rug === */}
+      <NoisyBox size={[2, 0.015, 1.5]} position={[0, 0.008, 1]}
+        color="#8B0000" roughness={0.95} seed={3210} bevel={0.005} lightnessSpread={0.15} />
+
+      {/* === Side table with lamp === */}
+      <group position={[ROOM_W / 2 - 0.5, 0, 1]}>
+        <NoisyBox size={[0.35, 0.04, 0.35]} position={[0, 0.55, 0]} color="#654321" roughness={0.65} seed={3220} bevel={0.01} />
+        {[[-0.13, -0.13], [0.13, -0.13], [-0.13, 0.13], [0.13, 0.13]].map(([lx, lz], li) => (
+          <NoisyBox key={`leg-${li}`} size={[0.04, 0.55, 0.04]} position={[lx!, 0.275, lz!]}
+            color="#5c3a1e" roughness={0.75} seed={3221 + li} bevel={0.006} />
+        ))}
+        <NoisyBox size={[0.12, 0.1, 0.12]} position={[0, 0.83, 0]} color="#F5DEB3" roughness={0.9} seed={3227} bevel={0.01} />
+        <pointLight position={[0, 0.85, 0]} color="#FFF8DC" intensity={0.8} distance={2} decay={2} />
+      </group>
     </group>
   );
 }
+
+
 
 // =================================================================
 // Treehouse (ツリーハウス) — HIGH-POLY VOXEL
