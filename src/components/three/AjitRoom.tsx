@@ -87,7 +87,8 @@ export function AjitRoom() {
         </>
       )}
 
-      {/* ===== Floor ===== */}
+      {/* ===== VOXEL ISLAND FLOOR ===== */}
+      {/* Main floor surface */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, 0, 0]}
@@ -108,10 +109,75 @@ export function AjitRoom() {
         />
       </mesh>
 
+      {/* ===== Stepped Terrain Layers (voxel island edge) ===== */}
+      {/* Layer 1: Grass/Top trim around edges */}
+      {[
+        { pos: [0, -0.06, -ROOM_D / 2 + 0.15] as [number,number,number], size: [ROOM_W + 0.3, 0.12, 0.3] as [number,number,number] },
+        { pos: [0, -0.06, ROOM_D / 2 - 0.15] as [number,number,number], size: [ROOM_W + 0.3, 0.12, 0.3] as [number,number,number] },
+        { pos: [-ROOM_W / 2 + 0.15, -0.06, 0] as [number,number,number], size: [0.3, 0.12, ROOM_D] as [number,number,number] },
+        { pos: [ROOM_W / 2 - 0.15, -0.06, 0] as [number,number,number], size: [0.3, 0.12, ROOM_D] as [number,number,number] },
+      ].map((edge, i) => (
+        <mesh key={`edge1-${i}`} position={edge.pos} castShadow receiveShadow>
+          <boxGeometry args={edge.size} />
+          <meshStandardMaterial color={theme.accentColor} roughness={0.7} />
+        </mesh>
+      ))}
+      {/* Layer 2: Dirt/mid layer */}
+      {[
+        { pos: [0, -0.22, -ROOM_D / 2 + 0.2] as [number,number,number], size: [ROOM_W + 0.5, 0.2, 0.4] as [number,number,number] },
+        { pos: [0, -0.22, ROOM_D / 2 - 0.2] as [number,number,number], size: [ROOM_W + 0.5, 0.2, 0.4] as [number,number,number] },
+        { pos: [-ROOM_W / 2 + 0.2, -0.22, 0] as [number,number,number], size: [0.4, 0.2, ROOM_D + 0.3] as [number,number,number] },
+        { pos: [ROOM_W / 2 - 0.2, -0.22, 0] as [number,number,number], size: [0.4, 0.2, ROOM_D + 0.3] as [number,number,number] },
+      ].map((edge, i) => (
+        <mesh key={`edge2-${i}`} position={edge.pos} castShadow>
+          <boxGeometry args={edge.size} />
+          <meshStandardMaterial color="#8B6914" roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Layer 3: Rock/bottom layer */}
+      {[
+        { pos: [0, -0.42, -ROOM_D / 2 + 0.25] as [number,number,number], size: [ROOM_W + 0.7, 0.2, 0.5] as [number,number,number] },
+        { pos: [0, -0.42, ROOM_D / 2 - 0.25] as [number,number,number], size: [ROOM_W + 0.7, 0.2, 0.5] as [number,number,number] },
+        { pos: [-ROOM_W / 2 + 0.25, -0.42, 0] as [number,number,number], size: [0.5, 0.2, ROOM_D + 0.5] as [number,number,number] },
+        { pos: [ROOM_W / 2 - 0.25, -0.42, 0] as [number,number,number], size: [0.5, 0.2, ROOM_D + 0.5] as [number,number,number] },
+      ].map((edge, i) => (
+        <mesh key={`edge3-${i}`} position={edge.pos} castShadow>
+          <boxGeometry args={edge.size} />
+          <meshStandardMaterial color="#5C4033" roughness={0.95} />
+        </mesh>
+      ))}
+      {/* Corner cubes for voxel stepped look */}
+      {[
+        [-ROOM_W / 2 + 0.2, -ROOM_D / 2 + 0.2],
+        [ROOM_W / 2 - 0.2, -ROOM_D / 2 + 0.2],
+        [-ROOM_W / 2 + 0.2, ROOM_D / 2 - 0.2],
+        [ROOM_W / 2 - 0.2, ROOM_D / 2 - 0.2],
+      ].map(([x, z], i) => (
+        <group key={`corner-${i}`}>
+          <mesh position={[x!, -0.06, z!]} castShadow>
+            <boxGeometry args={[0.4, 0.12, 0.4]} />
+            <meshStandardMaterial color={theme.accentColor} roughness={0.7} />
+          </mesh>
+          <mesh position={[x!, -0.25, z!]} castShadow>
+            <boxGeometry args={[0.5, 0.2, 0.5]} />
+            <meshStandardMaterial color="#8B6914" roughness={0.9} />
+          </mesh>
+          <mesh position={[x!, -0.48, z!]} castShadow>
+            <boxGeometry args={[0.6, 0.25, 0.6]} />
+            <meshStandardMaterial color="#5C4033" roughness={0.95} />
+          </mesh>
+        </group>
+      ))}
+      {/* Under-floor fill (bottom of island) */}
+      <mesh position={[0, -0.28, 0]} receiveShadow>
+        <boxGeometry args={[ROOM_W, 0.55, ROOM_D]} />
+        <meshStandardMaterial color="#4A3728" roughness={0.95} />
+      </mesh>
+
       {/* ===== Floor Pattern Overlay ===== */}
       <FloorOverlay pattern={theme.floorPattern} color={theme.floorColor} />
 
-      {/* ===== Back Wall ===== */}
+      {/* ===== Back Wall — with brick-like segments ===== */}
       <mesh position={[0, ROOM_H / 2, -ROOM_D / 2]} name="wall-back" receiveShadow>
         <boxGeometry args={[ROOM_W, ROOM_H, 0.15]} />
         <meshStandardMaterial
@@ -123,6 +189,16 @@ export function AjitRoom() {
           transparent={wallMat.transparent}
           opacity={wallMat.opacity ?? 1}
         />
+      </mesh>
+      {/* Wall accent trim (top) */}
+      <mesh position={[0, ROOM_H - 0.05, -ROOM_D / 2 + 0.08]}>
+        <boxGeometry args={[ROOM_W + 0.1, 0.1, 0.02]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
+      </mesh>
+      {/* Wall base trim */}
+      <mesh position={[0, 0.05, -ROOM_D / 2 + 0.08]}>
+        <boxGeometry args={[ROOM_W + 0.1, 0.1, 0.04]} />
+        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
       </mesh>
 
       {/* ===== Left Wall ===== */}
@@ -143,6 +219,15 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
+      {/* Left wall trims */}
+      <mesh position={[-ROOM_W / 2 + 0.08, ROOM_H - 0.05, 0]}>
+        <boxGeometry args={[0.02, 0.1, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
+      </mesh>
+      <mesh position={[-ROOM_W / 2 + 0.08, 0.05, 0]}>
+        <boxGeometry args={[0.04, 0.1, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
+      </mesh>
 
       {/* ===== Right Wall ===== */}
       <mesh
@@ -162,17 +247,40 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
+      {/* Right wall trims */}
+      <mesh position={[ROOM_W / 2 - 0.08, ROOM_H - 0.05, 0]}>
+        <boxGeometry args={[0.02, 0.1, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
+      </mesh>
+      <mesh position={[ROOM_W / 2 - 0.08, 0.05, 0]}>
+        <boxGeometry args={[0.04, 0.1, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
+      </mesh>
+
+      {/* ===== Ceiling with panel detail ===== */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ROOM_H, 0]}>
+        <planeGeometry args={[ROOM_W, ROOM_D]} />
+        <meshStandardMaterial color={theme.ceilingColor} roughness={0.9} />
+      </mesh>
+      {/* Ceiling beams for visual interest */}
+      {[-2, 0, 2].map((x, i) => (
+        <mesh key={`beam-${i}`} position={[x, ROOM_H - 0.04, 0]}>
+          <boxGeometry args={[0.12, 0.08, ROOM_D - 0.5]} />
+          <meshStandardMaterial color={theme.ceilingColor} roughness={0.8} metalness={0.1} />
+        </mesh>
+      ))}
+      {[-2, 0, 2].map((z, i) => (
+        <mesh key={`beamz-${i}`} position={[0, ROOM_H - 0.04, z]}>
+          <boxGeometry args={[ROOM_W - 0.5, 0.08, 0.12]} />
+          <meshStandardMaterial color={theme.ceilingColor} roughness={0.8} metalness={0.1} />
+        </mesh>
+      ))}
+
 
       {/* ===== Wall Pattern Overlays ===== */}
       <WallOverlay pattern={theme.wallPattern} color={theme.wallColor} wall="back" />
       <WallOverlay pattern={theme.wallPattern} color={theme.wallColor} wall="left" />
       <WallOverlay pattern={theme.wallPattern} color={theme.wallColor} wall="right" />
-
-      {/* ===== Ceiling ===== */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ROOM_H, 0]}>
-        <planeGeometry args={[ROOM_W, ROOM_D]} />
-        <meshStandardMaterial color={theme.ceilingColor} roughness={0.9} />
-      </mesh>
 
       {/* ===== Neon Accent Strips ===== */}
       <mesh position={[0, ROOM_H - 0.06, -ROOM_D / 2 + 0.1]}>

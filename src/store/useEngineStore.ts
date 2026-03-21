@@ -84,7 +84,7 @@ interface AchievementContext {
 }
 
 const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_room', name: '初めてのアジト', emoji: '🏠', description: '初めて部屋に入った', condition: (c) => c.totalSessions >= 1 },
+  { id: 'first_room', name: '初めての隠れ家', emoji: '🏠', description: '初めて部屋に入った', condition: (c) => c.totalSessions >= 1 },
   { id: 'chatty', name: 'おしゃべり好き', emoji: '💬', description: '10回メッセージを送った', condition: (c) => c.totalMessages >= 10 },
   { id: 'reactor', name: 'リアクション王', emoji: '🎉', description: 'リアクションを20回使った', condition: (c) => c.totalReactions >= 20 },
   { id: 'trusted', name: '信頼の証', emoji: '⭐', description: '信頼レベル「信頼者」に到達', condition: (c) => ['trusted', 'veteran', 'guardian'].includes(c.trustLevel) },
