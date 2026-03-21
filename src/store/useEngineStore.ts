@@ -10,7 +10,22 @@ import { AnalyticsEngine } from '@/engine/social/AnalyticsEngine';
 import { DailyChallengeSystem, type DailyState, type DailyChallenge } from '@/engine/social/DailyChallengeSystem';
 import { SilenceDirector, type SilenceState } from '@/engine/choreography/SilenceDirector';
 import { AutoModerator, type ModerationAction } from '@/engine/safety/AutoModerator';
-import { initSoundFX, playReactionSound, playPeakMoment, playJoinSound, playLeaveSound } from '@/engine/audio/SoundFX';
+import { initSoundFX, playReactionSound, playPeakMoment, playJoinSound, playLeaveSound, playMicOn, playMicOff, playErrorSound, playResonanceSound } from '@/engine/audio/SoundFX';
+import { ConversationGameEngine, type GameState as ConvoGameState, type GameType as ConvoGameType } from '@/engine/game/ConversationGameEngine';
+import { SharedActivitiesManager, type Activity, type ActiveActivity, type ActivityType } from '@/engine/game/SharedActivitiesManager';
+import { SessionAchievements, type Achievement as SessionAchievement } from '@/engine/interaction/SessionAchievements';
+import { AvatarExpressionEngine, type ExpressionState } from '@/engine/interaction/AvatarExpressionEngine';
+import { PrivacyGuard, type PrivacySettings } from '@/engine/safety/PrivacyGuard';
+import { ReportSystem, type ReportCategory } from '@/engine/safety/ReportSystem';
+import { SafetyBoundarySystem } from '@/engine/safety/SafetyBoundarySystem';
+import { ConversationLevelSystem, type LevelState } from '@/engine/social/ConversationLevelSystem';
+import { InviteLinkSystem, type InviteLink } from '@/engine/social/InviteLinkSystem';
+import { FavoriteRoomsManager, type FavoriteRoom } from '@/engine/social/FavoriteRoomsManager';
+import { NotificationEngine, type cocoroNotification } from '@/engine/social/NotificationEngine';
+import { GuestMode, type GuestProfile } from '@/engine/social/GuestMode';
+import { VoiceFFTAnalyzer, type VoiceMetrics } from '@/engine/audio/VoiceFFTAnalyzer';
+import { RoomAmbienceEngine } from '@/engine/audio/RoomAmbienceEngine';
+import { MoodLightingEngine, type MoodColors } from '@/engine/choreography/MoodLightingEngine';
 import type { FurnitureActionType } from '@/types/cocoro';
 
 // ============================================================
@@ -169,6 +184,21 @@ interface EngineState {
   dailyChallenge: DailyChallengeSystem;
   silenceDirector: SilenceDirector;
   autoModerator: AutoModerator;
+  gameEngine: ConversationGameEngine;
+  activities: SharedActivitiesManager;
+  sessionAchievements: SessionAchievements;
+  avatarExpression: AvatarExpressionEngine;
+  privacyGuard: PrivacyGuard;
+  reportSystem: ReportSystem;
+  safetyBoundary: SafetyBoundarySystem;
+  levelSystem: ConversationLevelSystem;
+  inviteLinks: InviteLinkSystem;
+  favoriteRooms: FavoriteRoomsManager;
+  notificationEngine: NotificationEngine;
+  guestMode: GuestMode;
+  voiceFFT: VoiceFFTAnalyzer;
+  roomAmbience: RoomAmbienceEngine;
+  moodLighting: MoodLightingEngine;
 
   // Reactive state
   trustProfile: TrustProfile | null;
@@ -177,16 +207,18 @@ interface EngineState {
   notifications: Notification[];
   friends: FriendEntry[];
   stats: { sessions: number; messages: number; reactions: number; furniture: number };
-
-  // Daily challenge state
   dailyState: DailyState | null;
   weeklyTheme: { name: string; emoji: string } | null;
-
-  // Silence state
   silenceState: SilenceState;
-
-  // Activity
   currentGame: GameState | null;
+  convoGame: ConvoGameState | null;
+  activeActivity: ActiveActivity | null;
+  sessionAchievementsList: SessionAchievement[];
+  expressionState: ExpressionState;
+  privacySettings: PrivacySettings;
+  detailedLevel: LevelState;
+  favoriteRoomsList: FavoriteRoom[];
+  voiceMetrics: VoiceMetrics | null;
 
   // Actions
   initForUser: (userId: string) => void;
@@ -201,7 +233,27 @@ interface EngineState {
   endGame: () => void;
   nextRound: () => void;
   updateSilence: (anySpeaking: boolean, participantCount: number) => void;
-  playSFX: (type: 'reaction' | 'join' | 'leave' | 'peak') => void;
+  playSFX: (type: 'reaction' | 'join' | 'leave' | 'peak' | 'mic_on' | 'mic_off' | 'error' | 'resonance') => void;
+  // Game engines
+  startConvoGame: (type: ConvoGameType, participants: Array<{ id: string; displayName: string }>) => void;
+  startActivity: (type: ActivityType, participants: string[]) => void;
+  endActivity: () => void;
+  // Expression
+  updateExpression: (params: { volume: number; isSpeaking: boolean; emotion: { joy: number; anger: number; sorrow: number; surprise: number }; pitch?: number }) => void;
+  tickExpression: () => ExpressionState;
+  // Safety
+  reportUser: (targetId: string, targetName: string, category: ReportCategory, description: string, roomId: string) => void;
+  blockUser: (userId: string) => void;
+  toggleSafeZone: () => void;
+  // Social
+  createInviteLink: (roomId: string, roomName: string, creatorName: string) => InviteLink;
+  toggleFavoriteRoom: (roomId: string, roomName: string) => void;
+  // Voice FFT
+  startVoiceFFTDemo: () => void;
+  updateVoiceMetrics: (time: number) => void;
+  // Room ambience
+  startRoomAmbience: () => void;
+  stopRoomAmbience: () => void;
 }
 
 export const useEngineStore = create<EngineState>((set, get) => {
@@ -210,13 +262,39 @@ export const useEngineStore = create<EngineState>((set, get) => {
   const dailyChallenge = new DailyChallengeSystem();
   const silenceDirector = new SilenceDirector();
   const autoModerator = new AutoModerator();
+  const gameEngine = new ConversationGameEngine();
+  const activitiesMgr = new SharedActivitiesManager();
+  const sessionAch = new SessionAchievements();
+  const avatarExpr = new AvatarExpressionEngine();
+  const privacyGuard = new PrivacyGuard();
+  const reportSystem = new ReportSystem();
+  const safetyBoundary = new SafetyBoundarySystem();
+  const levelSystem = new ConversationLevelSystem();
+  const inviteLinks = new InviteLinkSystem();
+  const favoriteRooms = new FavoriteRoomsManager();
+  const notificationEngine = new NotificationEngine();
+  const guestModeEngine = new GuestMode();
+  const voiceFFT = new VoiceFFTAnalyzer();
+  const roomAmbience = new RoomAmbienceEngine();
+  const moodLighting = new MoodLightingEngine();
+
+  // Wire notification engine to store notifications
+  notificationEngine.onNotify((n) => {
+    get().pushNotification({ type: 'info', emoji: n.emoji, title: n.title, message: n.body });
+  });
+
+  // Wire level-up to notifications
+  levelSystem.onLevelUp((newLevel, title) => {
+    get().pushNotification({ type: 'level', emoji: '⬆️', title: `Lv.${newLevel}にレベルアップ！`, message: `称号「${title}」を獲得` });
+    get().playSFX('peak');
+  });
 
   return {
-    trust,
-    analytics,
-    dailyChallenge,
-    silenceDirector,
-    autoModerator,
+    trust, analytics, dailyChallenge, silenceDirector, autoModerator,
+    gameEngine, activities: activitiesMgr, sessionAchievements: sessionAch,
+    avatarExpression: avatarExpr, privacyGuard, reportSystem, safetyBoundary,
+    levelSystem, inviteLinks, favoriteRooms, notificationEngine: notificationEngine,
+    guestMode: guestModeEngine, voiceFFT, roomAmbience, moodLighting,
     trustProfile: null,
     conversationLevel: calcLevel(0),
     unlockedAchievements: [],
@@ -227,10 +305,20 @@ export const useEngineStore = create<EngineState>((set, get) => {
     weeklyTheme: null,
     silenceState: { phase: 'none', durationSeconds: 0, bgmVolume: 0, showThinking: false, showTopicSuggestion: false, showEncouragement: false, encouragementText: '' },
     currentGame: null,
+    convoGame: null,
+    activeActivity: null,
+    sessionAchievementsList: [],
+    expressionState: avatarExpr.update(),
+    privacySettings: privacyGuard.getSettings(),
+    detailedLevel: levelSystem.getState(),
+    favoriteRoomsList: favoriteRooms.getFavorites(),
+    voiceMetrics: null,
 
     initForUser: (userId: string) => {
       const profile = trust.getOrCreate(userId);
       initSoundFX();
+      sessionAch.resetSession();
+      voiceFFT.startDemo();
 
       // Load persisted XP
       let totalXp = 0;
@@ -261,6 +349,9 @@ export const useEngineStore = create<EngineState>((set, get) => {
         stats,
         dailyState: ds,
         weeklyTheme: wt,
+        detailedLevel: levelSystem.getState(),
+        favoriteRoomsList: favoriteRooms.getFavorites(),
+        privacySettings: privacyGuard.getSettings(),
       });
 
       // Show daily challenge notification
@@ -420,17 +511,117 @@ export const useEngineStore = create<EngineState>((set, get) => {
       set({ silenceState: newState });
     },
 
-    playSFX: (type: 'reaction' | 'join' | 'leave' | 'peak') => {
+    playSFX: (type) => {
       switch (type) {
         case 'reaction': playReactionSound(); break;
         case 'join': playJoinSound(); break;
         case 'leave': playLeaveSound(); break;
         case 'peak': playPeakMoment(); break;
+        case 'mic_on': playMicOn(); break;
+        case 'mic_off': playMicOff(); break;
+        case 'error': playErrorSound(); break;
+        case 'resonance': playResonanceSound(); break;
       }
     },
+
+    // === Conversation Game ===
+    startConvoGame: (type, participants) => {
+      const state = gameEngine.createGame(type, participants);
+      gameEngine.start();
+      set({ convoGame: state });
+      get().pushNotification({ type: 'info', emoji: '🎮', title: 'ゲーム開始！', message: `${type}がスタート` });
+      get().playSFX('peak');
+    },
+
+    startActivity: (type, participants) => {
+      const result = activitiesMgr.start(type, participants);
+      set({ activeActivity: result });
+      if (result) {
+        get().pushNotification({ type: 'info', emoji: result.activity.emoji, title: `${result.activity.name}開始！`, message: result.activity.description });
+      }
+    },
+
+    endActivity: () => {
+      activitiesMgr.finish();
+      set({ activeActivity: null });
+    },
+
+    // === Avatar Expression ===
+    updateExpression: (params) => {
+      avatarExpr.processVoice(params);
+    },
+
+    tickExpression: () => {
+      const expr = avatarExpr.update();
+      set({ expressionState: expr });
+      return expr;
+    },
+
+    // === Safety ===
+    reportUser: (targetId, targetName, category, description, roomId) => {
+      reportSystem.submit({
+        reporterId: get().trustProfile?.userId ?? 'unknown',
+        targetId, targetName, category, description, roomId,
+        evidenceMetadata: { targetSpeakingSeconds: 0, targetVolume: 0, proximityDistance: 0, recentActions: [] },
+      });
+      get().pushNotification({ type: 'info', emoji: '📢', title: '通報を受け付けました', message: `${targetName}について確認します` });
+    },
+
+    blockUser: (userId) => {
+      safetyBoundary.blockUser(userId);
+      get().pushNotification({ type: 'info', emoji: '🚫', title: 'ブロックしました', message: 'このユーザーの音声とアバターが非表示になります' });
+    },
+
+    toggleSafeZone: () => {
+      if (safetyBoundary.isSafeZoneActive()) {
+        safetyBoundary.deactivateSafeZone();
+      } else {
+        safetyBoundary.activateSafeZone();
+        get().pushNotification({ type: 'info', emoji: '🛡️', title: 'セーフゾーンON', message: '全音声を遮断しました' });
+      }
+    },
+
+    // === Social ===
+    createInviteLink: (roomId, roomName, creatorName) => {
+      return inviteLinks.create({
+        roomId, roomName, category: 'general', creatorName,
+        participantCount: 1, maxParticipants: 8, expiresIn: 24 * 60 * 60 * 1000,
+      });
+    },
+
+    toggleFavoriteRoom: (roomId, roomName) => {
+      if (favoriteRooms.isFavorite(roomId)) {
+        favoriteRooms.removeFavorite(roomId);
+      } else {
+        favoriteRooms.addFavorite(roomId, roomName, 'general');
+        get().pushNotification({ type: 'info', emoji: '⭐', title: 'お気に入り追加', message: `「${roomName}」をお気に入りに追加しました` });
+      }
+      set({ favoriteRoomsList: favoriteRooms.getFavorites() });
+    },
+
+    // === Voice FFT ===
+    startVoiceFFTDemo: () => { voiceFFT.startDemo(); },
+    updateVoiceMetrics: (time) => {
+      const metrics = voiceFFT.getMetrics(time);
+      set({ voiceMetrics: metrics });
+      // Feed into expression engine
+      avatarExpr.processVoice({
+        volume: metrics.volume,
+        isSpeaking: metrics.isSpeaking,
+        emotion: { joy: 0.2, anger: 0, sorrow: 0, surprise: metrics.energy * 0.3 },
+      });
+    },
+
+    // === Room Ambience ===
+    startRoomAmbience: () => { roomAmbience.start(); },
+    stopRoomAmbience: () => { roomAmbience.stop(); },
   };
 });
 
 export { ACHIEVEMENTS, GAME_TOPICS };
 export type { GameType as ActivityGameType };
 export type { DailyState, DailyChallenge, SilenceState, ModerationAction };
+export type { ConvoGameState, ConvoGameType, Activity, ActiveActivity, ActivityType };
+export type { SessionAchievement, ExpressionState, PrivacySettings, ReportCategory };
+export type { LevelState, InviteLink, FavoriteRoom, cocoroNotification, GuestProfile };
+export type { VoiceMetrics, MoodColors };
