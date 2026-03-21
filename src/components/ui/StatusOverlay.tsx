@@ -1,6 +1,6 @@
 /**
  * cocoro — StatusOverlay
- * HUD overlay showing trust badge, conversation level, achievements
+ * HUD overlay showing trust badge, conversation level, daily challenge, streak
  */
 
 import { useEngineStore } from '@/store/useEngineStore';
@@ -9,6 +9,8 @@ import { TrustScoreSystem } from '@/engine/social/TrustScoreSystem';
 export function StatusOverlay() {
   const trustProfile = useEngineStore(s => s.trustProfile);
   const level = useEngineStore(s => s.conversationLevel);
+  const dailyState = useEngineStore(s => s.dailyState);
+  const weeklyTheme = useEngineStore(s => s.weeklyTheme);
 
   if (!trustProfile) return null;
 
@@ -34,6 +36,28 @@ export function StatusOverlay() {
         </div>
         <span className="xp-text">{level.xp}/{level.xpToNext} XP</span>
       </div>
+
+      {/* Daily Challenge */}
+      {dailyState && (
+        <div className="daily-challenge-badge">
+          <span>{dailyState.todayChallenge.emoji}</span>
+          <span style={{ fontSize: 10, opacity: 0.7 }}>{dailyState.todayChallenge.title}</span>
+        </div>
+      )}
+
+      {/* Streak */}
+      {dailyState && dailyState.currentStreak > 0 && (
+        <div className="streak-badge">
+          🔥 {dailyState.currentStreak}日
+        </div>
+      )}
+
+      {/* Weekly Theme */}
+      {weeklyTheme && (
+        <div className="weekly-theme-badge">
+          {weeklyTheme.emoji} {weeklyTheme.name}
+        </div>
+      )}
     </div>
   );
 }

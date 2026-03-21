@@ -27,6 +27,7 @@ import { StatusOverlay } from './components/ui/StatusOverlay';
 import { NotificationToast } from './components/ui/NotificationToast';
 import { ActivityPanel } from './components/ui/ActivityPanel';
 import { SocialPanel } from './components/ui/SocialPanel';
+import { SilenceOverlay } from './components/ui/SilenceOverlay';
 import { useUserStore } from './store/useUserStore';
 import { useRoomStore } from './store/useRoomStore';
 import { useAjitStore } from './store/useAjitStore';
@@ -165,6 +166,9 @@ export default function App() {
       <ReactionBar />
       <TextChat />
       <EmoteBar />
+
+      {/* Silence Director — 沈黙演出 */}
+      <SilenceOverlay />
 
       {/* デモモードバナー */}
       {isDemo && (

@@ -7,6 +7,10 @@
 import { create } from 'zustand';
 import { TrustScoreSystem, type TrustProfile, type TrustLevel } from '@/engine/social/TrustScoreSystem';
 import { AnalyticsEngine } from '@/engine/social/AnalyticsEngine';
+import { DailyChallengeSystem, type DailyState, type DailyChallenge } from '@/engine/social/DailyChallengeSystem';
+import { SilenceDirector, type SilenceState } from '@/engine/choreography/SilenceDirector';
+import { AutoModerator, type ModerationAction } from '@/engine/safety/AutoModerator';
+import { initSoundFX, playReactionSound, playPeakMoment, playJoinSound, playLeaveSound } from '@/engine/audio/SoundFX';
 import type { FurnitureActionType } from '@/types/cocoro';
 
 // ============================================================
@@ -162,6 +166,9 @@ interface EngineState {
   // Systems
   trust: TrustScoreSystem;
   analytics: AnalyticsEngine;
+  dailyChallenge: DailyChallengeSystem;
+  silenceDirector: SilenceDirector;
+  autoModerator: AutoModerator;
 
   // Reactive state
   trustProfile: TrustProfile | null;
@@ -170,6 +177,13 @@ interface EngineState {
   notifications: Notification[];
   friends: FriendEntry[];
   stats: { sessions: number; messages: number; reactions: number; furniture: number };
+
+  // Daily challenge state
+  dailyState: DailyState | null;
+  weeklyTheme: { name: string; emoji: string } | null;
+
+  // Silence state
+  silenceState: SilenceState;
 
   // Activity
   currentGame: GameState | null;
@@ -186,25 +200,37 @@ interface EngineState {
   startGame: (type: GameType) => void;
   endGame: () => void;
   nextRound: () => void;
+  updateSilence: (anySpeaking: boolean, participantCount: number) => void;
+  playSFX: (type: 'reaction' | 'join' | 'leave' | 'peak') => void;
 }
 
 export const useEngineStore = create<EngineState>((set, get) => {
   const trust = new TrustScoreSystem();
   const analytics = new AnalyticsEngine();
+  const dailyChallenge = new DailyChallengeSystem();
+  const silenceDirector = new SilenceDirector();
+  const autoModerator = new AutoModerator();
 
   return {
     trust,
     analytics,
+    dailyChallenge,
+    silenceDirector,
+    autoModerator,
     trustProfile: null,
     conversationLevel: calcLevel(0),
     unlockedAchievements: [],
     notifications: [],
     friends: [],
     stats: { sessions: 0, messages: 0, reactions: 0, furniture: 0 },
+    dailyState: null,
+    weeklyTheme: null,
+    silenceState: { phase: 'none', durationSeconds: 0, bgmVolume: 0, showThinking: false, showTopicSuggestion: false, showEncouragement: false, encouragementText: '' },
     currentGame: null,
 
     initForUser: (userId: string) => {
       const profile = trust.getOrCreate(userId);
+      initSoundFX();
 
       // Load persisted XP
       let totalXp = 0;
@@ -222,13 +248,38 @@ export const useEngineStore = create<EngineState>((set, get) => {
       let stats = { sessions: 0, messages: 0, reactions: 0, furniture: 0 };
       try { stats = { ...stats, ...JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) || '{}') }; } catch { /* */ }
 
+      // Daily challenge check-in
+      dailyChallenge.checkIn();
+      const ds = dailyChallenge.getState();
+      const wt = dailyChallenge.getWeeklyTheme();
+
       set({
         trustProfile: profile,
         conversationLevel: calcLevel(totalXp),
         unlockedAchievements: unlocked,
         friends,
         stats,
+        dailyState: ds,
+        weeklyTheme: wt,
       });
+
+      // Show daily challenge notification
+      get().pushNotification({
+        type: 'info',
+        emoji: ds.todayChallenge.emoji,
+        title: `今日のチャレンジ`,
+        message: `${ds.todayChallenge.title} — ${ds.todayChallenge.description}`,
+      });
+
+      // Show streak if active
+      if (ds.currentStreak > 1) {
+        get().pushNotification({
+          type: 'achievement',
+          emoji: '🔥',
+          title: `${ds.currentStreak}日連続ログイン！`,
+          message: `${wt.emoji} ${wt.name}`,
+        });
+      }
 
       analytics.track('app_opened', { userId });
     },
@@ -363,8 +414,23 @@ export const useEngineStore = create<EngineState>((set, get) => {
         return { currentGame: { ...s.currentGame, round: s.currentGame.round + 1 } };
       });
     },
+
+    updateSilence: (anySpeaking: boolean, participantCount: number) => {
+      const newState = silenceDirector.update(anySpeaking, participantCount);
+      set({ silenceState: newState });
+    },
+
+    playSFX: (type: 'reaction' | 'join' | 'leave' | 'peak') => {
+      switch (type) {
+        case 'reaction': playReactionSound(); break;
+        case 'join': playJoinSound(); break;
+        case 'leave': playLeaveSound(); break;
+        case 'peak': playPeakMoment(); break;
+      }
+    },
   };
 });
 
 export { ACHIEVEMENTS, GAME_TOPICS };
 export type { GameType as ActivityGameType };
+export type { DailyState, DailyChallenge, SilenceState, ModerationAction };
