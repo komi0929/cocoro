@@ -1,8 +1,9 @@
 /**
  * cocoro — StatusOverlay
- * HUD overlay showing trust badge, conversation level, daily challenge, streak
+ * HUD overlay: trust badge, level, daily challenge, streak, voice metrics
  */
 
+import { useEffect } from 'react';
 import { useEngineStore } from '@/store/useEngineStore';
 import { TrustScoreSystem } from '@/engine/social/TrustScoreSystem';
 
@@ -11,6 +12,23 @@ export function StatusOverlay() {
   const level = useEngineStore(s => s.conversationLevel);
   const dailyState = useEngineStore(s => s.dailyState);
   const weeklyTheme = useEngineStore(s => s.weeklyTheme);
+  const detailedLevel = useEngineStore(s => s.detailedLevel);
+  const voiceMetrics = useEngineStore(s => s.voiceMetrics);
+  const updateVoiceMetrics = useEngineStore(s => s.updateVoiceMetrics);
+  const tickExpression = useEngineStore(s => s.tickExpression);
+
+  // Update voice metrics + expression every frame via rAF
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const t = performance.now() / 1000;
+      updateVoiceMetrics(t);
+      tickExpression();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [updateVoiceMetrics, tickExpression]);
 
   if (!trustProfile) return null;
 
@@ -25,17 +43,27 @@ export function StatusOverlay() {
         <span className="trust-label">{trustInfo.label}</span>
       </div>
 
-      {/* Level Progress */}
+      {/* Level Progress with detailed title */}
       <div className="level-progress">
         <div className="level-info">
-          <span className="level-number">Lv.{level.level}</span>
-          <span className="level-title">{level.title}</span>
+          <span className="level-number">{detailedLevel.titleEmoji} Lv.{detailedLevel.level}</span>
+          <span className="level-title">{detailedLevel.title}</span>
         </div>
         <div className="xp-bar-track">
           <div className="xp-bar-fill" style={{ width: `${xpPercent}%` }} />
         </div>
         <span className="xp-text">{level.xp}/{level.xpToNext} XP</span>
       </div>
+
+      {/* Voice Activity Indicator */}
+      {voiceMetrics && voiceMetrics.isSpeaking && (
+        <div className="voice-indicator">
+          <span>🎤</span>
+          <div className="voice-bar-track">
+            <div className="voice-bar-fill" style={{ width: `${voiceMetrics.volume * 100}%`, transition: 'width 0.1s' }} />
+          </div>
+        </div>
+      )}
 
       {/* Daily Challenge */}
       {dailyState && (

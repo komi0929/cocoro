@@ -4,17 +4,22 @@
  */
 
 import { EMOTE_LIST, useEmoteStore } from '@/store/useEmoteStore';
+import { useEngineStore } from '@/store/useEngineStore';
 import { useState, useCallback } from 'react';
 
 export function EmoteBar() {
   const [isOpen, setIsOpen] = useState(false);
   const currentEmote = useEmoteStore(s => s.currentEmote);
   const triggerEmote = useEmoteStore(s => s.triggerEmote);
+  const playSFX = useEngineStore(s => s.playSFX);
+  const sessionAchievements = useEngineStore(s => s.sessionAchievements);
 
   const handleEmote = useCallback((id: typeof EMOTE_LIST[number]['id']) => {
     triggerEmote(id);
+    playSFX('reaction');
+    sessionAchievements.recordReaction();
     setIsOpen(false);
-  }, [triggerEmote]);
+  }, [triggerEmote, playSFX, sessionAchievements]);
 
   return (
     <div className="emote-bar">

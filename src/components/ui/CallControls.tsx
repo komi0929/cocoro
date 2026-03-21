@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useCallStore } from '@/store/useCallStore';
 import { useRoomStore } from '@/store/useRoomStore';
 import { useUserStore } from '@/store/useUserStore';
+import { useEngineStore } from '@/store/useEngineStore';
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -37,6 +38,7 @@ export function CallControls() {
 
   const currentRoom = useRoomStore(s => s.currentRoom);
   const user = useUserStore(s => s.user);
+  const playSFX = useEngineStore(s => s.playSFX);
   const durationRef = useRef<number>(0);
 
   // Call duration timer
@@ -78,7 +80,8 @@ export function CallControls() {
   const handleJoin = useCallback(() => {
     if (!currentRoom || !user) return;
     joinCall(currentRoom.id, user.name);
-  }, [currentRoom, user, joinCall]);
+    playSFX('join');
+  }, [currentRoom, user, joinCall, playSFX]);
 
   // No room — hide
   if (!currentRoom) return null;
@@ -153,7 +156,7 @@ export function CallControls() {
           {talkMode === 'open' && (
             <button
               className={`call-btn ${isMuted ? 'muted' : ''}`}
-              onClick={toggleMute}
+              onClick={() => { toggleMute(); playSFX(isMuted ? 'mic_on' : 'mic_off'); }}
               title={isMuted ? '\u30DF\u30E5\u30FC\u30C8\u89E3\u9664' : '\u30DF\u30E5\u30FC\u30C8'}
             >
               {isMuted ? '\u{1F507}' : '\u{1F3A4}'}
@@ -181,7 +184,7 @@ export function CallControls() {
           {/* Leave */}
           <button
             className="call-btn call-leave"
-            onClick={leaveCall}
+            onClick={() => { leaveCall(); playSFX('leave'); }}
             title={'\u901A\u8A71\u3092\u7D42\u4E86'}
           >
             {'\u{1F4F5}'}

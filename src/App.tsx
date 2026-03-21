@@ -46,6 +46,10 @@ export default function App() {
   const currentRoom = useRoomStore(s => s.currentRoom);
   const initEngine = useEngineStore(s => s.initForUser);
   const recordAction = useEngineStore(s => s.recordAction);
+  const playSFX = useEngineStore(s => s.playSFX);
+  const startRoomAmbience = useEngineStore(s => s.startRoomAmbience);
+  const stopRoomAmbience = useEngineStore(s => s.stopRoomAmbience);
+  const startVoiceFFTDemo = useEngineStore(s => s.startVoiceFFTDemo);
 
   const [screen, setScreen] = useState<AppScreen>('register');
   const [showInvite, setShowInvite] = useState(false);
@@ -115,9 +119,12 @@ export default function App() {
   useEffect(() => {
     if (screen === 'room' && currentRoom) {
       startAmbience(currentRoom.theme);
+      startRoomAmbience();
+      startVoiceFFTDemo();
+      playSFX('join');
     }
-    return () => { stopAmbience(); };
-  }, [screen, currentRoom]);
+    return () => { stopAmbience(); stopRoomAmbience(); };
+  }, [screen, currentRoom, startRoomAmbience, stopRoomAmbience, startVoiceFFTDemo, playSFX]);
 
   // Register
   if (screen === 'register' || !isLoggedIn) {
