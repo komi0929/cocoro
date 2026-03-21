@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import type { FurnitureItem } from '@/types/cocoro';
+import { getFurnitureDef } from '@/data/furnitureCatalog';
 
 const PASSPHRASE_WORDS = [
   '\u30B3\u30E1\u30C3\u30C8', '\u30B7\u30E3\u30C9\u30A6', '\u30BF\u30A4\u30D5\u30FC\u30F3',
@@ -60,7 +61,7 @@ export const useAjitStore = create<AjitState>((set, get) => ({
   placingType: null,
   placingColorVariant: undefined,
   isDragging: false,
-  roomCapacity: 200,
+  roomCapacity: 0,
   isDrawerOpen: false,
 
   setPassphrase: (pw) => set({ passphrase: pw }),
@@ -76,14 +77,23 @@ export const useAjitStore = create<AjitState>((set, get) => ({
     return words;
   },
 
-  addFurniture: (item) => set(s => ({
-    placedFurniture: [...s.placedFurniture, item],
-  })),
+  addFurniture: (item) => set(s => {
+    const def = getFurnitureDef(item.type);
+    return {
+      placedFurniture: [...s.placedFurniture, item],
+      roomCapacity: s.roomCapacity + (def?.cost ?? 5),
+    };
+  }),
 
-  removeFurniture: (id) => set(s => ({
-    placedFurniture: s.placedFurniture.filter(f => f.id !== id),
-    selectedFurnitureId: s.selectedFurnitureId === id ? null : s.selectedFurnitureId,
-  })),
+  removeFurniture: (id) => set(s => {
+    const removed = s.placedFurniture.find(f => f.id === id);
+    const def = removed ? getFurnitureDef(removed.type) : null;
+    return {
+      placedFurniture: s.placedFurniture.filter(f => f.id !== id),
+      selectedFurnitureId: s.selectedFurnitureId === id ? null : s.selectedFurnitureId,
+      roomCapacity: Math.max(0, s.roomCapacity - (def?.cost ?? 5)),
+    };
+  }),
 
   updateFurniturePosition: (id, position) => set(s => ({
     placedFurniture: s.placedFurniture.map(f =>
