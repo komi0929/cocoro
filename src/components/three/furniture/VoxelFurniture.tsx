@@ -1,10 +1,63 @@
 /**
- * cocoro — Voxel Furniture Factory Phase 5
- * 100 furniture routing with color variant + selection highlight
+ * cocoro — Voxel Furniture Factory Phase 6
+ * 量産エンジン(VoxelFurniture.ts)直結 + 既存100家具フォールバック
+ *
+ * 優先順位:
+ * 1. ENGINE_MAP → 量産エンジン VoxelGrid ベース（高品質）
+ * 2. FURNITURE_MAP → 既存手作りコンポーネント（レガシー）
  */
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import type { FurnitureItem } from '@/types/cocoro';
+import { VoxelGrid, type VoxelData } from '../voxel/VoxelGrid';
+import {
+  generateSofa, generateFridge, generateTV, generateWallClock,
+  generateTable, generateChair, generateLamp, generatePottedPlant,
+  generateBookshelf, generateBed, generateCushion, generateCake,
+  generateHoneyJar, generateFlowerVase, generateCoffeeTable,
+  generateEasel, generateBookStack, generateYarnBall,
+} from '../voxel/VoxelFurniture';
+
+// ============================================================
+// 量産エンジン家具マップ — VoxelGrid ベース高品質レンダリング
+// ここに登録するだけで本番に自動反映される
+// ============================================================
+type EngineEntry = { fn: (seed?: number) => VoxelData; voxelSize: number };
+const ENGINE_MAP: Record<string, EngineEntry> = {
+  sofa:         { fn: generateSofa, voxelSize: 0.03 },
+  sofa_red:     { fn: (s) => generateSofa(s ?? 101), voxelSize: 0.03 },
+  sofa_green:   { fn: (s) => generateSofa(s ?? 102), voxelSize: 0.03 },
+  mini_fridge:  { fn: generateFridge, voxelSize: 0.03 },
+  // monitor は TV で代用
+  table:        { fn: generateTable, voxelSize: 0.04 },
+  low_table:    { fn: generateTable, voxelSize: 0.035 },
+  chair:        { fn: generateChair, voxelSize: 0.04 },
+  lamp:         { fn: generateLamp, voxelSize: 0.04 },
+  plant:        { fn: generatePottedPlant, voxelSize: 0.04 },
+  plant_tall:   { fn: generatePottedPlant, voxelSize: 0.05 },
+  shelf:        { fn: generateBookshelf, voxelSize: 0.03 },
+  bed:          { fn: generateBed, voxelSize: 0.03 },
+  cushion:      { fn: generateCushion, voxelSize: 0.04 },
+  clock:        { fn: generateWallClock, voxelSize: 0.05 },
+  bonsai:       { fn: generatePottedPlant, voxelSize: 0.04 },
+};
+
+/** 量産エンジン家具をVoxelGridで描画するコンポーネント */
+function EngineRenderedFurniture({ entry, item }: { entry: EngineEntry; item: FurnitureItem }) {
+  const data = useMemo(() => entry.fn(42), [entry]);
+  // Center the model at origin
+  const W = data[0]?.[0]?.length ?? 1;
+  const D = data[0]?.length ?? 1;
+  return (
+    <VoxelGrid
+      data={data}
+      voxelSize={entry.voxelSize}
+      enableAO
+      aoIntensity={0.55}
+      position={[-W * entry.voxelSize / 2, 0, -D * entry.voxelSize / 2]}
+    />
+  );
+}
 
 // --- チル系 ---
 import {
@@ -174,8 +227,9 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
 };
 
 export function VoxelFurniture({ item, onClick, isSelected }: Props) {
+  const engineEntry = ENGINE_MAP[item.type];
   const Component = FURNITURE_MAP[item.type];
-  if (!Component) return null;
+  if (!engineEntry && !Component) return null;
 
   return (
     <Suspense fallback={null}>
@@ -188,11 +242,10 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
         }}
         onContextMenu={(e) => {
           e.stopPropagation();
-          // 右クリックでも家具を選択
           onClick?.();
         }}
       >
-        {/* Selection highlight — pulsing ring + bounding glow */}
+        {/* Selection highlight */}
         {isSelected && (
           <>
             <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -217,8 +270,13 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
             </mesh>
           </>
         )}
-        <Component item={item} />
+        {/* 量産エンジン版があればそちらを優先、なければレガシーコンポーネント */}
+        {engineEntry
+          ? <EngineRenderedFurniture entry={engineEntry} item={item} />
+          : Component && <Component item={item} />
+        }
       </group>
     </Suspense>
   );
 }
+
