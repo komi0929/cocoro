@@ -58,11 +58,11 @@ function fillSteppedEllipsoid(
 // ============================================================
 function sculptBear(grid: VoxelData, ox: number, oy: number, oz: number) {
   // Colors from reference
-  const brown = '#8B6914';       // Main brown (warm, rich)
-  const darkBrown = '#6B4E12';   // Shadow brown
-  const lightBrown = '#A07828';  // Highlight brown
-  const tan = '#C4A060';         // Belly/muzzle color
-  const lightTan = '#D4B478';    // Belly highlight
+  const brown = '#A0722E';       // Warm mid-brown (reference match)
+  const darkBrown = '#7A5518';   // Shadow brown
+  const lightBrown = '#B88838';  // Highlight brown
+  const tan = '#D4B478';         // Belly/muzzle color
+  const lightTan = '#E8CCA0';    // Belly highlight
   const black = '#1A1A1A';       // Eyes, nose
   const white = '#FFFFFF';       // Eye highlight
 

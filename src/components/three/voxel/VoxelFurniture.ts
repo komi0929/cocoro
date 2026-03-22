@@ -1,232 +1,244 @@
 /**
- * VoxelFurniture v2 — キューブベース家具・アイテム量産
+ * VoxelFurniture v3 — 3D Sculpted Furniture
  *
- * 参考画像の家具スタイル:
- * - 木のテーブル: フラットな天板 + 角の太い脚
- * - 棚: 直方体フレーム + カラフルな本/アイテム
- * - 樽: 縦方向の板 + 帯金属
- * - PC/デスク: 直方体の組み合わせ
- *
- * ルール: フラットカラー、直方体ベース、ノイズなし
+ * Design system rules applied:
+ * 1. 3D Sculpture: All parts have rounded edges, no pure rectangles
+ * 2. 3-Color Grading: base + shadow(×0.75) + highlight(×1.15)
+ * 3. Warm Colors: No pure gray/white/black
+ * 4. kawaii details: faces, blush, small decorations
  */
+import { VoxelData, createGrid, setVoxel, fillBox } from './VoxelGrid';
+import { fillRoundedBox3D, adjustBrightness } from './VoxelPrimitives';
 
-import { VoxelData, createGrid, setVoxel } from './VoxelGrid';
+function cp(base: string) {
+  return { base, shadow: adjustBrightness(base, 0.75), highlight: adjustBrightness(base, 1.15) };
+}
 
-// フラットカラー塗りつぶし（ノイズなし）
-function fillFlat(
-  grid: VoxelData, x1: number, y1: number, z1: number,
-  x2: number, y2: number, z2: number, color: string,
-): void {
-  for (let y = y1; y <= y2; y++)
-    for (let z = z1; z <= z2; z++)
-      for (let x = x1; x <= x2; x++)
-        setVoxel(grid, x, y, z, color);
+function fillEllipsoid(
+  grid: VoxelData, cx: number, cy: number, cz: number,
+  rx: number, ry: number, rz: number, color: string,
+) {
+  for (let dy = -ry; dy <= ry; dy++) for (let dx = -rx; dx <= rx; dx++) for (let dz = -rz; dz <= rz; dz++) {
+    if ((dx/rx)**2 + (dy/ry)**2 + (dz/rz)**2 <= 1.05) setVoxel(grid, cx+dx, cy+dy, cz+dz, color);
+  }
+}
+
+function fillEllipse2D(grid: VoxelData, cx: number, cy: number, z: number, rx: number, ry: number, color: string) {
+  for (let dy = -ry; dy <= ry; dy++) for (let dx = -rx; dx <= rx; dx++) {
+    if ((dx/rx)**2 + (dy/ry)**2 <= 1.0) setVoxel(grid, cx+dx, cy+dy, z, color);
+  }
 }
 
 // ============================================================
-// ハチミツ壺（kawaii顔付き）
+// Honey Jar — sculpted with kawaii face
 // ============================================================
-export function generateHoneyJar(_seed: number = 42): VoxelData {
-  const grid = createGrid(12, 14, 12);
-  const cx = 6, cz = 6;
-  const HONEY = '#FFD54F';
-  const HONEY_DARK = '#E4B027';
-  const WOOD = '#8B5A36';
+export function generateHoneyJar(_seed = 42): VoxelData {
+  const grid = createGrid(14, 16, 14);
+  const cx = 7, cz = 7;
+  const honey = cp('#FFD54F');
+  const wood = cp('#8B5A36');
 
-  // 本体（樽型: 2段の直方体）
-  fillFlat(grid, cx - 3, 0, cz - 3, cx + 3, 0, cz + 3, HONEY_DARK); // 底
-  fillFlat(grid, cx - 3, 1, cz - 3, cx + 3, 7, cz + 3, HONEY); // 本体
-  fillFlat(grid, cx - 4, 2, cz - 4, cx + 4, 6, cz + 4, HONEY); // 膨らみ
-  fillFlat(grid, cx - 3, 8, cz - 3, cx + 3, 8, cz + 3, HONEY_DARK); // 首
-
-  // 蓋
-  fillFlat(grid, cx - 3, 9, cz - 3, cx + 3, 9, cz + 3, WOOD);
-  fillFlat(grid, cx - 2, 10, cz - 2, cx + 2, 10, cz + 2, WOOD);
-  setVoxel(grid, cx, 11, cz, '#6B3E1E'); // 取っ手
-
-  // ラベル（前面）
-  fillFlat(grid, cx - 2, 3, cz - 4, cx + 2, 6, cz - 4, '#FFF8E1');
-
-  // kawaii顔
-  const fz = cz - 5;
-  // 目
-  setVoxel(grid, cx - 1, 5, fz + 1, '#1A1A1A');
-  setVoxel(grid, cx - 1, 6, fz + 1, '#1A1A1A');
-  setVoxel(grid, cx + 2, 5, fz + 1, '#1A1A1A');
-  setVoxel(grid, cx + 2, 6, fz + 1, '#1A1A1A');
-  // ハイライト
-  setVoxel(grid, cx - 1, 6, fz + 1, '#FFFFFF');
-  setVoxel(grid, cx + 2, 6, fz + 1, '#FFFFFF');
-  // 口
-  setVoxel(grid, cx, 4, fz + 1, '#8B6914');
-  setVoxel(grid, cx + 1, 4, fz + 1, '#8B6914');
-  // ほっぺ
-  setVoxel(grid, cx - 2, 4, fz + 1, '#FFB6C1');
-  setVoxel(grid, cx + 3, 4, fz + 1, '#FFB6C1');
-
-  // ハチミツ垂れ
-  setVoxel(grid, cx + 3, 7, cz - 3, '#DAA520');
-  setVoxel(grid, cx + 3, 6, cz - 3, '#DAA520');
-
-  return grid;
-}
-
-// ============================================================
-// テーブル（木の天板 + 太い角脚）
-// ============================================================
-export function generateTable(_seed: number = 100): VoxelData {
-  const grid = createGrid(14, 10, 10);
-  const WOOD = '#A0724E';
-  const WOOD_TOP = '#B8845E';
-
-  // 天板
-  fillFlat(grid, 0, 7, 0, 13, 8, 9, WOOD_TOP);
-  fillFlat(grid, 0, 7, 0, 13, 7, 9, WOOD);
-
-  // 4本脚（太め: 2x2）
-  fillFlat(grid, 0, 0, 0, 1, 6, 1, WOOD);
-  fillFlat(grid, 12, 0, 0, 13, 6, 1, WOOD);
-  fillFlat(grid, 0, 0, 8, 1, 6, 9, WOOD);
-  fillFlat(grid, 12, 0, 8, 13, 6, 9, WOOD);
-
-  return grid;
-}
-
-// ============================================================
-// 椅子（座面 + 背もたれ + 脚）
-// ============================================================
-export function generateChair(_seed: number = 200): VoxelData {
-  const grid = createGrid(8, 14, 8);
-  const WOOD = '#A0724E';
-  const CUSHION = '#FF8A65';
-
-  // 脚
-  fillFlat(grid, 0, 0, 0, 0, 4, 0, WOOD);
-  fillFlat(grid, 7, 0, 0, 7, 4, 0, WOOD);
-  fillFlat(grid, 0, 0, 7, 0, 4, 7, WOOD);
-  fillFlat(grid, 7, 0, 7, 7, 4, 7, WOOD);
-
-  // 座面フレーム
-  fillFlat(grid, 0, 5, 0, 7, 6, 7, WOOD);
-
-  // クッション
-  fillFlat(grid, 1, 7, 1, 6, 7, 6, CUSHION);
-
-  // 背もたれ
-  fillFlat(grid, 0, 7, 7, 7, 12, 7, WOOD);
-  // 背もたれ装飾穴
-  fillFlat(grid, 2, 9, 7, 5, 11, 7, '#00000000'); // 透明にはできないのでスキップ
-
-  return grid;
-}
-
-// ============================================================
-// ランプ（ベース + ポール + シェード）
-// ============================================================
-export function generateLamp(_seed: number = 300): VoxelData {
-  const grid = createGrid(8, 14, 8);
-  const METAL = '#D4A574';
-  const SHADE = '#FFE4B5';
-  const SHADE_TOP = '#FFCC80';
-
-  // ベース
-  fillFlat(grid, 2, 0, 2, 5, 0, 5, METAL);
-
-  // ポール
-  fillFlat(grid, 3, 1, 3, 4, 7, 4, METAL);
-
-  // シェード（台形）
-  fillFlat(grid, 1, 8, 1, 6, 8, 6, SHADE);
-  fillFlat(grid, 0, 9, 0, 7, 9, 7, SHADE);
-  fillFlat(grid, 0, 10, 0, 7, 11, 7, SHADE_TOP);
-
-  // 光（頂上）
-  setVoxel(grid, 3, 12, 3, '#FFFFFF');
-  setVoxel(grid, 4, 12, 4, '#FFFFFF');
-
-  return grid;
-}
-
-// ============================================================
-// クッション（丸いkawaii顔付き）
-// ============================================================
-export function generateCushion(_seed: number = 400, color: string = '#FF8A65'): VoxelData {
-  const grid = createGrid(10, 4, 10);
-  const cx = 5, cz = 5;
-
-  // ぷっくり形状（2段の直方体）
-  fillFlat(grid, cx - 3, 0, cz - 3, cx + 3, 0, cz + 3, color);
-  fillFlat(grid, cx - 4, 1, cz - 4, cx + 4, 2, cz + 4, color);
-  fillFlat(grid, cx - 3, 3, cz - 3, cx + 3, 3, cz + 3, color);
-
-  // kawaii顔（前面）
-  setVoxel(grid, cx - 1, 2, cz - 4, '#1A1A1A');
-  setVoxel(grid, cx + 2, 2, cz - 4, '#1A1A1A');
-  setVoxel(grid, cx, 1, cz - 4, '#FFB6C1');
-
-  return grid;
-}
-
-// ============================================================
-// 植木鉢（多肉植物入り）
-// ============================================================
-export function generatePottedPlant(_seed: number = 500): VoxelData {
-  const grid = createGrid(8, 12, 8);
-  const POT = '#B8642E';
-  const POT_RIM = '#CD853F';
-  const SOIL = '#5D4037';
-  const GREEN = '#4CAF50';
-  const GREEN_DARK = '#2E7D32';
-
-  // 鉢（テーパー: 下が細い）
-  fillFlat(grid, 2, 0, 2, 5, 1, 5, POT);
-  fillFlat(grid, 1, 2, 1, 6, 4, 6, POT);
-  fillFlat(grid, 0, 5, 0, 7, 5, 7, POT_RIM);
-
-  // 土
-  fillFlat(grid, 1, 5, 1, 6, 5, 6, SOIL);
-
-  // 植物（直方体の葉）
-  fillFlat(grid, 3, 6, 3, 4, 8, 4, GREEN); // 茎
-  fillFlat(grid, 1, 8, 2, 6, 9, 5, GREEN); // 葉1
-  fillFlat(grid, 2, 9, 1, 5, 10, 6, GREEN_DARK); // 葉2
-  fillFlat(grid, 2, 10, 2, 5, 11, 5, GREEN); // 葉先端
-
-  return grid;
-}
-
-// ============================================================
-// 本棚（カラフルな本入り）
-// ============================================================
-export function generateBookshelf(_seed: number = 600): VoxelData {
-  const grid = createGrid(14, 16, 5);
-  const WOOD = '#A0724E';
-  const WOOD_DARK = '#8B5A36';
-
-  // フレーム（側面）
-  fillFlat(grid, 0, 0, 0, 0, 15, 4, WOOD_DARK);
-  fillFlat(grid, 13, 0, 0, 13, 15, 4, WOOD_DARK);
-
-  // 棚板
-  for (const sy of [0, 4, 8, 12, 15]) {
-    fillFlat(grid, 0, sy, 0, 13, sy, 4, WOOD);
+  // Body: ellipsoid (barrel shape)
+  fillEllipsoid(grid, cx, 5, cz, 4, 5, 4, honey.base);
+  // Darker bottom
+  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
+    if (grid[0]?.[cz+dz]?.[cx+dx] != null) setVoxel(grid, cx+dx, 0, cz+dz, honey.shadow);
   }
 
-  // 背板
-  fillFlat(grid, 0, 0, 4, 13, 15, 4, WOOD_DARK);
+  // Neck
+  fillRoundedBox3D(grid, cx-2, 10, cz-2, cx+2, 11, cz+2, honey.shadow, 1);
 
-  // 本（各段にカラフルに配置）
-  const BOOK_COLORS = ['#8B0000', '#00008B', '#006400', '#8B4513', '#4B0082',
-                        '#B8860B', '#FF6347', '#4169E1', '#800080', '#2F4F4F'];
+  // Lid
+  fillRoundedBox3D(grid, cx-3, 12, cz-3, cx+3, 12, cz+3, wood.base, 1);
+  fillRoundedBox3D(grid, cx-2, 13, cz-2, cx+2, 13, cz+2, wood.base, 1);
+  setVoxel(grid, cx, 14, cz, wood.shadow);
+
+  // Label (front)
+  fillBox(grid, cx-2, 4, cz+4, cx+2, 7, cz+4, '#FFF8E1');
+
+  // kawaii face on label
+  const fz = cz + 5;
+  setVoxel(grid, cx-1, 6, fz-1, '#1A1A1A'); setVoxel(grid, cx+1, 6, fz-1, '#1A1A1A');
+  setVoxel(grid, cx-1, 7, fz-1, '#FFFFFF'); setVoxel(grid, cx+1, 7, fz-1, '#FFFFFF');
+  setVoxel(grid, cx, 5, fz-1, '#8B6914'); // mouth
+  setVoxel(grid, cx-2, 5, fz-1, '#FFB6C1'); setVoxel(grid, cx+2, 5, fz-1, '#FFB6C1'); // blush
+
+  // Honey drip
+  setVoxel(grid, cx+3, 8, cz+3, '#DAA520');
+  setVoxel(grid, cx+3, 7, cz+3, '#DAA520');
+  setVoxel(grid, cx+3, 6, cz+3, '#E4B027');
+
+  return grid;
+}
+
+// ============================================================
+// Table — rounded top, tapered legs
+// ============================================================
+export function generateTable(_seed = 100): VoxelData {
+  const grid = createGrid(16, 10, 12);
+  const w = cp('#A0724E');
+  const top = cp('#C49060');
+
+  // Tabletop (rounded box)
+  fillRoundedBox3D(grid, 0, 7, 0, 15, 9, 11, top.base, 1);
+  // Top highlight
+  fillBox(grid, 1, 9, 1, 14, 9, 10, top.highlight);
+  // Bottom shadow
+  fillBox(grid, 1, 7, 1, 14, 7, 10, top.shadow);
+
+  // 4 legs (tapered: wider at top, narrower at bottom)
+  for (const [lx, lz] of [[1,1],[13,1],[1,9],[13,9]]) {
+    fillBox(grid, lx, 2, lz, lx+1, 6, lz+1, w.base);
+    setVoxel(grid, lx, 0, lz, w.shadow); setVoxel(grid, lx+1, 0, lz, w.shadow);
+    setVoxel(grid, lx, 0, lz+1, w.shadow); setVoxel(grid, lx+1, 0, lz+1, w.shadow);
+    setVoxel(grid, lx, 1, lz, w.base); setVoxel(grid, lx+1, 1, lz+1, w.base);
+  }
+
+  return grid;
+}
+
+// ============================================================
+// Chair — rounded seat cushion, warm wood
+// ============================================================
+export function generateChair(_seed = 200): VoxelData {
+  const grid = createGrid(10, 16, 10);
+  const w = cp('#A0724E');
+  const cushion = cp('#FF8A65');
+
+  // Legs
+  for (const [lx, lz] of [[0,0],[8,0],[0,8],[8,8]]) {
+    fillBox(grid, lx, 0, lz, lx+1, 5, lz+1, w.base);
+    setVoxel(grid, lx, 0, lz, w.shadow); setVoxel(grid, lx+1, 0, lz+1, w.shadow);
+  }
+
+  // Seat frame
+  fillRoundedBox3D(grid, 0, 6, 0, 9, 7, 9, w.base, 1);
+
+  // Cushion (ellipsoid on top)
+  fillEllipsoid(grid, 5, 8, 5, 4, 1, 4, cushion.base);
+  // Cushion highlight
+  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+    if (grid[9]?.[5+dz]?.[5+dx] != null) setVoxel(grid, 5+dx, 9, 5+dz, cushion.highlight);
+  }
+
+  // Backrest
+  fillRoundedBox3D(grid, 0, 8, 8, 9, 14, 9, w.base, 1);
+  fillBox(grid, 1, 14, 8, 8, 14, 9, w.highlight);
+
+  return grid;
+}
+
+// ============================================================
+// Lamp — ellipsoid shade
+// ============================================================
+export function generateLamp(_seed = 300): VoxelData {
+  const grid = createGrid(10, 16, 10);
+  const metal = cp('#D4A574');
+  const shade = cp('#FFE4B5');
+
+  // Base (rounded)
+  fillRoundedBox3D(grid, 2, 0, 2, 7, 1, 7, metal.base, 1);
+  setVoxel(grid, 3, 0, 3, metal.shadow); setVoxel(grid, 6, 0, 6, metal.shadow);
+
+  // Pole
+  fillBox(grid, 4, 2, 4, 5, 8, 5, metal.base);
+
+  // Shade (ellipsoid)
+  fillEllipsoid(grid, 5, 12, 5, 4, 3, 4, shade.base);
+  // Shade highlight (top)
+  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+    if (grid[14]?.[5+dz]?.[5+dx] != null) setVoxel(grid, 5+dx, 14, 5+dz, shade.highlight);
+  }
+  // Light glow
+  setVoxel(grid, 5, 9, 5, '#FFFDE7');
+  setVoxel(grid, 4, 9, 5, '#FFFDE7');
+
+  return grid;
+}
+
+// ============================================================
+// Cushion — puffy ellipsoid with face
+// ============================================================
+export function generateCushion(_seed = 400, color = '#FF8A65'): VoxelData {
+  const grid = createGrid(12, 6, 12);
+  const c = cp(color);
+
+  fillEllipsoid(grid, 6, 3, 6, 5, 2, 5, c.base);
+  // Highlight top
+  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
+    if (grid[5]?.[6+dz]?.[6+dx] != null) setVoxel(grid, 6+dx, 5, 6+dz, c.highlight);
+  }
+  // Shadow bottom
+  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
+    if (grid[1]?.[6+dz]?.[6+dx] != null) setVoxel(grid, 6+dx, 1, 6+dz, c.shadow);
+  }
+
+  // kawaii face
+  const fz = 11;
+  setVoxel(grid, 4, 3, fz, '#1A1A1A'); setVoxel(grid, 8, 3, fz, '#1A1A1A');
+  setVoxel(grid, 6, 2, fz, '#FFB6C1');
+
+  return grid;
+}
+
+// ============================================================
+// Potted Plant — rounded pot, organic leaves
+// ============================================================
+export function generatePottedPlant(_seed = 500): VoxelData {
+  const grid = createGrid(10, 14, 10);
+  const pot = cp('#B8642E');
+  const green = cp('#4CAF50');
+
+  // Pot (tapered ellipsoid)
+  fillEllipsoid(grid, 5, 3, 5, 3, 3, 3, pot.base);
+  // Rim
+  fillRoundedBox3D(grid, 2, 6, 2, 8, 6, 8, pot.highlight, 1);
+  // Soil
+  fillEllipse2D(grid, 5, 5, 6, 3, 3, '#5D4037');
+
+  // Leaves (overlapping ellipsoids)
+  fillEllipsoid(grid, 5, 9, 5, 3, 2, 3, green.base);
+  fillEllipsoid(grid, 4, 11, 4, 2, 1, 2, green.highlight);
+  fillEllipsoid(grid, 6, 10, 6, 2, 2, 2, adjustBrightness(green.base, 0.9));
+  // Stem
+  setVoxel(grid, 5, 7, 5, '#2E7D32');
+  setVoxel(grid, 5, 8, 5, '#388E3C');
+
+  return grid;
+}
+
+// ============================================================
+// Bookshelf — warm wood, rounded edges, colorful books
+// ============================================================
+export function generateBookshelf(_seed = 600): VoxelData {
+  const grid = createGrid(16, 18, 7);
+  const w = cp('#A0724E');
+
+  // Frame (sides)
+  fillRoundedBox3D(grid, 0, 0, 0, 1, 17, 6, w.shadow, 1);
+  fillRoundedBox3D(grid, 14, 0, 0, 15, 17, 6, w.shadow, 1);
+
+  // Shelves
+  for (const sy of [0, 4, 8, 12, 17]) {
+    fillRoundedBox3D(grid, 0, sy, 0, 15, sy, 6, w.base, 0);
+    fillBox(grid, 1, sy, 1, 14, sy, 5, w.highlight);
+  }
+
+  // Back panel
+  fillBox(grid, 0, 0, 6, 15, 17, 6, w.shadow);
+
+  // Books
+  const BOOKS = ['#8B2222','#1E4D8C','#2E6B2E','#8B5E14','#5C2D91','#B87333','#CD4545','#4169E1','#6B2C6B','#2F5F5F'];
   let ci = 0;
-  for (const baseY of [1, 5, 9, 13]) {
-    let x = 1;
-    while (x < 13) {
-      const bookH = baseY === 13 ? 2 : 3;
-      const color = BOOK_COLORS[ci % BOOK_COLORS.length]!;
-      fillFlat(grid, x, baseY, 1, x, baseY + bookH - 1, 3, color);
-      x += 1;
-      ci++;
+  for (const by of [1, 5, 9, 13]) {
+    let x = 2;
+    while (x < 14) {
+      const bookH = by === 13 ? 3 : 3;
+      const c = BOOKS[ci % BOOKS.length]!;
+      fillBox(grid, x, by, 2, x, by + bookH - 1, 5, c);
+      // Book highlight (top edge)
+      setVoxel(grid, x, by + bookH - 1, 3, adjustBrightness(c, 1.3));
+      x += 1; ci++;
     }
   }
 
@@ -234,59 +246,66 @@ export function generateBookshelf(_seed: number = 600): VoxelData {
 }
 
 // ============================================================
-// ベッド（フレーム + マットレス + 掛け布団 + 枕）
+// Bed — soft blanket, puffy pillows
 // ============================================================
-export function generateBed(_seed: number = 700): VoxelData {
-  const grid = createGrid(14, 8, 18);
-  const WOOD = '#A0724E';
-  const SHEET = '#B3E5FC';
-  const PILLOW = '#FFF8E1';
-  const BLANKET = '#81D4FA';
+export function generateBed(_seed = 700): VoxelData {
+  const grid = createGrid(16, 10, 20);
+  const w = cp('#A0724E');
+  const sheet = cp('#B3E5FC');
+  const pillow = cp('#FFF8E1');
 
-  // フレーム
-  fillFlat(grid, 0, 0, 0, 13, 2, 17, WOOD);
+  // Frame (rounded)
+  fillRoundedBox3D(grid, 0, 0, 0, 15, 3, 19, w.base, 1);
+  fillBox(grid, 1, 0, 1, 14, 0, 18, w.shadow);
 
-  // マットレス
-  fillFlat(grid, 1, 3, 1, 12, 4, 16, '#FFFFFF');
+  // Mattress
+  fillBox(grid, 1, 4, 1, 14, 5, 18, '#FFFFFF');
 
-  // 掛け布団
-  fillFlat(grid, 1, 5, 5, 12, 5, 16, BLANKET);
-  fillFlat(grid, 1, 6, 6, 12, 6, 15, SHEET);
+  // Blanket (puffed up with ellipsoid)
+  fillEllipsoid(grid, 8, 7, 12, 6, 2, 6, sheet.base);
+  // Blanket highlight
+  for (let dx = -4; dx <= 4; dx++) for (let dz = -4; dz <= 4; dz++) {
+    if (grid[8]?.[12+dz]?.[8+dx] != null) setVoxel(grid, 8+dx, 8, 12+dz, sheet.highlight);
+  }
 
-  // 枕
-  fillFlat(grid, 2, 5, 1, 5, 6, 4, PILLOW);
-  fillFlat(grid, 8, 5, 1, 11, 6, 4, PILLOW);
+  // Pillows (ellipsoids)
+  fillEllipsoid(grid, 4, 7, 3, 3, 1, 2, pillow.base);
+  fillEllipsoid(grid, 12, 7, 3, 3, 1, 2, pillow.base);
+  // Pillow highlights
+  setVoxel(grid, 4, 8, 3, pillow.highlight); setVoxel(grid, 12, 8, 3, pillow.highlight);
 
-  // ヘッドボード
-  fillFlat(grid, 0, 3, 0, 13, 7, 0, WOOD);
+  // Headboard
+  fillRoundedBox3D(grid, 0, 4, 0, 15, 9, 0, w.base, 1);
+  fillBox(grid, 1, 9, 0, 14, 9, 0, w.highlight);
 
   return grid;
 }
 
 // ============================================================
-// ケーキ（kawaii）
+// Cake — layered with strawberries
 // ============================================================
-export function generateCake(_seed: number = 800): VoxelData {
-  const grid = createGrid(10, 8, 10);
-  const cx = 5, cz = 5;
-  const CAKE = '#CD853F';
-  const CREAM = '#FFF8E1';
-  const BERRY = '#FF4444';
+export function generateCake(_seed = 800): VoxelData {
+  const grid = createGrid(12, 10, 12);
+  const cx = 6, cz = 6;
+  const cake = cp('#CD853F');
+  const cream = cp('#FFF8E1');
 
-  // ケーキ本体
-  fillFlat(grid, cx - 3, 0, cz - 3, cx + 3, 4, cz + 3, CAKE);
+  // Base layer (ellipsoid)
+  fillEllipsoid(grid, cx, 2, cz, 4, 2, 4, cake.base);
 
-  // クリーム層
-  fillFlat(grid, cx - 3, 2, cz - 3, cx + 3, 2, cz + 3, CREAM);
-  fillFlat(grid, cx - 3, 5, cz - 3, cx + 3, 5, cz + 3, CREAM);
+  // Cream layer
+  fillEllipse2D(grid, cx, 2, cz, 4, 4, cream.base);
+  // Top cream
+  fillEllipse2D(grid, cx, 4, cz, 3, 3, cream.base);
+  fillEllipse2D(grid, cx, 5, cz, 2, 2, cream.highlight);
 
-  // イチゴ
-  setVoxel(grid, cx - 2, 6, cz, BERRY);
-  setVoxel(grid, cx + 2, 6, cz, BERRY);
-  setVoxel(grid, cx, 6, cz - 2, BERRY);
-  setVoxel(grid, cx, 6, cz + 2, BERRY);
-  setVoxel(grid, cx, 6, cz, CREAM);
-  setVoxel(grid, cx, 7, cz, CREAM); // 頂上
+  // Strawberries
+  const berry = '#FF4444';
+  setVoxel(grid, cx-2, 5, cz, berry); setVoxel(grid, cx+2, 5, cz, berry);
+  setVoxel(grid, cx, 5, cz-2, berry); setVoxel(grid, cx, 5, cz+2, berry);
+  // Top cream swirl
+  setVoxel(grid, cx, 6, cz, cream.base);
+  setVoxel(grid, cx, 7, cz, cream.highlight);
 
   return grid;
 }
