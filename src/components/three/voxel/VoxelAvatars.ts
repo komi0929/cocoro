@@ -1,377 +1,584 @@
 /**
- * VoxelAvatars v6 - Face Map based voxel avatars
+ * VoxelAvatars v7 — 3D Sculpted Voxel Avatars
+ *
+ * Key principles from reference analysis:
+ * 1. MUZZLE: The snout/mouth area is a 3D BOX that PROTRUDES forward from the face
+ * 2. BELLY: The chest/belly is ELLIPTICAL, not a rectangle
+ * 3. ARMS: Arms bend FORWARD at the bottom (hands reach toward camera)
+ * 4. SPHERICAL ROUNDING: Much more aggressive stepped sphere shape on head & body
+ * 5. EARS: Small 3D bumps on top of head, not flat
+ * 6. Everything is a 3D SCULPTURE, not a flat surface with textures
  */
 import { VoxelData, createGrid, setVoxel, fillBox } from './VoxelGrid';
-import { fillRoundedBox3D, drawYarnBall, drawSunflowerSeed, drawCollar, adjustBrightness } from './VoxelPrimitives';
+import { fillRoundedBox3D, adjustBrightness } from './VoxelPrimitives';
 
-type FaceMap = string[][];
-
-function applyFaceMap(
-  grid: VoxelData, map: FaceMap, cx: number, topY: number, faceZ: number,
-  colorLookup: Record<string, string>,
-): void {
-  const rows = map.length;
-  const cols = map[0]!.length;
-  const x0 = cx - Math.floor(cols / 2);
-  for (let r = 0; r < rows; r++) {
-    const y = topY - r;
-    const row = map[r]!;
-    for (let c = 0; c < cols; c++) {
-      const ch = row[c];
-      if (!ch || ch === '_') continue;
-      const color = colorLookup[ch];
-      if (color) setVoxel(grid, x0 + c, y, faceZ, color);
-    }
-  }
-}
-
-interface ColorProfile { base: string; highlight: string; shadow: string; }
-function cp(base: string, hf = 1.15, sf = 0.75): ColorProfile {
-  return { base, highlight: adjustBrightness(base, hf), shadow: adjustBrightness(base, sf) };
-}
-
-interface AvatarDef {
-  id: string; name: string;
-  body: ColorProfile; belly: ColorProfile;
-  headW: number; headH: number; headD: number; headCornerR: number;
-  bodyW: number; bodyH: number; bodyD: number; bodyCornerR: number;
-  armW: number; armH: number; armD: number;
-  legW: number; legH: number; legD: number; legSpacing: number;
-  bellyW: number; bellyH: number;
-  faceMap: FaceMap; faceColorLookup: Record<string, string>; faceTopOffset: number;
-  earBuilder?: (g: VoxelData, cx: number, y: number, cz: number, hw: number, b: ColorProfile) => void;
-  tailBuilder?: (g: VoxelData, cx: number, y: number, z: number, b: ColorProfile) => void;
-  itemBuilder?: (g: VoxelData, x: number, y: number, cz: number) => void;
-  specialBuilder?: (g: VoxelData, cx: number, cz: number, hx1: number,
-    headY: number, headW: number, headH: number, headD: number, headFrontZ: number,
-    bodyX1: number, bodyY: number, bodyW: number, bodyH: number, bodyD: number, bodyFrontZ: number,
-    armLX: number, armRX: number, armY: number, armH: number, armW: number, armD: number,
-    legY: number, legW: number, legH: number, legD: number, body: ColorProfile) => void;
-}
-
-// Face maps
-const BEAR_FACE: FaceMap = [
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '___BW____BW__'.split(''),
-  '___BB____BB__'.split(''),
-  '___BB____BB__'.split(''),
-  '______NN_____'.split(''),
-  '_____DDDD____'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-];
-const CAT_FACE: FaceMap = [
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '___BW____BW__'.split(''),
-  '___BB____BB__'.split(''),
-  '___BB____BB__'.split(''),
-  '______PP_____'.split(''),
-  '_____DDDD____'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-];
-const RABBIT_FACE: FaceMap = CAT_FACE;
-const DOG_FACE: FaceMap = [
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '___BW____BW__'.split(''),
-  '___BB____BB__'.split(''),
-  '___BB____BB__'.split(''),
-  '______NN_____'.split(''),
-  '_____DDDD____'.split(''),
-  '______TT_____'.split(''),
-  '_____________'.split(''),
-];
-const PANDA_FACE: FaceMap = [
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '__KKK____KKK_'.split(''),
-  '__KBWK__KBWK_'.split(''),
-  '__KBBK__KBBK_'.split(''),
-  '__KKK____KKK_'.split(''),
-  '______NN_____'.split(''),
-  '_____DDDD____'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-];
-const FOX_FACE: FaceMap = BEAR_FACE;
-const PENGUIN_FACE: FaceMap = [
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-  '___BW____BW__'.split(''),
-  '___BB____BB__'.split(''),
-  '___BB____BB__'.split(''),
-  '______OO_____'.split(''),
-  '______OO_____'.split(''),
-  '_____________'.split(''),
-  '_____________'.split(''),
-];
-const HAMSTER_FACE: FaceMap = CAT_FACE;
-
-// Ear builders
-function buildRoundEars(g: VoxelData, cx: number, y: number, cz: number, hw: number, b: ColorProfile, ic: string, r = 3) {
-  const dx = Math.floor(hw / 2) - 1;
-  for (let dy = 0; dy < r; dy++) {
-    const w = dy === r - 1 ? 1 : 2;
-    for (let ddx = 0; ddx < w; ddx++) {
-      for (let dz = -1; dz <= 0; dz++) {
-        const c = (ddx === 0 && dz === -1 && dy < r - 1) ? ic : b.base;
-        setVoxel(g, cx - dx + ddx, y + dy, cz + dz, c);
-        setVoxel(g, cx + dx - ddx, y + dy, cz + dz, c);
+// ============================================================
+// Utility: Elliptical fill for belly
+// ============================================================
+function fillEllipse2D(
+  grid: VoxelData, cx: number, cy: number, z: number,
+  radiusX: number, radiusY: number, color: string,
+) {
+  for (let dy = -radiusY; dy <= radiusY; dy++) {
+    for (let dx = -radiusX; dx <= radiusX; dx++) {
+      const nx = dx / radiusX;
+      const ny = dy / radiusY;
+      if (nx * nx + ny * ny <= 1.0) {
+        setVoxel(grid, cx + dx, cy + dy, z, color);
       }
     }
   }
 }
-function buildPointedEars(g: VoxelData, cx: number, y: number, cz: number, hw: number, b: ColorProfile, ic: string, h = 4, bw = 3) {
-  const hs = Math.floor(hw / 2);
-  for (let hi = 0; hi < h; hi++) {
-    const w = Math.max(1, bw - hi);
-    for (let dx = 0; dx < w; dx++) {
-      for (let dz = -1; dz <= 0; dz++) {
-        const inner = dx < w - 1 && dz === -1 && hi < h - 1;
-        setVoxel(g, cx - hs + dx, y + hi, cz + dz, inner ? ic : b.base);
-        setVoxel(g, cx + hs - dx, y + hi, cz + dz, inner ? ic : b.base);
+
+// ============================================================
+// Utility: Stepped sphere (3D oval body shape)
+// ============================================================
+function fillSteppedEllipsoid(
+  grid: VoxelData,
+  cx: number, cy: number, cz: number,
+  rx: number, ry: number, rz: number,
+  color: string,
+) {
+  for (let dy = -ry; dy <= ry; dy++) {
+    for (let dx = -rx; dx <= rx; dx++) {
+      for (let dz = -rz; dz <= rz; dz++) {
+        const nx = dx / rx;
+        const ny = dy / ry;
+        const nz = dz / rz;
+        if (nx * nx + ny * ny + nz * nz <= 1.05) {
+          setVoxel(grid, cx + dx, cy + dy, cz + dz, color);
+        }
       }
     }
   }
 }
-function buildLongEars(g: VoxelData, cx: number, y: number, cz: number, _hw: number, b: ColorProfile, ic: string, h = 8, edx = 3) {
-  for (let hi = 0; hi < h; hi++) {
-    const w = hi < h - 1 ? 2 : 1;
-    for (let ddx = 0; ddx < w; ddx++) {
-      for (let dz = -1; dz <= 0; dz++) {
-        const inner = ddx === 0 && dz === -1;
-        setVoxel(g, cx - edx + ddx, y + hi, cz + dz, inner ? ic : b.base);
-        setVoxel(g, cx + edx - ddx, y + hi, cz + dz, inner ? ic : b.base);
+
+// ============================================================
+// Bear — Exact reference reproduction
+// ============================================================
+function sculptBear(grid: VoxelData, ox: number, oy: number, oz: number) {
+  // Colors from reference
+  const brown = '#8B6914';       // Main brown (warm, rich)
+  const darkBrown = '#6B4E12';   // Shadow brown
+  const lightBrown = '#A07828';  // Highlight brown
+  const tan = '#C4A060';         // Belly/muzzle color
+  const lightTan = '#D4B478';    // Belly highlight
+  const black = '#1A1A1A';       // Eyes, nose
+  const white = '#FFFFFF';       // Eye highlight
+
+  // Reference proportions (total ~30 voxels tall):
+  // Legs: 6h, Body: 12h, Head: 12h
+  // Head is ~14w x 12h x 12d (sphere-ish)
+  // Body is ~12w x 12h x 10d
+  // Muzzle protrudes 3 blocks from face
+
+  // ===== LEGS =====
+  const legH = 6, legW = 5, legD = 5;
+  const legSpacing = 1; // gap between legs
+  const legLX = ox - legSpacing - legW;
+  const legRX = ox + legSpacing;
+  for (let dy = 0; dy < legH; dy++) {
+    for (let dx = 0; dx < legW; dx++) {
+      for (let dz = 0; dz < legD; dz++) {
+        const c = dy === 0 ? darkBrown : brown;
+        setVoxel(grid, legLX + dx, oy + dy, oz - Math.floor(legD / 2) + dz, c);
+        setVoxel(grid, legRX + dx, oy + dy, oz - Math.floor(legD / 2) + dz, c);
       }
     }
   }
-}
-function buildFloppyEars(g: VoxelData, cx: number, by: number, cz: number, hw: number, _b: ColorProfile, c: string, dh = 5, ew = 3) {
-  const hs = Math.floor(hw / 2);
-  for (let h = 0; h < dh; h++) {
+
+  // ===== BODY =====
+  // Spherical body using stepped ellipsoid
+  const bodyW = 14, bodyH = 12, bodyD = 11;
+  const bodyCY = oy + legH + Math.floor(bodyH / 2);
+  fillSteppedEllipsoid(grid, ox, bodyCY, oz,
+    Math.floor(bodyW / 2), Math.floor(bodyH / 2), Math.floor(bodyD / 2), brown);
+
+  // Top highlight
+  const bodyTopY = oy + legH + bodyH - 1;
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dz = -3; dz <= 3; dz++) {
+      if (grid[bodyTopY]?.[oz + dz]?.[ox + dx] != null) {
+        setVoxel(grid, ox + dx, bodyTopY, oz + dz, lightBrown);
+      }
+    }
+  }
+  // Bottom shadow
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dz = -3; dz <= 3; dz++) {
+      if (grid[oy + legH]?.[oz + dz]?.[ox + dx] != null) {
+        setVoxel(grid, ox + dx, oy + legH, oz + dz, darkBrown);
+      }
+    }
+  }
+
+  // ===== BELLY (elliptical, on front face +Z) =====
+  const bellyRX = 4, bellyRY = 4;
+  const bellyCY = bodyCY;
+  // Find front Z of body
+  const bodyFrontZ = oz + Math.floor(bodyD / 2);
+  fillEllipse2D(grid, ox, bellyCY, bodyFrontZ, bellyRX, bellyRY, tan);
+  // Belly highlight (smaller ellipse)
+  fillEllipse2D(grid, ox, bellyCY + 1, bodyFrontZ, bellyRX - 1, bellyRY - 1, lightTan);
+
+  // ===== ARMS =====
+  // Arms are L-shaped: upper part on sides, lower part bends forward
+  const armW = 4, armUpperH = 7, armLowerH = 3, armD = 4;
+  const armY = oy + legH + bodyH - armUpperH - 1;
+
+  // Left arm — upper (side)
+  const armLX = ox - Math.floor(bodyW / 2) - armW;
+  for (let dy = 0; dy < armUpperH; dy++) {
+    for (let dx = 0; dx < armW; dx++) {
+      for (let dz = 0; dz < armD; dz++) {
+        setVoxel(grid, armLX + dx, armY + dy, oz - Math.floor(armD / 2) + dz, brown);
+      }
+    }
+  }
+  // Left arm — lower (bends forward)
+  for (let dy = 0; dy < armLowerH; dy++) {
+    for (let dx = 0; dx < armW; dx++) {
+      for (let dz = 0; dz < armD; dz++) {
+        setVoxel(grid, armLX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, brown);
+      }
+    }
+  }
+
+  // Right arm
+  const armRX = ox + Math.floor(bodyW / 2);
+  for (let dy = 0; dy < armUpperH; dy++) {
+    for (let dx = 0; dx < armW; dx++) {
+      for (let dz = 0; dz < armD; dz++) {
+        setVoxel(grid, armRX + dx, armY + dy, oz - Math.floor(armD / 2) + dz, brown);
+      }
+    }
+  }
+  // Right arm — lower (bends forward)
+  for (let dy = 0; dy < armLowerH; dy++) {
+    for (let dx = 0; dx < armW; dx++) {
+      for (let dz = 0; dz < armD; dz++) {
+        setVoxel(grid, armRX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, brown);
+      }
+    }
+  }
+
+  // ===== HEAD =====
+  // Spherical head using stepped ellipsoid
+  const headW = 16, headH = 14, headD = 14;
+  const headCY = oy + legH + bodyH + Math.floor(headH / 2) - 2; // slight overlap
+  fillSteppedEllipsoid(grid, ox, headCY, oz,
+    Math.floor(headW / 2), Math.floor(headH / 2), Math.floor(headD / 2), brown);
+
+  // Head top highlight
+  const headTopY = headCY + Math.floor(headH / 2);
+  for (let dx = -4; dx <= 4; dx++) {
+    for (let dz = -4; dz <= 4; dz++) {
+      if (grid[headTopY]?.[oz + dz]?.[ox + dx] != null) {
+        setVoxel(grid, ox + dx, headTopY, oz + dz, lightBrown);
+      }
+    }
+  }
+
+  // ===== MUZZLE (3D protrusion from face) =====
+  const muzzleW = 6, muzzleH = 4, muzzleD = 3;
+  const muzzleCY = headCY - 2; // below center of head
+  const headFrontZ = oz + Math.floor(headD / 2);
+  for (let dx = -Math.floor(muzzleW / 2); dx < Math.floor(muzzleW / 2); dx++) {
+    for (let dy = 0; dy < muzzleH; dy++) {
+      for (let dz = 0; dz < muzzleD; dz++) {
+        setVoxel(grid, ox + dx, muzzleCY + dy, headFrontZ + dz, tan);
+      }
+    }
+  }
+  // Muzzle highlight (top row)
+  for (let dx = -Math.floor(muzzleW / 2) + 1; dx < Math.floor(muzzleW / 2) - 1; dx++) {
+    setVoxel(grid, ox + dx, muzzleCY + muzzleH - 1, headFrontZ + muzzleD - 1, lightTan);
+  }
+
+  // ===== NOSE (on front of muzzle) =====
+  const noseZ = headFrontZ + muzzleD - 1;
+  const noseY = muzzleCY + muzzleH - 1;
+  setVoxel(grid, ox - 1, noseY, noseZ, black);
+  setVoxel(grid, ox, noseY, noseZ, black);
+  setVoxel(grid, ox - 1, noseY + 1, noseZ, black);
+  setVoxel(grid, ox, noseY + 1, noseZ, black);
+
+  // ===== EYES =====
+  const eyeY = headCY + 1;
+  const eyeDx = 3;
+  // Left eye (2w x 3h)
+  for (let dy = 0; dy < 3; dy++) {
+    setVoxel(grid, ox - eyeDx, eyeY + dy, headFrontZ, black);
+    setVoxel(grid, ox - eyeDx + 1, eyeY + dy, headFrontZ, black);
+  }
+  // Left eye highlight
+  setVoxel(grid, ox - eyeDx + 1, eyeY + 2, headFrontZ, white);
+
+  // Right eye (2w x 3h)
+  for (let dy = 0; dy < 3; dy++) {
+    setVoxel(grid, ox + eyeDx - 1, eyeY + dy, headFrontZ, black);
+    setVoxel(grid, ox + eyeDx, eyeY + dy, headFrontZ, black);
+  }
+  // Right eye highlight
+  setVoxel(grid, ox + eyeDx, eyeY + 2, headFrontZ, white);
+
+  // ===== EARS =====
+  // Small rounded bumps on top-sides of head
+  const earY = headCY + Math.floor(headH / 2) - 1;
+  const earDx = Math.floor(headW / 2) - 2;
+  // Left ear (3x3x2 bump)
+  for (let dx = 0; dx < 3; dx++) {
     for (let dz = -1; dz <= 0; dz++) {
-      for (let w = 0; w < ew; w++) {
-        setVoxel(g, cx - hs - ew + w, by - h, cz + dz, c);
-        setVoxel(g, cx + hs + 1 + w, by - h, cz + dz, c);
+      setVoxel(grid, ox - earDx + dx, earY, oz + dz, brown);
+      setVoxel(grid, ox - earDx + dx, earY + 1, oz + dz, brown);
+      if (dx === 1) setVoxel(grid, ox - earDx + dx, earY + 2, oz + dz, brown);
+    }
+  }
+  // Right ear
+  for (let dx = 0; dx < 3; dx++) {
+    for (let dz = -1; dz <= 0; dz++) {
+      setVoxel(grid, ox + earDx - 2 + dx, earY, oz + dz, brown);
+      setVoxel(grid, ox + earDx - 2 + dx, earY + 1, oz + dz, brown);
+      if (dx === 1) setVoxel(grid, ox + earDx - 2 + dx, earY + 2, oz + dz, brown);
+    }
+  }
+
+  // ===== TAIL (small stub on back) =====
+  const tailZ = oz - Math.floor(bodyD / 2) - 1;
+  const tailY = bodyCY + 1;
+  setVoxel(grid, ox, tailY, tailZ, brown);
+  setVoxel(grid, ox + 1, tailY, tailZ, brown);
+  setVoxel(grid, ox, tailY + 1, tailZ, brown);
+
+  // ===== HELD ITEM: Honey jar =====
+  const jarX = armRX + 1;
+  const jarY = armY + 1;
+  const jarZ = oz + Math.floor(armD / 2) + 1;
+  for (let dx = 0; dx < 4; dx++) {
+    for (let dy = 0; dy < 5; dy++) {
+      for (let dz = 0; dz < 3; dz++) {
+        setVoxel(grid, jarX + dx, jarY + dy, jarZ + dz, '#FFD54F');
       }
+    }
+  }
+  // Jar lid
+  for (let dx = 0; dx < 4; dx++) {
+    for (let dz = 0; dz < 3; dz++) {
+      setVoxel(grid, jarX + dx, jarY + 5, jarZ + dz, '#8B4513');
     }
   }
 }
 
-// Tail builders
-function buildStubTail(g: VoxelData, cx: number, y: number, z: number, c: string, len = 2) {
-  for (let i = 0; i < len; i++) { setVoxel(g, cx, y, z - i, c); setVoxel(g, cx + 1, y, z - i, c); }
-}
-function buildLongTail(g: VoxelData, cx: number, y: number, z: number, c: string, len = 6) {
-  for (let i = 0; i < len; i++) {
-    const ty = y + Math.round(Math.sin(i * 0.4) * 1.5);
-    setVoxel(g, cx, ty, z - i, c); setVoxel(g, cx + 1, ty, z - i, c); setVoxel(g, cx, ty + 1, z - i, c);
-  }
-}
-function buildFluffyTail(g: VoxelData, cx: number, y: number, z: number, c: string, tc: string, len = 6) {
-  for (let i = 0; i < len; i++) {
-    const w = Math.min(2, Math.floor(i * 0.5) + 1);
-    const col = i >= len - 2 ? tc : c;
-    for (let dx = -w; dx <= w; dx++) for (let dy = -w; dy <= w; dy++) if (dx*dx+dy*dy<=w*w+1) setVoxel(g, cx+dx, y+dy, z-i, col);
-  }
-}
-
-// Avatar definitions
-const AVATARS: Record<string, AvatarDef> = {
-  bear: {
-    id: 'bear', name: 'Bear',
-    body: cp('#8B6240'), belly: cp('#D4B892', 1.08, 0.88),
-    headW: 14, headH: 12, headD: 12, headCornerR: 3,
-    bodyW: 12, bodyH: 10, bodyD: 10, bodyCornerR: 2,
-    armW: 4, armH: 8, armD: 4, legW: 4, legH: 5, legD: 4, legSpacing: 3,
-    bellyW: 8, bellyH: 7,
-    faceMap: BEAR_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', N:'#2D1B0E', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildRoundEars(g,cx,y,cz,hw,b,'#C49A6C',3),
-    tailBuilder: (g,cx,y,z,b) => buildStubTail(g,cx,y,z,b.base),
-    itemBuilder: (g,x,y,cz) => { fillRoundedBox3D(g,x,y,cz-2,x+3,y+4,cz+1,'#FFD54F',1); fillBox(g,x,y+4,cz-2,x+3,y+4,cz+1,'#8B4513'); },
-  },
-  cat: {
-    id: 'cat', name: 'Cat',
-    body: cp('#9E9E9E'), belly: cp('#E8E8E8', 1.05, 0.90),
-    headW: 14, headH: 11, headD: 11, headCornerR: 3,
-    bodyW: 11, bodyH: 10, bodyD: 9, bodyCornerR: 1,
-    armW: 3, armH: 7, armD: 3, legW: 3, legH: 5, legD: 3, legSpacing: 2,
-    bellyW: 7, bellyH: 7,
-    faceMap: CAT_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', P:'#FF8CAA', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildPointedEars(g,cx,y,cz,hw,b,'#FFB6C1',4,3),
-    tailBuilder: (g,cx,y,z,b) => buildLongTail(g,cx,y,z,b.base,7),
-    itemBuilder: (g,x,y,cz) => drawYarnBall(g,x+2,y+2,cz,3,'#5BC0EB'),
-    specialBuilder: (g,cx,_cz,hx1,headY,headW,headH,_hD,headFrontZ,bodyX1,bodyY,bodyW,bodyH,_bD,bodyFrontZ) => {
-      const sc = '#707070';
-      for (let dy = 2; dy < headH; dy += 3) for (let dx = hx1+1; dx < hx1+headW-1; dx += 2) setVoxel(g,dx,headY+dy,headFrontZ,sc);
-      for (let dy = 1; dy < bodyH; dy += 3) for (let dx = bodyX1+1; dx < bodyX1+bodyW-1; dx += 2) setVoxel(g,dx,bodyY+dy,bodyFrontZ,sc);
-    },
-  },
-  rabbit: {
-    id: 'rabbit', name: 'Rabbit',
-    body: cp('#D9C9A8'), belly: cp('#F5EDE0', 1.05, 0.92),
-    headW: 14, headH: 12, headD: 11, headCornerR: 3,
-    bodyW: 11, bodyH: 9, bodyD: 9, bodyCornerR: 1,
-    armW: 3, armH: 7, armD: 3, legW: 4, legH: 4, legD: 5, legSpacing: 2,
-    bellyW: 7, bellyH: 6,
-    faceMap: RABBIT_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', P:'#FFB0B0', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildLongEars(g,cx,y,cz,hw,b,'#FFAABB',8,3),
-    tailBuilder: (g,cx,y,z) => buildStubTail(g,cx,y,z,'#F5EDE0',3),
-  },
-  dog: {
-    id: 'dog', name: 'Dog',
-    body: cp('#EADDD0'), belly: cp('#FFFFFF', 1.0, 0.92),
-    headW: 14, headH: 12, headD: 12, headCornerR: 3,
-    bodyW: 12, bodyH: 10, bodyD: 10, bodyCornerR: 2,
-    armW: 4, armH: 8, armD: 4, legW: 4, legH: 5, legD: 4, legSpacing: 3,
-    bellyW: 8, bellyH: 7,
-    faceMap: DOG_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', N:'#2D1B0E', D:'#555555', T:'#FF6B8A' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildFloppyEars(g,cx,y,cz,hw,b,'#C49050',5,3),
-    tailBuilder: (g,cx,y,z,b) => buildLongTail(g,cx,y,z,b.base,5),
-    specialBuilder: (g,cx,cz,hx1,headY,headW,headH,headD,_hFZ,_bx1,bodyY,bodyW,bodyH) => {
-      const pc = '#C49050';
-      for (let dy = Math.floor(headH*0.5); dy < headH; dy++) for (let dx = cx; dx < hx1+headW; dx++) for (let dz = 0; dz < headD; dz++) setVoxel(g,dx,headY+dy,cz-Math.floor(headD/2)+dz,pc);
-      drawCollar(g,cx,bodyY+bodyH-1,cz-Math.floor(bodyW/2),cz+Math.floor(bodyW/2),Math.floor(bodyW/2),'#4488CC','#FFD700');
-    },
-  },
-  panda: {
-    id: 'panda', name: 'Panda',
-    body: cp('#F0F0F0', 1.05, 0.85), belly: cp('#FFFFFF'),
-    headW: 14, headH: 12, headD: 12, headCornerR: 3,
-    bodyW: 13, bodyH: 11, bodyD: 10, bodyCornerR: 2,
-    armW: 4, armH: 9, armD: 4, legW: 4, legH: 5, legD: 4, legSpacing: 3,
-    bellyW: 9, bellyH: 8,
-    faceMap: PANDA_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', K:'#1A1A1A', N:'#1A1A1A', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw) => buildRoundEars(g,cx,y,cz,hw,cp('#1A1A1A'),'#1A1A1A',3),
-    tailBuilder: (g,cx,y,z) => buildStubTail(g,cx,y,z,'#F0F0F0',1),
-    specialBuilder: (g,cx,cz,_hx1,_hY,_hW,_hH,_hD,_hFZ,_bx1,_bY,_bW,_bH,_bD,_bFZ,armLX,armRX,armY,armH,armW,armD,legY,legW,legH,legD) => {
-      const bk = '#1A1A1A';
-      for (let dy=0;dy<armH;dy++) for (let dz=0;dz<armD;dz++) for (let dx=0;dx<armW;dx++) { setVoxel(g,armLX+dx,armY+dy,cz-Math.floor(armD/2)+dz,bk); setVoxel(g,armRX+dx,armY+dy,cz-Math.floor(armD/2)+dz,bk); }
-      for (let dy=0;dy<legH;dy++) for (let dz=0;dz<legD;dz++) for (let dx=0;dx<legW;dx++) { setVoxel(g,cx-3-legW+1+dx,legY+dy,cz-Math.floor(legD/2)+dz,bk); setVoxel(g,cx+3+dx,legY+dy,cz-Math.floor(legD/2)+dz,bk); }
-    },
-  },
-  fox: {
-    id: 'fox', name: 'Fox',
-    body: cp('#D4652B'), belly: cp('#FFF5E6', 1.02, 0.90),
-    headW: 13, headH: 11, headD: 11, headCornerR: 3,
-    bodyW: 11, bodyH: 10, bodyD: 9, bodyCornerR: 1,
-    armW: 3, armH: 7, armD: 3, legW: 3, legH: 5, legD: 3, legSpacing: 2,
-    bellyW: 7, bellyH: 7,
-    faceMap: FOX_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', N:'#1A1A1A', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildPointedEars(g,cx,y,cz,hw,b,'#FFF5E6',5,4),
-    tailBuilder: (g,cx,y,z,b) => buildFluffyTail(g,cx,y,z,b.base,'#FFFFFF',7),
-    specialBuilder: (g,cx,_cz,_hx1,headY,headW,headH,_hD,headFrontZ) => {
-      const w = '#FFF5E6';
-      for (let dy=0; dy<Math.floor(headH*0.55); dy++) { const mw=Math.floor(headW/2)-Math.floor(dy*0.5); for (let dx=-mw;dx<=mw;dx++) setVoxel(g,cx+dx,headY+dy,headFrontZ,w); }
-    },
-  },
-  penguin: {
-    id: 'penguin', name: 'Penguin',
-    body: cp('#2C3E6B'), belly: cp('#FFFFFF'),
-    headW: 13, headH: 11, headD: 11, headCornerR: 3,
-    bodyW: 11, bodyH: 10, bodyD: 9, bodyCornerR: 1,
-    armW: 2, armH: 8, armD: 2, legW: 3, legH: 2, legD: 3, legSpacing: 2,
-    bellyW: 8, bellyH: 8,
-    faceMap: PENGUIN_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', O:'#FF8C00', D:'#555555' }, faceTopOffset: 1,
-    specialBuilder: (g,cx,cz,_hx1,_hY,_hW,_hH,_hD,_hFZ,_bx1,_bY,_bW,_bH,_bD,_bFZ,_aLX,_aRX,_aY,_aH,_aW,_aD,legY,legW,_legH,legD) => {
-      const o = '#FF8C00';
-      for (let dx=0;dx<legW;dx++) for (let dz=0;dz<legD;dz++) { setVoxel(g,cx-2-legW+1+dx,legY,cz-Math.floor(legD/2)+dz,o); setVoxel(g,cx+2+dx,legY,cz-Math.floor(legD/2)+dz,o); }
-    },
-  },
-  hamster: {
-    id: 'hamster', name: 'Hamster',
-    body: cp('#E8C39E'), belly: cp('#FFF8F0', 1.03, 0.92),
-    headW: 15, headH: 13, headD: 12, headCornerR: 3,
-    bodyW: 12, bodyH: 8, bodyD: 9, bodyCornerR: 1,
-    armW: 3, armH: 5, armD: 3, legW: 3, legH: 3, legD: 3, legSpacing: 3,
-    bellyW: 8, bellyH: 5,
-    faceMap: HAMSTER_FACE, faceColorLookup: { B:'#1A1A1A', W:'#FFFFFF', P:'#FFB0B0', D:'#555555' }, faceTopOffset: 1,
-    earBuilder: (g,cx,y,cz,hw,b) => buildRoundEars(g,cx,y,cz,hw,b,'#FFB6C1',3),
-    tailBuilder: (g,cx,y,z,b) => buildStubTail(g,cx,y,z,b.base,1),
-    itemBuilder: (g,x,y,cz) => drawSunflowerSeed(g,x,y,cz),
-    specialBuilder: (g,cx,cz,hx1,headY,headW,headH) => {
-      const cc = '#F0D8B8';
-      const cy = headY + Math.floor(headH/2) - 1;
-      for (let dy=-1;dy<=2;dy++) for (let dz=0;dz<3;dz++) { setVoxel(g,hx1-1,cy+dy,cz-1+dz,cc); setVoxel(g,hx1+headW,cy+dy,cz-1+dz,cc); }
-    },
-  },
-};
-
-// Main generation function
-export function generateCubicAvatar(planId: string, _opts: Record<string, string> = {}, _seed = 42): VoxelData {
-  const A = AVATARS[planId];
-  if (!A) return createGrid(1,1,1);
-  const earH = A.earBuilder ? 6 : 0;
-  const totalW = Math.max(A.headW, A.bodyW + A.armW*2 + 2) + 12;
-  const totalH = A.legH + A.bodyH + A.headH + earH + 6;
-  const totalD = Math.max(A.headD, A.bodyD) + 16;
-  const grid = createGrid(totalW, totalH, totalD);
-  const cx = Math.floor(totalW/2), cz = Math.floor(totalD/2);
+// ============================================================
+// Cat — 3D sculpted
+// ============================================================
+function sculptCat(grid: VoxelData, ox: number, oy: number, oz: number) {
+  const gray = '#9E9E9E';
+  const darkGray = '#757575';
+  const lightGray = '#BDBDBD';
+  const white = '#E8E8E8';
+  const pink = '#FF8CAA';
+  const black = '#1A1A1A';
+  const stripeColor = '#6E6E6E';
 
   // Legs
-  const legY = 0;
-  const lx1 = cx - A.legSpacing - A.legW + 1, lx2 = cx + A.legSpacing;
-  for (let dx=0;dx<A.legW;dx++) for (let dy=0;dy<A.legH;dy++) for (let dz=0;dz<A.legD;dz++) {
-    const c = dy===0 ? A.body.shadow : A.body.base;
-    setVoxel(grid,lx1+dx,legY+dy,cz-Math.floor(A.legD/2)+dz,c);
-    setVoxel(grid,lx2+dx,legY+dy,cz-Math.floor(A.legD/2)+dz,c);
+  const legH = 5, legW = 4, legD = 4, legSp = 1;
+  const lx1 = ox - legSp - legW, lx2 = ox + legSp;
+  for (let dy = 0; dy < legH; dy++) for (let dx = 0; dx < legW; dx++) for (let dz = 0; dz < legD; dz++) {
+    setVoxel(grid, lx1 + dx, oy + dy, oz - Math.floor(legD / 2) + dz, dy === 0 ? darkGray : gray);
+    setVoxel(grid, lx2 + dx, oy + dy, oz - Math.floor(legD / 2) + dz, dy === 0 ? darkGray : gray);
+  }
+
+  // Body (ellipsoid)
+  const bodyW = 12, bodyH = 11, bodyD = 10;
+  const bodyCY = oy + legH + Math.floor(bodyH / 2);
+  fillSteppedEllipsoid(grid, ox, bodyCY, oz, Math.floor(bodyW / 2), Math.floor(bodyH / 2), Math.floor(bodyD / 2), gray);
+
+  // Belly ellipse
+  const bodyFZ = oz + Math.floor(bodyD / 2);
+  fillEllipse2D(grid, ox, bodyCY, bodyFZ, 3, 4, white);
+
+  // Stripes on body
+  for (let dy = -Math.floor(bodyH / 2); dy <= Math.floor(bodyH / 2); dy += 3) {
+    for (let dx = -Math.floor(bodyW / 2); dx <= Math.floor(bodyW / 2); dx += 2) {
+      if (grid[bodyCY + dy]?.[bodyFZ]?.[ox + dx] != null) {
+        setVoxel(grid, ox + dx, bodyCY + dy, bodyFZ, stripeColor);
+      }
+    }
+  }
+
+  // Arms (L-shaped)
+  const armW = 3, armUH = 6, armLH = 3, armD = 3;
+  const armY = oy + legH + bodyH - armUH - 1;
+  const aLX = ox - Math.floor(bodyW / 2) - armW, aRX = ox + Math.floor(bodyW / 2);
+  for (let dy = 0; dy < armUH; dy++) for (let dx = 0; dx < armW; dx++) for (let dz = 0; dz < armD; dz++) {
+    setVoxel(grid, aLX + dx, armY + dy, oz - Math.floor(armD / 2) + dz, gray);
+    setVoxel(grid, aRX + dx, armY + dy, oz - Math.floor(armD / 2) + dz, gray);
+  }
+  for (let dy = 0; dy < armLH; dy++) for (let dx = 0; dx < armW; dx++) for (let dz = 0; dz < armD; dz++) {
+    setVoxel(grid, aLX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, gray);
+    setVoxel(grid, aRX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, gray);
+  }
+
+  // Head (ellipsoid)
+  const headW = 15, headH = 13, headD = 13;
+  const headCY = oy + legH + bodyH + Math.floor(headH / 2) - 2;
+  fillSteppedEllipsoid(grid, ox, headCY, oz, Math.floor(headW / 2), Math.floor(headH / 2), Math.floor(headD / 2), gray);
+  const hFZ = oz + Math.floor(headD / 2);
+
+  // Stripes on head
+  for (let dy = 2; dy <= Math.floor(headH / 2); dy += 2) {
+    for (let dx = -Math.floor(headW / 2) + 1; dx <= Math.floor(headW / 2) - 1; dx += 2) {
+      if (grid[headCY + dy]?.[hFZ]?.[ox + dx] != null) setVoxel(grid, ox + dx, headCY + dy, hFZ, stripeColor);
+    }
+  }
+
+  // Muzzle
+  const mW = 6, mH = 3, mD = 2;
+  const mCY = headCY - 2;
+  for (let dx = -Math.floor(mW / 2); dx < Math.floor(mW / 2); dx++) for (let dy = 0; dy < mH; dy++) for (let dz = 0; dz < mD; dz++) {
+    setVoxel(grid, ox + dx, mCY + dy, hFZ + dz, white);
+  }
+
+  // Nose (pink triangle)
+  setVoxel(grid, ox - 1, mCY + mH - 1, hFZ + mD - 1, pink);
+  setVoxel(grid, ox, mCY + mH - 1, hFZ + mD - 1, pink);
+  setVoxel(grid, ox - 1, mCY + mH, hFZ + mD - 1, pink);
+  setVoxel(grid, ox, mCY + mH, hFZ + mD - 1, pink);
+
+  // Mouth
+  setVoxel(grid, ox - 1, mCY, hFZ + mD - 1, darkGray);
+  setVoxel(grid, ox, mCY, hFZ + mD - 1, darkGray);
+
+  // Eyes
+  const eY = headCY + 1, eDx = 3;
+  for (let dy = 0; dy < 3; dy++) { setVoxel(grid, ox - eDx, eY + dy, hFZ, black); setVoxel(grid, ox - eDx + 1, eY + dy, hFZ, black); }
+  setVoxel(grid, ox - eDx + 1, eY + 2, hFZ, '#FFFFFF');
+  for (let dy = 0; dy < 3; dy++) { setVoxel(grid, ox + eDx - 1, eY + dy, hFZ, black); setVoxel(grid, ox + eDx, eY + dy, hFZ, black); }
+  setVoxel(grid, ox + eDx, eY + 2, hFZ, '#FFFFFF');
+
+  // Ears (pointed, with pink inside)
+  const earY = headCY + Math.floor(headH / 2);
+  const earDx = Math.floor(headW / 2) - 2;
+  for (let h = 0; h < 4; h++) {
+    const w = Math.max(1, 3 - h);
+    for (let dx = 0; dx < w; dx++) for (let dz = -1; dz <= 0; dz++) {
+      const inner = dx < w - 1 && dz === -1 && h < 3;
+      setVoxel(grid, ox - earDx + dx, earY + h, oz + dz, inner ? pink : gray);
+      setVoxel(grid, ox + earDx - dx, earY + h, oz + dz, inner ? pink : gray);
+    }
+  }
+
+  // Tail (long, curving)
+  const tailZ = oz - Math.floor(bodyD / 2) - 1;
+  const tailY = bodyCY + 2;
+  for (let i = 0; i < 7; i++) {
+    const ty = tailY + Math.round(Math.sin(i * 0.4) * 1.5);
+    setVoxel(grid, ox, ty, tailZ - i, gray);
+    setVoxel(grid, ox + 1, ty, tailZ - i, gray);
+    setVoxel(grid, ox, ty + 1, tailZ - i, gray);
+  }
+
+  // Yarn ball
+  const ybX = aRX + armW + 1, ybY = armY + 2;
+  for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) for (let dz = -3; dz <= 3; dz++) {
+    if (dx * dx + dy * dy + dz * dz <= 10) setVoxel(grid, ybX + dx, ybY + dy, oz + dz, '#5BC0EB');
+  }
+}
+
+// ============================================================
+// Generic avatar using same technique (for the other 6)
+// ============================================================
+function sculptGeneric(
+  grid: VoxelData, ox: number, oy: number, oz: number,
+  mainColor: string, bellyColor: string, noseColor: string,
+  earType: 'round' | 'pointed' | 'long' | 'floppy' | 'none',
+  earInnerColor: string,
+  tailType: 'stub' | 'long' | 'fluffy',
+  extras?: (g: VoxelData, ox: number, oy: number, oz: number, bodyCY: number, headCY: number, bodyFZ: number, headFZ: number) => void,
+) {
+  const dark = adjustBrightness(mainColor, 0.75);
+  const light = adjustBrightness(mainColor, 1.15);
+  const bellyLight = adjustBrightness(bellyColor, 1.08);
+  const black = '#1A1A1A';
+
+  // Legs
+  const legH = 5, legW = 4, legD = 4, legSp = 1;
+  for (let dy = 0; dy < legH; dy++) for (let dx = 0; dx < legW; dx++) for (let dz = 0; dz < legD; dz++) {
+    setVoxel(grid, ox - legSp - legW + dx, oy + dy, oz - 2 + dz, dy === 0 ? dark : mainColor);
+    setVoxel(grid, ox + legSp + dx, oy + dy, oz - 2 + dz, dy === 0 ? dark : mainColor);
   }
 
   // Body
-  const bodyY = A.legH, bx1 = cx - Math.floor(A.bodyW/2), bz1 = cz - Math.floor(A.bodyD/2);
-  fillRoundedBox3D(grid,bx1,bodyY,bz1,bx1+A.bodyW-1,bodyY+A.bodyH-1,bz1+A.bodyD-1,A.body.base,A.bodyCornerR);
-  fillBox(grid,bx1+1,bodyY,bz1+1,bx1+A.bodyW-2,bodyY,bz1+A.bodyD-2,A.body.shadow);
-  fillBox(grid,bx1+1,bodyY+A.bodyH-1,bz1+1,bx1+A.bodyW-2,bodyY+A.bodyH-1,bz1+A.bodyD-2,A.body.highlight);
-  const bodyFrontZ = bz1+A.bodyD-1;
-  fillBox(grid,cx-Math.floor(A.bellyW/2),bodyY+1,bodyFrontZ,cx-Math.floor(A.bellyW/2)+A.bellyW-1,bodyY+A.bellyH,bodyFrontZ,A.belly.base);
+  const bodyH = 11, bodyW = 12, bodyD = 10;
+  const bodyCY = oy + legH + Math.floor(bodyH / 2);
+  fillSteppedEllipsoid(grid, ox, bodyCY, oz, Math.floor(bodyW / 2), Math.floor(bodyH / 2), Math.floor(bodyD / 2), mainColor);
+  const bodyFZ = oz + Math.floor(bodyD / 2);
+  fillEllipse2D(grid, ox, bodyCY, bodyFZ, 3, 4, bellyColor);
+  fillEllipse2D(grid, ox, bodyCY + 1, bodyFZ, 2, 3, bellyLight);
 
-  // Arms
-  const armY = bodyY+A.bodyH-A.armH, armLX = bx1-A.armW, armRX = bx1+A.bodyW;
-  for (let dx=0;dx<A.armW;dx++) for (let dy=0;dy<A.armH;dy++) for (let dz=0;dz<A.armD;dz++) {
-    const c = dy===0?A.body.shadow:A.body.base;
-    setVoxel(grid,armLX+dx,armY+dy,cz-Math.floor(A.armD/2)+dz,c);
-    setVoxel(grid,armRX+dx,armY+dy,cz-Math.floor(A.armD/2)+dz,c);
+  // Arms (L-shaped)
+  const armW = 3, armUH = 6, armD = 3;
+  const armY = oy + legH + bodyH - armUH - 1;
+  const aLX = ox - Math.floor(bodyW / 2) - armW, aRX = ox + Math.floor(bodyW / 2);
+  for (let dy = 0; dy < armUH; dy++) for (let dx = 0; dx < armW; dx++) for (let dz = 0; dz < armD; dz++) {
+    setVoxel(grid, aLX + dx, armY + dy, oz - 1 + dz, mainColor);
+    setVoxel(grid, aRX + dx, armY + dy, oz - 1 + dz, mainColor);
+  }
+  for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < armW; dx++) for (let dz = 0; dz < armD; dz++) {
+    setVoxel(grid, aLX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, mainColor);
+    setVoxel(grid, aRX + dx, armY + dy, oz + Math.floor(armD / 2) + dz, mainColor);
   }
 
   // Head
-  const headY = bodyY+A.bodyH, hx1 = cx-Math.floor(A.headW/2), hz1 = cz-Math.floor(A.headD/2);
-  fillRoundedBox3D(grid,hx1,headY,hz1,hx1+A.headW-1,headY+A.headH-1,hz1+A.headD-1,A.body.base,A.headCornerR);
-  fillBox(grid,hx1+2,headY+A.headH-1,hz1+2,hx1+A.headW-3,headY+A.headH-1,hz1+A.headD-3,A.body.highlight);
-  const headFrontZ = hz1+A.headD-1;
+  const headH = 13, headW = 15, headD = 13;
+  const headCY = oy + legH + bodyH + Math.floor(headH / 2) - 2;
+  fillSteppedEllipsoid(grid, ox, headCY, oz, Math.floor(headW / 2), Math.floor(headH / 2), Math.floor(headD / 2), mainColor);
+  const headFZ = oz + Math.floor(headD / 2);
 
-  // Special features (before face so face overwrites)
-  if (A.specialBuilder) A.specialBuilder(grid,cx,cz,hx1,headY,A.headW,A.headH,A.headD,headFrontZ,bx1,bodyY,A.bodyW,A.bodyH,A.bodyD,bodyFrontZ,armLX,armRX,armY,A.armH,A.armW,A.armD,legY,A.legW,A.legH,A.legD,A.body);
+  // Muzzle
+  const mW = 6, mH = 3, mD = 2, mCY = headCY - 2;
+  for (let dx = -Math.floor(mW / 2); dx < Math.floor(mW / 2); dx++) for (let dy = 0; dy < mH; dy++) for (let dz = 0; dz < mD; dz++) {
+    setVoxel(grid, ox + dx, mCY + dy, headFZ + dz, bellyColor);
+  }
 
-  // Face map
-  applyFaceMap(grid,A.faceMap,cx,headY+A.headH-1-A.faceTopOffset,headFrontZ,A.faceColorLookup);
+  // Nose
+  setVoxel(grid, ox - 1, mCY + mH - 1, headFZ + mD - 1, noseColor);
+  setVoxel(grid, ox, mCY + mH - 1, headFZ + mD - 1, noseColor);
+
+  // Eyes
+  const eY = headCY + 1, eDx = 3;
+  for (let dy = 0; dy < 3; dy++) { setVoxel(grid, ox - eDx, eY + dy, headFZ, black); setVoxel(grid, ox - eDx + 1, eY + dy, headFZ, black); }
+  setVoxel(grid, ox - eDx + 1, eY + 2, headFZ, '#FFFFFF');
+  for (let dy = 0; dy < 3; dy++) { setVoxel(grid, ox + eDx - 1, eY + dy, headFZ, black); setVoxel(grid, ox + eDx, eY + dy, headFZ, black); }
+  setVoxel(grid, ox + eDx, eY + 2, headFZ, '#FFFFFF');
 
   // Ears
-  if (A.earBuilder) A.earBuilder(grid,cx,headY+A.headH,cz,A.headW,A.body);
+  const earY = headCY + Math.floor(headH / 2);
+  const earDx = Math.floor(headW / 2) - 2;
+  if (earType === 'round') {
+    for (let h = 0; h < 3; h++) { const w = h === 2 ? 1 : 2; for (let dx = 0; dx < w; dx++) for (let dz = -1; dz <= 0; dz++) { setVoxel(grid, ox - earDx + dx, earY + h, oz + dz, dx === 0 && dz === -1 ? earInnerColor : mainColor); setVoxel(grid, ox + earDx - dx, earY + h, oz + dz, dx === 0 && dz === -1 ? earInnerColor : mainColor); } }
+  } else if (earType === 'pointed') {
+    for (let h = 0; h < 4; h++) { const w = Math.max(1, 3 - h); for (let dx = 0; dx < w; dx++) for (let dz = -1; dz <= 0; dz++) { const inner = dx < w - 1 && dz === -1 && h < 3; setVoxel(grid, ox - earDx + dx, earY + h, oz + dz, inner ? earInnerColor : mainColor); setVoxel(grid, ox + earDx - dx, earY + h, oz + dz, inner ? earInnerColor : mainColor); } }
+  } else if (earType === 'long') {
+    for (let h = 0; h < 8; h++) { const w = h < 7 ? 2 : 1; for (let dx = 0; dx < w; dx++) for (let dz = -1; dz <= 0; dz++) { setVoxel(grid, ox - 3 + dx, earY + h, oz + dz, dx === 0 && dz === -1 ? earInnerColor : mainColor); setVoxel(grid, ox + 3 - dx, earY + h, oz + dz, dx === 0 && dz === -1 ? earInnerColor : mainColor); } }
+  } else if (earType === 'floppy') {
+    for (let h = 0; h < 5; h++) for (let dz = -1; dz <= 0; dz++) for (let w = 0; w < 3; w++) { setVoxel(grid, ox - earDx - 3 + w, earY - 2 - h, oz + dz, earInnerColor); setVoxel(grid, ox + earDx + 1 + w, earY - 2 - h, oz + dz, earInnerColor); }
+  }
 
   // Tail
-  if (A.tailBuilder) A.tailBuilder(grid,cx,bodyY+Math.floor(A.bodyH/2),bz1-1,A.body);
+  const tailZ = oz - Math.floor(bodyD / 2) - 1;
+  const tailY = bodyCY + 1;
+  if (tailType === 'stub') { setVoxel(grid, ox, tailY, tailZ, mainColor); setVoxel(grid, ox + 1, tailY, tailZ, mainColor); }
+  else if (tailType === 'long') { for (let i = 0; i < 6; i++) { const ty = tailY + Math.round(Math.sin(i * 0.4) * 1.5); setVoxel(grid, ox, ty, tailZ - i, mainColor); setVoxel(grid, ox + 1, ty, tailZ - i, mainColor); } }
+  else if (tailType === 'fluffy') { for (let i = 0; i < 6; i++) { const w = Math.min(2, Math.floor(i * 0.5) + 1); const c = i >= 4 ? '#FFFFFF' : mainColor; for (let dx = -w; dx <= w; dx++) for (let dy = -w; dy <= w; dy++) if (dx * dx + dy * dy <= w * w + 1) setVoxel(grid, ox + dx, tailY + dy, tailZ - i, c); } }
 
-  // Held item
-  if (A.itemBuilder) A.itemBuilder(grid,armRX+A.armW+1,armY+2,cz);
+  if (extras) extras(grid, ox, oy, oz, bodyCY, headCY, bodyFZ, headFZ);
+}
 
+// ============================================================
+// Public API — one function per avatar
+// ============================================================
+export function generateBearAvatar(_seed = 42): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptBear(grid, 20, 2, 25);
   return grid;
 }
 
-// Shortcuts
-export const generateBearAvatar = (s=42) => generateCubicAvatar('bear',{},s);
-export const generateCatAvatar = (s=100) => generateCubicAvatar('cat',{},s);
-export const generateRabbitAvatar = (s=200) => generateCubicAvatar('rabbit',{},s);
-export const generateDogAvatar = (s=300) => generateCubicAvatar('dog',{},s);
-export const generatePandaAvatar = (s=400) => generateCubicAvatar('panda',{},s);
-export const generateFoxAvatar = (s=500) => generateCubicAvatar('fox',{},s);
-export const generatePenguinAvatar = (s=600) => generateCubicAvatar('penguin',{},s);
-export const generateHamsterAvatar = (s=700) => generateCubicAvatar('hamster',{},s);
-export type { AvatarDef as CubicBodyPlan };
-export const CUBIC_PLANS = AVATARS;
+export function generateCatAvatar(_seed = 100): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptCat(grid, 20, 2, 25);
+  return grid;
+}
+
+export function generateRabbitAvatar(_seed = 200): VoxelData {
+  const grid = makeGrid(50, 55, 50);
+  sculptGeneric(grid, 20, 2, 25, '#D9C9A8', '#F5EDE0', '#FFB0B0', 'long', '#FFAABB', 'stub');
+  return grid;
+}
+
+export function generateDogAvatar(_seed = 300): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptGeneric(grid, 20, 2, 25, '#EADDD0', '#FFFFFF', '#2D1B0E', 'floppy', '#C49050', 'long',
+    (g, ox, _oy, oz, bodyCY, headCY, _bodyFZ, headFZ) => {
+      // Brown patch on top of head
+      for (let dy = 3; dy <= 6; dy++) for (let dx = 0; dx <= 6; dx++) for (let dz = -3; dz <= 3; dz++) {
+        if (g[headCY + dy]?.[oz + dz]?.[ox + dx] != null) setVoxel(g, ox + dx, headCY + dy, oz + dz, '#C49050');
+      }
+      // Blue collar
+      const collarY = bodyCY + 4;
+      for (let dx = -5; dx <= 5; dx++) for (let dz = -4; dz <= 4; dz++) {
+        if (g[collarY]?.[oz + dz]?.[ox + dx] != null) setVoxel(g, ox + dx, collarY, oz + dz, '#4488CC');
+      }
+    });
+  return grid;
+}
+
+export function generatePandaAvatar(_seed = 400): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptGeneric(grid, 20, 2, 25, '#F0F0F0', '#FFFFFF', '#1A1A1A', 'round', '#1A1A1A', 'stub',
+    (g, ox, oy, oz, bodyCY, headCY, _bodyFZ, headFZ) => {
+      // Black eye patches
+      const eY = headCY + 1, eDx = 3;
+      for (let dy = -1; dy <= 3; dy++) { const w = (dy <= 0 || dy >= 3) ? 1 : 2; for (let dx = 0; dx < w; dx++) { setVoxel(g, ox - eDx - dx, eY + dy, headFZ, '#1A1A1A'); setVoxel(g, ox + eDx + dx, eY + dy, headFZ, '#1A1A1A'); } }
+      // Black arms & legs
+      const armY = oy + 5 + 11 - 6 - 1;
+      const aLX = ox - 6 - 3, aRX = ox + 6;
+      for (let dy = 0; dy < 6; dy++) for (let dx = 0; dx < 3; dx++) for (let dz = 0; dz < 3; dz++) { setVoxel(g, aLX + dx, armY + dy, oz - 1 + dz, '#1A1A1A'); setVoxel(g, aRX + dx, armY + dy, oz - 1 + dz, '#1A1A1A'); }
+      for (let dy = 0; dy < 5; dy++) for (let dx = 0; dx < 4; dx++) for (let dz = 0; dz < 4; dz++) { setVoxel(g, ox - 1 - 4 + dx, oy + dy, oz - 2 + dz, '#1A1A1A'); setVoxel(g, ox + 1 + dx, oy + dy, oz - 2 + dz, '#1A1A1A'); }
+    });
+  return grid;
+}
+
+export function generateFoxAvatar(_seed = 500): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptGeneric(grid, 20, 2, 25, '#D4652B', '#FFF5E6', '#1A1A1A', 'pointed', '#FFF5E6', 'fluffy',
+    (g, ox, _oy, _oz, _bodyCY, headCY, _bodyFZ, headFZ) => {
+      // White lower face
+      for (let dy = -4; dy <= 0; dy++) {
+        const w = 4 + dy;
+        for (let dx = -w; dx <= w; dx++) setVoxel(g, ox + dx, headCY + dy, headFZ, '#FFF5E6');
+      }
+    });
+  return grid;
+}
+
+export function generatePenguinAvatar(_seed = 600): VoxelData {
+  const grid = makeGrid(50, 50, 50);
+  sculptGeneric(grid, 20, 2, 25, '#2C3E6B', '#FFFFFF', '#FF8C00', 'none', '', 'stub',
+    (g, ox, oy, oz) => {
+      // Orange feet
+      for (let dx = 0; dx < 4; dx++) for (let dz = 0; dz < 4; dz++) {
+        setVoxel(g, ox - 1 - 4 + dx, oy, oz - 2 + dz, '#FF8C00');
+        setVoxel(g, ox + 1 + dx, oy, oz - 2 + dz, '#FF8C00');
+      }
+    });
+  return grid;
+}
+
+export function generateHamsterAvatar(_seed = 700): VoxelData {
+  const grid = makeGrid(50, 55, 50);
+  sculptGeneric(grid, 20, 2, 25, '#E8C39E', '#FFF8F0', '#1A1A1A', 'round', '#FFB6C1', 'stub',
+    (g, ox, _oy, oz, _bodyCY, headCY) => {
+      // Cheek pouches
+      const cy = headCY - 1;
+      for (let dy = -1; dy <= 2; dy++) for (let dz = -1; dz <= 1; dz++) {
+        setVoxel(g, ox - 8, cy + dy, oz + dz, '#F0D8B8');
+        setVoxel(g, ox + 8, cy + dy, oz + dz, '#F0D8B8');
+      }
+    });
+  return grid;
+}
+
+function makeGrid(w: number, h: number, d: number): VoxelData { return createGrid(w, h, d); }
+
+export function generateCubicAvatar(id: string, _opts: Record<string, string> = {}, s = 42): VoxelData {
+  const m: Record<string, (s: number) => VoxelData> = {
+    bear: generateBearAvatar, cat: generateCatAvatar, rabbit: generateRabbitAvatar,
+    dog: generateDogAvatar, panda: generatePandaAvatar, fox: generateFoxAvatar,
+    penguin: generatePenguinAvatar, hamster: generateHamsterAvatar,
+  };
+  return (m[id] ?? generateBearAvatar)(s);
+}
+export type CubicBodyPlan = { id: string };
+export const CUBIC_PLANS: Record<string, CubicBodyPlan> = { bear: { id: 'bear' }, cat: { id: 'cat' }, rabbit: { id: 'rabbit' }, dog: { id: 'dog' }, panda: { id: 'panda' }, fox: { id: 'fox' }, penguin: { id: 'penguin' }, hamster: { id: 'hamster' } };
