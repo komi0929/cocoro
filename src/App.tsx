@@ -34,10 +34,16 @@ import { useAjitStore } from './store/useAjitStore';
 import { useEngineStore } from './store/useEngineStore';
 import { startAmbience, stopAmbience } from './engine/voice/AmbientSounds';
 import type { RoomTheme } from './types/cocoro';
+import { VoxelAuditPage } from './components/three/voxel/VoxelAudit';
 
 type AppScreen = 'register' | 'lobby' | 'theme-select' | 'room';
 
 export default function App() {
+  // 監査モード: ?audit=voxel でアクセス
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('audit') === 'voxel') {
+    return <VoxelAuditPage />;
+  }
+
   const user = useUserStore(s => s.user);
   const isLoggedIn = useUserStore(s => s.isLoggedIn);
   const isDemo = useUserStore(s => s.isDemo);
