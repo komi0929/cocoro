@@ -4,14 +4,12 @@
  * 全カテゴリのモデルを一覧表示し、品質確認と承認を行う。
  * URLパラメータ ?audit=voxel でアクセス。
  *
- * カテゴリ:
- * - 🧸 アバター（5種族）
- * - 🏠 家具・アイテム（9種）
- * - 🌴 環境（5種）
- * - 📐 旧プロシージャル（13種）
+ * WebGLコンテキスト管理:
+ *   IntersectionObserverで可視カードのみCanvasを生成。
+ *   同時アクティブ上限 MAX_ACTIVE_CANVASES = 8 を確保。
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { VoxelGrid, EmissiveVoxelGrid, type VoxelData } from './VoxelGrid';
@@ -35,6 +33,8 @@ import {
   generateSeaweed, generateBuilding, generateWaterTower,
   generateSpaceConsole, generateTreasureChest, generateJellyfish
 } from './VoxelModels';
+
+const MAX_ACTIVE_CANVASES = 8;
 
 type ModelDef = {
   id: string; name: string; category: string;
@@ -84,34 +84,101 @@ const ALL_MODELS: ModelDef[] = [
   { id: 'old-jelly', name: '🪼 クラゲ', category: '旧モデル', fn: generateJellyfish, voxelSize: 0.04, rank: 'B', emissive: true },
 ];
 
+/* ─── WebGL コンテキスト管理（グローバル） ─── */
+const activeSet = new Set<string>();
+const waitQueue: Array<{ id: string; resolve: () => void }> = [];
+
+function requestSlot(id: string): Promise<void> {
+  if (activeSet.size < MAX_ACTIVE_CANVASES) {
+    activeSet.add(id);
+    return Promise.resolve();
+  }
+  return new Promise(resolve => waitQueue.push({ id, resolve }));
+}
+
+function releaseSlot(id: string) {
+  activeSet.delete(id);
+  if (waitQueue.length > 0) {
+    const next = waitQueue.shift()!;
+    activeSet.add(next.id);
+    next.resolve();
+  }
+}
+
+/* ─── Lazy 3D Card ─── */
 function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: number; onSeedChange: (s: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [slotReady, setSlotReady] = useState(false);
+
+  // IntersectionObserver: ビューポート可視判定
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: '200px 0px' } // 200px早めに読み込み
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // スロットの取得と解放
+  useEffect(() => {
+    if (!visible) {
+      releaseSlot(model.id);
+      setSlotReady(false);
+      return;
+    }
+    let cancelled = false;
+    requestSlot(model.id).then(() => {
+      if (!cancelled) setSlotReady(true);
+    });
+    return () => {
+      cancelled = true;
+      releaseSlot(model.id);
+      setSlotReady(false);
+    };
+  }, [visible, model.id]);
+
   const data = useMemo(() => {
+    if (!slotReady) return null;
     try { return model.fn(seed); } catch (e) { console.error(`Model ${model.id} failed:`, e); return [[[]]] as VoxelData; }
-  }, [model, seed]);
+  }, [model, seed, slotReady]);
+
   const rankColors: Record<string, string> = { S: '#FFD700', A: '#4CAF50', B: '#FF9800', C: '#F44336' };
+
   // ボクセル数を自動計算
   let voxelCount = 0;
-  for (const layer of data) { for (const row of layer) { for (const v of row) { if (v) voxelCount++; } } }
+  if (data) { for (const layer of data) { for (const row of layer) { for (const v of row) { if (v) voxelCount++; } } } }
+
   return (
-    <div style={S.card}>
+    <div ref={ref} style={S.card}>
       <div style={S.cardHeader}>
         <span style={S.cardName}>{model.name}</span>
         <span style={{ ...S.badge, background: rankColors[model.rank] ?? '#888' }}>{model.rank}</span>
         <span style={S.catBadge}>{model.category}</span>
-        <span style={{ fontSize: 10, color: '#555' }}>{voxelCount.toLocaleString()} voxels</span>
+        {voxelCount > 0 && <span style={{ fontSize: 10, color: '#555' }}>{voxelCount.toLocaleString()} voxels</span>}
       </div>
       <div style={S.canvasWrap}>
-        <Canvas camera={{ position: [3, 2, 3], fov: 45 }} style={{ background: '#12122a' }}>
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[5, 10, 5]} intensity={1.2} />
-          {model.emissive ? (
-            <EmissiveVoxelGrid data={data} voxelSize={model.voxelSize} emissiveColor="#FF4500" emissiveIntensity={1.5} />
-          ) : (
-            <VoxelGrid data={data} voxelSize={model.voxelSize} enableAO aoIntensity={0.35} />
-          )}
-          <OrbitControls autoRotate autoRotateSpeed={2} />
-          <gridHelper args={[4, 20, '#222', '#1a1a1a']} />
-        </Canvas>
+        {slotReady && data ? (
+          <Canvas camera={{ position: [2.5, 1.5, 4], fov: 40 }} style={{ background: '#12122a' }}>
+            <ambientLight intensity={0.8} />
+            <directionalLight position={[3, 8, 8]} intensity={1.4} />
+            {model.emissive ? (
+              <EmissiveVoxelGrid data={data} voxelSize={model.voxelSize} emissiveColor="#FF4500" emissiveIntensity={1.5} />
+            ) : (
+              <VoxelGrid data={data} voxelSize={model.voxelSize} enableAO aoIntensity={0.35} />
+            )}
+            <OrbitControls autoRotate autoRotateSpeed={2} />
+            <gridHelper args={[4, 20, '#222', '#1a1a1a']} />
+          </Canvas>
+        ) : (
+          <div style={S.placeholder}>
+            <span style={{ fontSize: 32 }}>{model.name.split(' ')[0]}</span>
+            <span style={{ fontSize: 11, color: '#555', marginTop: 8 }}>読み込み中...</span>
+          </div>
+        )}
       </div>
       <div style={S.seedRow}>
         <span style={{ fontSize: 11, color: '#666' }}>Seed: {seed}</span>
@@ -129,6 +196,12 @@ export function VoxelAuditPage() {
   const filtered = filter === '全て' ? ALL_MODELS : ALL_MODELS.filter(m => m.category === filter);
   const getSeed = useCallback((id: string) => seeds[id] ?? 42, [seeds]);
   const setSeed = useCallback((id: string, s: number) => setSeeds(p => ({ ...p, [id]: s })), []);
+
+  // カテゴリ切り替え時にすべてのスロットを解放
+  useEffect(() => {
+    activeSet.clear();
+    waitQueue.length = 0;
+  }, [filter]);
 
   const counts = {
     avatar: ALL_MODELS.filter(m => m.category === 'アバター').length,
@@ -172,6 +245,7 @@ const S: Record<string, React.CSSProperties> = {
   badge: { padding: '2px 8px', borderRadius: 6, color: '#fff', fontSize: 11, fontWeight: 800 },
   catBadge: { padding: '2px 8px', borderRadius: 6, background: '#222', color: '#888', fontSize: 10 },
   canvasWrap: { width: '100%', height: 200, borderRadius: 12, overflow: 'hidden' },
+  placeholder: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', background: '#0e0e20' },
   seedRow: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, justifyContent: 'flex-end' },
   btn: { padding: '3px 10px', borderRadius: 6, border: '1px solid #333', background: '#1a1a2e', color: '#ccc', cursor: 'pointer', fontSize: 11 },
 };

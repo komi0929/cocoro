@@ -225,8 +225,23 @@ function buildVoxelMesh(data: VoxelData, voxelSize: number, enableAO: boolean, a
             }
             aos.push(ao);
 
-            // Color with AO baked
-            colors.push(color.r * ao, color.g * ao, color.b * ao);
+            // 面シェーディング: 法線方向に基づく明暗差
+            // +Y面(上)=1.12, 側面=1.0, -Y面(底)=0.78
+            let faceBrightness = 1.0;
+            if (face.normal[1] > 0.5) faceBrightness = 1.12;       // 上面: 明るく
+            else if (face.normal[1] < -0.5) faceBrightness = 0.78; // 底面: 暗く
+            else if (face.normal[2] > 0.5) faceBrightness = 1.04;  // 正面: やや明るく
+            else if (face.normal[2] < -0.5) faceBrightness = 0.88; // 背面: やや暗く
+            else if (face.normal[0] > 0.5) faceBrightness = 0.95;  // 右面
+            else if (face.normal[0] < -0.5) faceBrightness = 0.92; // 左面
+
+            const fb = faceBrightness * ao;
+            // Color with AO + face shading baked
+            colors.push(
+              Math.min(1, color.r * fb),
+              Math.min(1, color.g * fb),
+              Math.min(1, color.b * fb),
+            );
           }
 
           // 2 triangles per face（スムーズなAOのため対角フリップ判定）
@@ -285,8 +300,8 @@ export function VoxelGrid({
   const material = useMemo(() => {
     return new THREE.MeshStandardMaterial({
       vertexColors: true,
-      roughness: 0.72,
-      metalness: 0.05,
+      roughness: 0.55,    // やや光沢感のあるナノブロック風
+      metalness: 0.08,
       flatShading: true,  // ボクセルらしいフラットシェーディング
     });
   }, []);

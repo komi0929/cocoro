@@ -1,199 +1,386 @@
 /**
- * VoxelAvatars v4 — キューブベース・ボクセルアート量産システム
+ * VoxelAvatars v5 — ナノブロック品質ボクセルアバター量産システム
  *
- * ★ 設計思想（参考画像分析に基づく）:
- * - 頭は「立方体」、体は「直方体」（球体禁止）
- * - 全高 14-16 ボクセル（少ないボクセルで意図的にデザイン）
- * - フラットカラー 2-3色（ノイズ/グラデーション禁止）
- * - 目: 2x2黒 + 1白ハイライト（ピクセルアートの基本）
- * - 各ボクセルが視認できるサイズ
- *
- * ★ 量産フロー:
- * 1. CubicBodyPlan に形状パラメータを定義（JSONのみ）
- * 2. generateCubicAvatar(plan) → 完成モデル出力
- * 3. 監査ページで確認
+ * ★ 参考画像分析に基づくデザイン原則:
+ * - 全高 32-40 ボクセル（頭:体 = 1:0.8 大頭身）
+ * - 1パーツ3-5色階調（ベース+影+ハイライト+中間色）
+ * - ステップドカーブで角を段差的に丸める
+ * - 高精度顔: 3x4目（瞳+白目+複数ハイライト）
+ * - 種族固有パターン（猫の縞、パンダの黒パッチ等）
+ * - 立体的な持ち物（毛糸玉の溝、ひまわりの種の殻等）
  */
 
 import { VoxelData, createGrid, setVoxel, fillBox } from './VoxelGrid';
+import {
+  fillRoundedBox3D, fillSteppedSphere,
+  drawDetailedEye, drawNose3D, drawMouth, drawBlush,
+  drawRoundEars, drawPointedEars, drawLongEars, drawFloppyEars,
+  drawYarnBall, drawSunflowerSeed, drawCollar,
+  adjustBrightness, type EyeStyle,
+} from './VoxelPrimitives';
 
 // ============================================================
-// キューブ型ボディプラン
+// カラープロファイル
 // ============================================================
 
-export interface CubicBodyPlan {
+interface ColorProfile {
+  base: string;
+  highlight: string;
+  shadow: string;
+  midtone: string;
+}
+
+interface AvatarPlanV5 {
   id: string;
   name: string;
-  /** メインカラー（体の色、1色のみ） */
-  mainColor: string;
-  /** メインカラーの影色 */
-  mainShadow: string;
-  /** お腹/胸の色 */
-  bellyColor: string;
-  /** 鼻の色 */
+  body: ColorProfile;
+  belly: ColorProfile;
   noseColor: string;
-  /** ほっぺの色 */
   blushColor: string;
+  eyeStyle: EyeStyle;
 
-  /** 頭のサイズ [w, h, d] */
-  headSize: [number, number, number];
-  /** 体のサイズ [w, h, d] */
-  bodySize: [number, number, number];
-  /** 腕のサイズ [w, h, d] */
-  armSize: [number, number, number];
-  /** 足のサイズ [w, h, d] */
-  legSize: [number, number, number];
-  /** 足の横位置（中心からの距離） */
+  // サイズ (全体が32-40ボクセルになるよう)
+  headW: number; headH: number; headD: number;
+  bodyW: number; bodyH: number; bodyD: number;
+  armW: number;  armH: number;  armD: number;
+  legW: number;  legH: number;  legD: number;
   legSpacing: number;
+  headCornerR: number; // 頭の角丸め段数
+  bodyCornerR: number;
 
-  /** 目の横位置（中心からの距離） */
+  // 顔位置
   eyeDx: number;
-  /** 目のY位置（頭の中でのオフセット、0=中央） */
-  eyeDy: number;
-  /** 目のサイズ 2=2x2, 3=2x3 */
-  eyeH: number;
+  eyeY: number; // 頭内での目のY位置(0=中央)
 
-  /** 耳 */
-  ears: EarDef;
-  /** しっぽ */
-  tail: TailDef;
+  // 耳
+  earType: 'round' | 'pointed' | 'long' | 'floppy' | 'none';
+  earParams: {
+    dx: number; height: number; width: number;
+    outerColor: string; innerColor: string;
+  };
 
-  /** お腹パネルのサイズ [w, h] — 体前面に配置 */
-  bellyPanel: [number, number];
+  // しっぽ
+  tailType: 'stub' | 'long' | 'fluffy';
+  tailLength: number;
+  tailColor?: string;
+  tailTipColor?: string;
 
-  /** 特殊マーキング */
-  markings?: MarkingDef[];
+  // お腹パネル
+  bellyW: number; bellyH: number;
+
+  // 特殊描画
+  specialFeatures?: (grid: VoxelData, ctx: DrawContext) => void;
 }
 
-interface EarDef {
-  type: 'round' | 'pointed' | 'long' | 'floppy' | 'tiny';
-  width: number;
-  height: number;
-  /** 頭頂部からの横オフセット */
-  dx: number;
-  /** 耳の内側色 */
-  innerColor: string;
-}
-
-interface TailDef {
-  type: 'stub' | 'long' | 'fluffy';
-  length: number;
-  color?: string; // デフォルトはmainColor
-  tipColor?: string; // 先端色（キツネの白先端等）
-}
-
-interface MarkingDef {
-  type: 'eye-patch' | 'face-white' | 'stripe';
-  color: string;
-  /** 適用位置 */
-  area: 'head' | 'body';
+interface DrawContext {
+  cx: number; cz: number;
+  headY: number; bodyY: number; legY: number;
+  headX1: number; headX2: number;
+  headZ1: number; headFrontZ: number;
+  bodyX1: number; bodyZ1: number; bodyFrontZ: number;
+  armLX: number; armRX: number; armY: number;
+  plan: AvatarPlanV5;
 }
 
 // ============================================================
-// お手本に基づくプリセット定義
+// 種族定義
 // ============================================================
 
-export const CUBIC_PLANS: Record<string, CubicBodyPlan> = {
+function cp(base: string, hf = 1.15, sf = 0.75, mf = 0.92): ColorProfile {
+  return { base, highlight: adjustBrightness(base, hf), shadow: adjustBrightness(base, sf), midtone: adjustBrightness(base, mf) };
+}
+
+const PLANS: Record<string, AvatarPlanV5> = {
   bear: {
     id: 'bear', name: 'クマ',
-    mainColor: '#8B5E3C', mainShadow: '#6B4226',
-    bellyColor: '#D4B892', noseColor: '#2D1B0E', blushColor: '#FFB0B0',
-    headSize: [8, 7, 7], bodySize: [7, 6, 5], armSize: [2, 5, 2], legSize: [2, 3, 2],
-    legSpacing: 2, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [5, 4],
-    ears: { type: 'round', width: 2, height: 2, dx: 3, innerColor: '#C49A6C' },
-    tail: { type: 'stub', length: 1 },
+    body: cp('#8B6240'),
+    belly: cp('#D4B892', 1.08, 0.88),
+    noseColor: '#2D1B0E', blushColor: '#FF9999',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 14, headH: 12, headD: 12,
+    bodyW: 12, bodyH: 10, bodyD: 10,
+    armW: 4, armH: 8, armD: 4,
+    legW: 4, legH: 5, legD: 4,
+    legSpacing: 3, headCornerR: 3, bodyCornerR: 2,
+    eyeDx: 3, eyeY: 1,
+    earType: 'round',
+    earParams: { dx: 5, height: 4, width: 3, outerColor: '#8B6240', innerColor: '#C49A6C' },
+    tailType: 'stub', tailLength: 2,
+    bellyW: 8, bellyH: 7,
   },
   cat: {
     id: 'cat', name: 'ネコ',
-    mainColor: '#E88A36', mainShadow: '#C06D1E',
-    bellyColor: '#FFF5E6', noseColor: '#FF8CAA', blushColor: '#FFB6C1',
-    headSize: [7, 6, 6], bodySize: [6, 6, 4], armSize: [2, 4, 2], legSize: [2, 3, 2],
-    legSpacing: 1, eyeDx: 2, eyeDy: 1, eyeH: 3,
-    bellyPanel: [4, 4],
-    ears: { type: 'pointed', width: 2, height: 3, dx: 2, innerColor: '#FFB6C1' },
-    tail: { type: 'long', length: 6 },
+    body: cp('#9E9E9E'),
+    belly: cp('#E8E8E8', 1.05, 0.90),
+    noseColor: '#FF8CAA', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 14, headH: 11, headD: 11,
+    bodyW: 11, bodyH: 10, bodyD: 9,
+    armW: 3, armH: 7, armD: 3,
+    legW: 3, legH: 5, legD: 3,
+    legSpacing: 2, headCornerR: 3, bodyCornerR: 1,
+    eyeDx: 3, eyeY: 1,
+    earType: 'pointed',
+    earParams: { dx: 3, height: 5, width: 4, outerColor: '#9E9E9E', innerColor: '#FFB6C1' },
+    tailType: 'long', tailLength: 8,
+    bellyW: 7, bellyH: 7,
+    specialFeatures: (grid, ctx) => {
+      // 猫の縞模様（体+頭の側面・背面に暗いグレー縞）
+      const stripeColor = '#707070';
+      const { plan, headY, headX1, headX2, headZ1, bodyY, bodyX1, bodyZ1 } = ctx;
+      // 頭の縞模様(上面)
+      for (let dy = 2; dy < plan.headH; dy += 3) {
+        for (let dx = headX1 + 1; dx < headX2; dx += 2) {
+          for (let dz = headZ1; dz < headZ1 + plan.headD; dz++) {
+            const ry = headY + dy;
+            if (ry >= 0 && ry < grid.length && dz >= 0 && grid[ry]?.[dz]?.[dx] !== null && grid[ry]?.[dz]?.[dx] !== undefined) {
+              setVoxel(grid, dx, ry, dz, stripeColor);
+            }
+          }
+        }
+      }
+      // 体の縞
+      for (let dy = 1; dy < plan.bodyH; dy += 3) {
+        for (let dx = bodyX1 + 1; dx < bodyX1 + plan.bodyW - 1; dx += 2) {
+          for (let dz = bodyZ1; dz < bodyZ1 + plan.bodyD; dz++) {
+            const ry = bodyY + dy;
+            if (ry >= 0 && ry < grid.length && grid[ry]?.[dz]?.[dx] !== null && grid[ry]?.[dz]?.[dx] !== undefined) {
+              setVoxel(grid, dx, ry, dz, stripeColor);
+            }
+          }
+        }
+      }
+    },
   },
   rabbit: {
     id: 'rabbit', name: 'ウサギ',
-    mainColor: '#F0EDE8', mainShadow: '#D5D0C8',
-    bellyColor: '#FFFFFF', noseColor: '#FFB0B0', blushColor: '#FFB6C1',
-    headSize: [7, 7, 6], bodySize: [6, 5, 5], armSize: [2, 4, 2], legSize: [2, 3, 3],
-    legSpacing: 1, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [4, 3],
-    ears: { type: 'long', width: 2, height: 6, dx: 2, innerColor: '#FFB6C1' },
-    tail: { type: 'stub', length: 2 },
+    body: cp('#D9C9A8'),
+    belly: cp('#F5EDE0', 1.05, 0.92),
+    noseColor: '#FFB0B0', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 14, headH: 12, headD: 11,
+    bodyW: 11, bodyH: 9, bodyD: 9,
+    armW: 3, armH: 7, armD: 3,
+    legW: 4, legH: 4, legD: 5,
+    legSpacing: 2, headCornerR: 3, bodyCornerR: 1,
+    eyeDx: 3, eyeY: 1,
+    earType: 'long',
+    earParams: { dx: 3, height: 10, width: 3, outerColor: '#D9C9A8', innerColor: '#FFAABB' },
+    tailType: 'stub', tailLength: 3, tailColor: '#F5EDE0',
+    bellyW: 7, bellyH: 6,
   },
   dog: {
     id: 'dog', name: 'イヌ',
-    mainColor: '#C49A6C', mainShadow: '#A07848',
-    bellyColor: '#F5E6D3', noseColor: '#2D1B0E', blushColor: '#FFB6C1',
-    headSize: [8, 7, 7], bodySize: [7, 6, 5], armSize: [2, 5, 2], legSize: [2, 3, 2],
-    legSpacing: 2, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [5, 4],
-    ears: { type: 'floppy', width: 2, height: 4, dx: 3, innerColor: '#A07848' },
-    tail: { type: 'long', length: 4, color: '#C49A6C' },
+    body: cp('#EADDD0'),
+    belly: cp('#FFFFFF', 1.0, 0.92),
+    noseColor: '#2D1B0E', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 14, headH: 12, headD: 12,
+    bodyW: 12, bodyH: 10, bodyD: 10,
+    armW: 4, armH: 8, armD: 4,
+    legW: 4, legH: 5, legD: 4,
+    legSpacing: 3, headCornerR: 3, bodyCornerR: 2,
+    eyeDx: 3, eyeY: 1,
+    earType: 'floppy',
+    earParams: { dx: 5, height: 6, width: 3, outerColor: '#C49050', innerColor: '#B08040' },
+    tailType: 'long', tailLength: 5,
+    bellyW: 8, bellyH: 7,
+    specialFeatures: (grid, ctx) => {
+      const patchColor = '#C49050';
+      const { headY, headX1, headX2, headZ1, headFrontZ, bodyY, bodyFrontZ, cx, cz, plan } = ctx;
+      // 頭頂パッチ（右半分を茶色）
+      for (let dy = Math.floor(plan.headH * 0.5); dy < plan.headH; dy++) {
+        for (let dx = cx; dx <= headX2; dx++) {
+          for (let dz = headZ1; dz < headZ1 + plan.headD; dz++) {
+            const ry = headY + dy;
+            if (ry >= 0 && ry < grid.length && grid[ry]?.[dz]?.[dx] !== null && grid[ry]?.[dz]?.[dx] !== undefined) {
+              setVoxel(grid, dx, ry, dz, patchColor);
+            }
+          }
+        }
+      }
+      // 首輪 + 鈴
+      const collarY = bodyY + plan.bodyH - 1;
+      drawCollar(grid, cx, collarY, headZ1, headZ1 + plan.headD - 1, Math.floor(plan.bodyW / 2), '#4488CC', '#FFD700');
+      // 舌c（前面=+Z方向に突出）
+      const mouthY = headY + Math.floor(plan.headH / 2) + plan.eyeY - 3;
+      setVoxel(grid, cx, mouthY, headFrontZ + 1, '#FF6B8A');
+      setVoxel(grid, cx + 1, mouthY, headFrontZ + 1, '#FF6B8A');
+    },
   },
   panda: {
     id: 'panda', name: 'パンダ',
-    mainColor: '#F0F0F0', mainShadow: '#D8D8D8',
-    bellyColor: '#FFFFFF', noseColor: '#1A1A1A', blushColor: '#FFB6C1',
-    headSize: [8, 7, 7], bodySize: [7, 6, 5], armSize: [2, 5, 2], legSize: [2, 3, 2],
-    legSpacing: 2, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [5, 4],
-    ears: { type: 'round', width: 2, height: 2, dx: 3, innerColor: '#1A1A1A' },
-    tail: { type: 'stub', length: 1 },
-    markings: [
-      { type: 'eye-patch', color: '#1A1A1A', area: 'head' },
-    ],
+    body: cp('#F0F0F0', 1.05, 0.85),
+    belly: cp('#FFFFFF'),
+    noseColor: '#1A1A1A', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 14, headH: 12, headD: 12,
+    bodyW: 13, bodyH: 11, bodyD: 10,
+    armW: 4, armH: 9, armD: 4,
+    legW: 4, legH: 5, legD: 4,
+    legSpacing: 3, headCornerR: 3, bodyCornerR: 2,
+    eyeDx: 3, eyeY: 1,
+    earType: 'round',
+    earParams: { dx: 5, height: 4, width: 3, outerColor: '#1A1A1A', innerColor: '#1A1A1A' },
+    tailType: 'stub', tailLength: 1,
+    bellyW: 9, bellyH: 8,
+    specialFeatures: (grid, ctx) => {
+      // パンダ: 精密な目パッチ + 黒い手足
+      const black = '#1A1A1A';
+      const darkGray = '#2A2A2A';
+      const { headY, cx, headZ1, headFrontZ, plan, bodyY, bodyX1, bodyZ1, legY, armLX, armRX, armY } = ctx;
+      // 目パッチ（楕円形の黒パッチ — 前面）
+      const eyeBaseY = headY + Math.floor(plan.headH / 2) + plan.eyeY;
+      for (let dy = -2; dy <= 3; dy++) {
+        const w = (dy === -2 || dy === 3) ? 1 : (dy === -1 || dy === 2) ? 2 : 3;
+        for (let dx = 0; dx < w; dx++) {
+          setVoxel(grid, cx - plan.eyeDx - dx, eyeBaseY + dy, headFrontZ, black);
+          setVoxel(grid, cx + plan.eyeDx + dx + 1, eyeBaseY + dy, headFrontZ, black);
+          setVoxel(grid, cx - plan.eyeDx - dx, eyeBaseY + dy, headFrontZ - 1, black);
+          setVoxel(grid, cx + plan.eyeDx + dx + 1, eyeBaseY + dy, headFrontZ - 1, black);
+        }
+      }
+      // 腕を黒に
+      for (let dy = 0; dy < plan.armH; dy++) {
+        for (let dz = 0; dz < plan.armD; dz++) {
+          for (let dx = 0; dx < plan.armW; dx++) {
+            setVoxel(grid, armLX + dx, armY + dy, ctx.bodyZ1 + Math.floor(plan.bodyD/2) - Math.floor(plan.armD/2) + dz, black);
+            setVoxel(grid, armRX + dx, armY + dy, ctx.bodyZ1 + Math.floor(plan.bodyD/2) - Math.floor(plan.armD/2) + dz, black);
+          }
+        }
+      }
+      // 足を黒に
+      for (let dy = 0; dy < plan.legH; dy++) {
+        for (let dz = 0; dz < plan.legD; dz++) {
+          for (let dx = 0; dx < plan.legW; dx++) {
+            const lx1 = cx - plan.legSpacing - plan.legW + 1;
+            const lx2 = cx + plan.legSpacing;
+            setVoxel(grid, lx1 + dx, legY + dy, ctx.cz - Math.floor(plan.legD/2) + dz, black);
+            setVoxel(grid, lx2 + dx, legY + dy, ctx.cz - Math.floor(plan.legD/2) + dz, black);
+          }
+        }
+      }
+    },
   },
   fox: {
     id: 'fox', name: 'キツネ',
-    mainColor: '#D4652B', mainShadow: '#AA4518',
-    bellyColor: '#FFF5E6', noseColor: '#1A1A1A', blushColor: '#FFB6C1',
-    headSize: [7, 6, 6], bodySize: [6, 6, 5], armSize: [2, 4, 2], legSize: [2, 3, 2],
-    legSpacing: 1, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [4, 4],
-    ears: { type: 'pointed', width: 3, height: 4, dx: 2, innerColor: '#FFF5E6' },
-    tail: { type: 'fluffy', length: 5, tipColor: '#FFFFFF' },
-    markings: [
-      { type: 'face-white', color: '#FFF5E6', area: 'head' },
-    ],
+    body: cp('#D4652B'),
+    belly: cp('#FFF5E6', 1.02, 0.90),
+    noseColor: '#1A1A1A', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 13, headH: 11, headD: 11,
+    bodyW: 11, bodyH: 10, bodyD: 9,
+    armW: 3, armH: 7, armD: 3,
+    legW: 3, legH: 5, legD: 3,
+    legSpacing: 2, headCornerR: 3, bodyCornerR: 1,
+    eyeDx: 3, eyeY: 1,
+    earType: 'pointed',
+    earParams: { dx: 3, height: 6, width: 4, outerColor: '#D4652B', innerColor: '#FFF5E6' },
+    tailType: 'fluffy', tailLength: 7, tailColor: '#D4652B', tailTipColor: '#FFFFFF',
+    bellyW: 7, bellyH: 7,
+    specialFeatures: (grid, ctx) => {
+      // キツネ: 白い顔の逆三角+足先の黒
+      const white = '#FFF5E6';
+      const { headY, cx, headFrontZ, plan } = ctx;
+      // 顔の下半分を白に（前面のみ）
+      for (let dy = 0; dy < Math.floor(plan.headH * 0.6); dy++) {
+        const maxW = Math.floor(plan.headW / 2) - Math.floor(dy * 0.5);
+        for (let dx = -maxW; dx <= maxW; dx++) {
+          setVoxel(grid, cx + dx, headY + dy, headFrontZ, white);
+        }
+      }
+      // 足先を暗く（靴下）
+      const dark = '#2D1B0E';
+      for (let dx = 0; dx < plan.legW; dx++) {
+        for (let dz = 0; dz < plan.legD; dz++) {
+          const lx1 = ctx.cx - plan.legSpacing - plan.legW + 1 + dx;
+          const lx2 = ctx.cx + plan.legSpacing + dx;
+          const lz = ctx.cz - Math.floor(plan.legD/2) + dz;
+          setVoxel(grid, lx1, ctx.legY, lz, dark);
+          setVoxel(grid, lx2, ctx.legY, lz, dark);
+        }
+      }
+    },
   },
   penguin: {
     id: 'penguin', name: 'ペンギン',
-    mainColor: '#2C3E6B', mainShadow: '#1A2744',
-    bellyColor: '#FFFFFF', noseColor: '#FF8C00', blushColor: '#FFB6C1',
-    headSize: [7, 6, 6], bodySize: [6, 6, 5], armSize: [2, 5, 1], legSize: [2, 1, 2],
-    legSpacing: 1, eyeDx: 2, eyeDy: 1, eyeH: 2,
-    bellyPanel: [5, 5],
-    ears: { type: 'tiny', width: 0, height: 0, dx: 0, innerColor: '#2C3E6B' },
-    tail: { type: 'stub', length: 1 },
+    body: cp('#2C3E6B'),
+    belly: cp('#FFFFFF'),
+    noseColor: '#FF8C00', blushColor: '#FFB6C1',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 13, headH: 11, headD: 11,
+    bodyW: 11, bodyH: 10, bodyD: 9,
+    armW: 2, armH: 8, armD: 2,
+    legW: 3, legH: 2, legD: 3,
+    legSpacing: 2, headCornerR: 3, bodyCornerR: 1,
+    eyeDx: 3, eyeY: 1,
+    earType: 'none',
+    earParams: { dx: 0, height: 0, width: 0, outerColor: '', innerColor: '' },
+    tailType: 'stub', tailLength: 1,
+    bellyW: 8, bellyH: 8,
+    specialFeatures: (grid, ctx) => {
+      // ペンギン: くちばしを立体的に
+      const orange = '#FF8C00';
+      const { headY, cx, headFrontZ, plan } = ctx;
+      const beakY = headY + Math.floor(plan.headH / 2) + plan.eyeY - 1;
+      // 立体くちばし（+Z方向に突出）
+      setVoxel(grid, cx, beakY, headFrontZ + 1, orange);
+      setVoxel(grid, cx + 1, beakY, headFrontZ + 1, orange);
+      setVoxel(grid, cx, beakY, headFrontZ + 2, adjustBrightness(orange, 0.85));
+      setVoxel(grid, cx + 1, beakY, headFrontZ + 2, adjustBrightness(orange, 0.85));
+      // 足はオレンジ
+      for (let dx = 0; dx < plan.legW; dx++) {
+        for (let dz = 0; dz < plan.legD; dz++) {
+          const lx1 = ctx.cx - plan.legSpacing - plan.legW + 1 + dx;
+          const lx2 = ctx.cx + plan.legSpacing + dx;
+          const lz = ctx.cz - Math.floor(plan.legD/2) + dz;
+          setVoxel(grid, lx1, ctx.legY, lz, orange);
+          setVoxel(grid, lx2, ctx.legY, lz, orange);
+        }
+      }
+    },
   },
   hamster: {
     id: 'hamster', name: 'ハムスター',
-    mainColor: '#E8C39E', mainShadow: '#C4A07A',
-    bellyColor: '#FFF8F0', noseColor: '#FFB0B0', blushColor: '#FF9999',
-    headSize: [8, 7, 7], bodySize: [7, 5, 5], armSize: [2, 3, 2], legSize: [2, 2, 2],
-    legSpacing: 2, eyeDx: 2, eyeDy: 1, eyeH: 3,
-    bellyPanel: [5, 3],
-    ears: { type: 'round', width: 2, height: 2, dx: 3, innerColor: '#FFB6C1' },
-    tail: { type: 'stub', length: 1 },
+    body: cp('#E8C39E'),
+    belly: cp('#FFF8F0', 1.03, 0.92),
+    noseColor: '#FFB0B0', blushColor: '#FF9999',
+    eyeStyle: { width: 2, height: 3, pupilColor: '#1A1A1A', highlightCount: 2 },
+    headW: 15, headH: 13, headD: 12,
+    bodyW: 12, bodyH: 8, bodyD: 9,
+    armW: 3, armH: 5, armD: 3,
+    legW: 3, legH: 3, legD: 3,
+    legSpacing: 3, headCornerR: 3, bodyCornerR: 1,
+    eyeDx: 3, eyeY: 1,
+    earType: 'round',
+    earParams: { dx: 6, height: 3, width: 3, outerColor: '#E8C39E', innerColor: '#FFB6C1' },
+    tailType: 'stub', tailLength: 1,
+    bellyW: 8, bellyH: 5,
+    specialFeatures: (grid, ctx) => {
+      // ハムスター: 頬袋のふくらみ + 背中のライン
+      const cheekColor = '#F0D8B8';
+      const { headY, headX1, headX2, headZ1, cx, plan } = ctx;
+      // 頬袋（頭の横にボリュームを追加）
+      const cheekY = headY + Math.floor(plan.headH / 2) - 1;
+      for (let dy = -1; dy <= 2; dy++) {
+        for (let dz = 0; dz < 3; dz++) {
+          setVoxel(grid, headX1 - 1, cheekY + dy, headZ1 + dz + 1, cheekColor);
+          setVoxel(grid, headX2 + 1, cheekY + dy, headZ1 + dz + 1, cheekColor);
+          if (dy >= 0 && dy <= 1) {
+            setVoxel(grid, headX1 - 2, cheekY + dy, headZ1 + dz + 2, cheekColor);
+            setVoxel(grid, headX2 + 2, cheekY + dy, headZ1 + dz + 2, cheekColor);
+          }
+        }
+      }
+      // 背中のライン（濃い色のストライプ）
+      const lineColor = '#C4A070';
+      for (let dy = headY + plan.headH - 3; dy > headY + 2; dy -= 1) {
+        setVoxel(grid, cx, dy, headZ1 + plan.headD - 1, lineColor);
+        setVoxel(grid, cx + 1, dy, headZ1 + plan.headD - 1, lineColor);
+      }
+    },
   },
 };
-
-// ============================================================
-// コア描画: ボックス塗り（フラットカラー、ノイズなし）
-// ============================================================
-
-function fillFlat(
-  grid: VoxelData, x1: number, y1: number, z1: number,
-  x2: number, y2: number, z2: number, color: string,
-): void {
-  for (let y = y1; y <= y2; y++)
-    for (let z = z1; z <= z2; z++)
-      for (let x = x1; x <= x2; x++)
-        setVoxel(grid, x, y, z, color);
-}
 
 // ============================================================
 // メイン生成関数
@@ -203,294 +390,223 @@ export function generateCubicAvatar(
   planId: string,
   options: {
     accessory?: 'none' | 'ribbon' | 'hat' | 'scarf' | 'crown';
-    heldItem?: 'none' | 'honey' | 'flower' | 'star' | 'sword' | 'shield';
+    heldItem?: 'none' | 'honey' | 'yarn_ball' | 'flower' | 'star' | 'seed';
     expression?: 'happy' | 'neutral' | 'wink';
   } = {},
   _seed: number = 42,
 ): VoxelData {
-  const P = CUBIC_PLANS[planId];
+  const P = PLANS[planId];
   if (!P) { console.error(`Unknown plan: ${planId}`); return createGrid(1, 1, 1); }
 
-  const [hw, hh, hd] = P.headSize;
-  const [bw, bh, bd] = P.bodySize;
-  const [aw, ah, ad] = P.armSize;
-  const [lw, lh, ld] = P.legSize;
-
-  // グリッドサイズを計算
-  const totalW = Math.max(hw, bw + aw * 2 + 2) + 8; // 持ち物スペース
-  const totalH = lh + bh + hh + P.ears.height + 4;
-  const totalD = Math.max(hd, bd, P.tail.length + bd) + 2;
+  // グリッドサイズ計算（余裕を持たせる）
+  const earH = P.earType !== 'none' ? P.earParams.height : 0;
+  const totalW = Math.max(P.headW, P.bodyW + P.armW * 2 + 2) + 12;
+  const totalH = P.legH + P.bodyH + P.headH + earH + 6;
+  const totalD = Math.max(P.headD, P.bodyD + P.tailLength) + 6;
   const grid = createGrid(totalW, totalH, totalD);
 
   const cx = Math.floor(totalW / 2);
-  const cz = Math.floor(totalD / 2) - 1; // やや前寄り
+  const cz = Math.floor(totalD / 2) - 1;
 
   // ===== 1. 足 =====
   const legY = 0;
-  const lx1 = cx - P.legSpacing - lw + 1;
+  const lx1 = cx - P.legSpacing - P.legW + 1;
   const lx2 = cx + P.legSpacing;
-  fillFlat(grid, lx1, legY, cz - Math.floor(ld / 2), lx1 + lw - 1, legY + lh - 1, cz + Math.floor(ld / 2), P.mainColor);
-  fillFlat(grid, lx2, legY, cz - Math.floor(ld / 2), lx2 + lw - 1, legY + lh - 1, cz + Math.floor(ld / 2), P.mainColor);
+  for (let dx = 0; dx < P.legW; dx++) {
+    for (let dy = 0; dy < P.legH; dy++) {
+      for (let dz = 0; dz < P.legD; dz++) {
+        const c = dy === 0 ? P.body.shadow : P.body.base;
+        setVoxel(grid, lx1 + dx, legY + dy, cz - Math.floor(P.legD/2) + dz, c);
+        setVoxel(grid, lx2 + dx, legY + dy, cz - Math.floor(P.legD/2) + dz, c);
+      }
+    }
+  }
 
   // ===== 2. 体 =====
-  const bodyY = lh;
-  const bx1 = cx - Math.floor(bw / 2);
-  const bz1 = cz - Math.floor(bd / 2);
-  fillFlat(grid, bx1, bodyY, bz1, bx1 + bw - 1, bodyY + bh - 1, bz1 + bd - 1, P.mainColor);
-  // 体の底面を影色に
-  fillFlat(grid, bx1, bodyY, bz1, bx1 + bw - 1, bodyY, bz1 + bd - 1, P.mainShadow);
+  const bodyY = P.legH;
+  const bx1 = cx - Math.floor(P.bodyW / 2);
+  const bz1 = cz - Math.floor(P.bodyD / 2);
+  fillRoundedBox3D(grid, bx1, bodyY, bz1, bx1 + P.bodyW - 1, bodyY + P.bodyH - 1, bz1 + P.bodyD - 1, P.body.base, P.bodyCornerR);
+  // 体底面=影、体上面=ハイライト
+  fillBox(grid, bx1 + 1, bodyY, bz1 + 1, bx1 + P.bodyW - 2, bodyY, bz1 + P.bodyD - 2, P.body.shadow);
+  fillBox(grid, bx1 + 1, bodyY + P.bodyH - 1, bz1 + 1, bx1 + P.bodyW - 2, bodyY + P.bodyH - 1, bz1 + P.bodyD - 2, P.body.highlight);
 
-  // お腹パネル（前面）
-  const [bpw, bph] = P.bellyPanel;
-  const bpx1 = cx - Math.floor(bpw / 2);
+  // お腹パネル（前面=+Z側）
+  const bpx1 = cx - Math.floor(P.bellyW / 2);
   const bpy1 = bodyY + 1;
-  fillFlat(grid, bpx1, bpy1, bz1, bpx1 + bpw - 1, bpy1 + bph - 1, bz1, P.bellyColor);
+  const bodyFrontZ = bz1 + P.bodyD - 1;
+  fillBox(grid, bpx1, bpy1, bodyFrontZ, bpx1 + P.bellyW - 1, bpy1 + P.bellyH - 1, bodyFrontZ, P.belly.base);
+  // お腹にもグラデーション
+  fillBox(grid, bpx1 + 1, bpy1 + P.bellyH - 1, bodyFrontZ, bpx1 + P.bellyW - 2, bpy1 + P.bellyH - 1, bodyFrontZ, P.belly.highlight);
 
   // ===== 3. 腕 =====
-  const armY = bodyY + bh - ah;
-  const armLx = bx1 - aw;
-  const armRx = bx1 + bw;
-  fillFlat(grid, armLx, armY, cz - Math.floor(ad / 2), armLx + aw - 1, armY + ah - 1, cz + Math.floor(ad / 2), P.mainColor);
-  fillFlat(grid, armRx, armY, cz - Math.floor(ad / 2), armRx + aw - 1, armY + ah - 1, cz + Math.floor(ad / 2), P.mainColor);
+  const armY = bodyY + P.bodyH - P.armH;
+  const armLX = bx1 - P.armW;
+  const armRX = bx1 + P.bodyW;
+  const armCZ = cz - Math.floor(P.armD / 2);
+  for (let dx = 0; dx < P.armW; dx++) {
+    for (let dy = 0; dy < P.armH; dy++) {
+      for (let dz = 0; dz < P.armD; dz++) {
+        const c = dy === 0 ? P.body.shadow : (dy === P.armH - 1 ? P.body.highlight : P.body.base);
+        setVoxel(grid, armLX + dx, armY + dy, armCZ + dz, c);
+        setVoxel(grid, armRX + dx, armY + dy, armCZ + dz, c);
+      }
+    }
+  }
 
   // ===== 4. 頭 =====
-  const headY = bodyY + bh;
-  const hx1 = cx - Math.floor(hw / 2);
-  const hz1 = cz - Math.floor(hd / 2);
-  fillFlat(grid, hx1, headY, hz1, hx1 + hw - 1, headY + hh - 1, hz1 + hd - 1, P.mainColor);
-  // 頭頂を少し明るく
-  fillFlat(grid, hx1, headY + hh - 1, hz1, hx1 + hw - 1, headY + hh - 1, hz1 + hd - 1, P.mainColor);
+  const headY = bodyY + P.bodyH;
+  const hx1 = cx - Math.floor(P.headW / 2);
+  const hz1 = cz - Math.floor(P.headD / 2);
+  fillRoundedBox3D(grid, hx1, headY, hz1, hx1 + P.headW - 1, headY + P.headH - 1, hz1 + P.headD - 1, P.body.base, P.headCornerR);
+  // 頭頂ハイライト
+  fillBox(grid, hx1 + 2, headY + P.headH - 1, hz1 + 2, hx1 + P.headW - 3, headY + P.headH - 1, hz1 + P.headD - 3, P.body.highlight);
 
-  // マーキング
-  if (P.markings) {
-    for (const m of P.markings) {
-      if (m.type === 'eye-patch' && m.area === 'head') {
-        // パンダの目パッチ
-        const ey = headY + Math.floor(hh / 2) + P.eyeDy;
-        for (let dy = -1; dy <= 2; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            setVoxel(grid, cx - P.eyeDx + dx, ey + dy, hz1, m.color);
-            setVoxel(grid, cx + P.eyeDx + dx, ey + dy, hz1, m.color);
-          }
-        }
-      } else if (m.type === 'face-white' && m.area === 'head') {
-        // キツネの白い顔マーク
-        const fy = headY;
-        for (let dy = 0; dy < Math.floor(hh / 2) + 1; dy++) {
-          const w = Math.max(1, Math.floor(hw / 2) - dy);
-          for (let dx = -w; dx <= w; dx++) {
-            setVoxel(grid, cx + dx, fy + dy, hz1, m.color);
-          }
-        }
-      }
-    }
+  // ===== 5. 特殊フィーチャー（パターン、パッチ等） =====
+  const drawCtx: DrawContext = {
+    cx, cz, headY, bodyY, legY,
+    headX1: hx1, headX2: hx1 + P.headW - 1,
+    headZ1: hz1, headFrontZ: hz1 + P.headD - 1,
+    bodyX1: bx1, bodyZ1: bz1, bodyFrontZ: bz1 + P.bodyD - 1,
+    armLX, armRX, armY, plan: P,
+  };
+  if (P.specialFeatures) {
+    P.specialFeatures(grid, drawCtx);
   }
 
-  // ===== 5. 顔 =====
-  const faceZ = hz1; // 前面
-  const eyeY = headY + Math.floor(hh / 2) + P.eyeDy;
+  // ===== 6. 顔（+Z方向=前面=カメラ側） =====
+  const faceZ = hz1 + P.headD - 1;
+  const eyeCY = headY + Math.floor(P.headH / 2) + P.eyeY;
 
-  // 目（2xN 黒 + ハイライト）
-  const expr = options.expression ?? 'happy';
-  // 左目
-  for (let dy = 0; dy < P.eyeH; dy++) {
-    setVoxel(grid, cx - P.eyeDx, eyeY + dy, faceZ, '#1A1A1A');
-    setVoxel(grid, cx - P.eyeDx + 1, eyeY + dy, faceZ, '#1A1A1A');
-  }
-  // 左目ハイライト
-  setVoxel(grid, cx - P.eyeDx, eyeY + P.eyeH - 1, faceZ, '#FFFFFF');
-
-  // 右目
-  if (expr === 'wink') {
-    // ウィンク: 右目を1ラインに
-    setVoxel(grid, cx + P.eyeDx, eyeY + 1, faceZ, '#1A1A1A');
-    setVoxel(grid, cx + P.eyeDx + 1, eyeY + 1, faceZ, '#1A1A1A');
+  // 目
+  drawDetailedEye(grid, cx - P.eyeDx, eyeCY, faceZ, P.eyeStyle);
+  if (options.expression === 'wink') {
+    // ウィンク: 右目を横線に
+    setVoxel(grid, cx + P.eyeDx, eyeCY, faceZ, '#1A1A1A');
+    setVoxel(grid, cx + P.eyeDx + 1, eyeCY, faceZ, '#1A1A1A');
+    setVoxel(grid, cx + P.eyeDx - 1, eyeCY, faceZ, '#1A1A1A');
   } else {
-    for (let dy = 0; dy < P.eyeH; dy++) {
-      setVoxel(grid, cx + P.eyeDx, eyeY + dy, faceZ, '#1A1A1A');
-      setVoxel(grid, cx + P.eyeDx + 1, eyeY + dy, faceZ, '#1A1A1A');
-    }
-    setVoxel(grid, cx + P.eyeDx + 1, eyeY + P.eyeH - 1, faceZ, '#FFFFFF');
+    drawDetailedEye(grid, cx + P.eyeDx + 1, eyeCY, faceZ, P.eyeStyle);
   }
 
-  // 鼻（中央）
-  setVoxel(grid, cx, eyeY - 1, faceZ, P.noseColor);
-  setVoxel(grid, cx + 1, eyeY - 1, faceZ, P.noseColor);
+  // 鼻（+Z方向に突出）
+  drawNose3D(grid, cx, eyeCY - 2, faceZ, P.noseColor, 2);
 
   // ほっぺ
-  setVoxel(grid, cx - P.eyeDx - 1, eyeY - 1, faceZ, P.blushColor);
-  setVoxel(grid, cx + P.eyeDx + 2, eyeY - 1, faceZ, P.blushColor);
+  drawBlush(grid, cx, eyeCY - 2, faceZ, P.eyeDx + 1, P.blushColor, 1);
 
   // 口
-  if (expr === 'happy') {
-    setVoxel(grid, cx, eyeY - 2, faceZ, '#555555');
-    setVoxel(grid, cx + 1, eyeY - 2, faceZ, '#555555');
-    setVoxel(grid, cx - 1, eyeY - 2, faceZ, '#555555');
+  const mouthStyle = (P.id === 'dog') ? 'tongue' : (options.expression === 'happy' ? 'smile' : 'simple');
+  drawMouth(grid, cx, eyeCY - 4, faceZ, mouthStyle as any, 3);
+
+  // ===== 7. 耳 =====
+  const earTopY = headY + P.headH;
+  if (P.earType === 'round') {
+    drawRoundEars(grid, cx, earTopY, cz, P.earParams.dx, Math.floor(P.earParams.height / 2), P.earParams.outerColor, P.earParams.innerColor);
+  } else if (P.earType === 'pointed') {
+    drawPointedEars(grid, cx, earTopY, cz, Math.floor(P.headW / 2), P.earParams.height, P.earParams.width, P.earParams.outerColor, P.earParams.innerColor);
+  } else if (P.earType === 'long') {
+    drawLongEars(grid, cx, earTopY, cz, P.earParams.dx, P.earParams.width, P.earParams.height, P.earParams.outerColor, P.earParams.innerColor);
+  } else if (P.earType === 'floppy') {
+    drawFloppyEars(grid, hx1, hx1 + P.headW - 1, headY + P.headH - 2, cz, P.earParams.width, P.earParams.height, P.earParams.outerColor, P.earParams.innerColor);
   }
 
-  // ===== 6. 耳 =====
-  const earY = headY + hh;
-  const E = P.ears;
-  if (E.type === 'round') {
-    // 丸耳（クマ、ハムスター、パンダ）
-    fillFlat(grid, cx - E.dx, earY, cz - 1, cx - E.dx + E.width - 1, earY + E.height - 1, cz, E.innerColor === '#1A1A1A' ? '#1A1A1A' : P.mainColor);
-    fillFlat(grid, cx + E.dx - E.width + 1, earY, cz - 1, cx + E.dx, earY + E.height - 1, cz, E.innerColor === '#1A1A1A' ? '#1A1A1A' : P.mainColor);
-    // 内側色
-    if (E.innerColor !== '#1A1A1A') {
-      setVoxel(grid, cx - E.dx, earY, cz - 1, E.innerColor);
-      setVoxel(grid, cx + E.dx, earY, cz - 1, E.innerColor);
+  // ===== 8. しっぽ（-Z方向=背面） =====
+  const tailZ = bz1 - 1;
+  const tailY = bodyY + Math.floor(P.bodyH / 2);
+  const tailC = P.tailColor ?? P.body.base;
+  if (P.tailType === 'stub') {
+    for (let i = 0; i < P.tailLength; i++) {
+      setVoxel(grid, cx, tailY, tailZ - i, tailC);
+      setVoxel(grid, cx + 1, tailY, tailZ - i, tailC);
     }
-  } else if (E.type === 'pointed') {
-    // 三角耳（ネコ、キツネ）
-    for (let h = 0; h < E.height; h++) {
-      const w = Math.max(1, E.width - h);
-      for (let dx = 0; dx < w; dx++) {
-        setVoxel(grid, cx - E.dx - Math.floor(hw / 2) + 1 + dx, earY + h, cz, P.mainColor);
-        setVoxel(grid, cx + E.dx + Math.floor(hw / 2) - 1 - dx + 1, earY + h, cz, P.mainColor);
-        setVoxel(grid, cx - E.dx - Math.floor(hw / 2) + 1 + dx, earY + h, cz - 1, P.mainColor);
-        setVoxel(grid, cx + E.dx + Math.floor(hw / 2) - 1 - dx + 1, earY + h, cz - 1, P.mainColor);
-      }
-      // 内側
-      if (h < E.height - 1 && w > 1) {
-        setVoxel(grid, cx - E.dx - Math.floor(hw / 2) + 2, earY + h, cz - 1, E.innerColor);
-        setVoxel(grid, cx + E.dx + Math.floor(hw / 2) - 1, earY + h, cz - 1, E.innerColor);
-      }
+  } else if (P.tailType === 'long') {
+    for (let i = 0; i < P.tailLength; i++) {
+      const ty = tailY + Math.round(Math.sin(i * 0.4) * 1.5);
+      setVoxel(grid, cx, ty, tailZ - i, tailC);
+      setVoxel(grid, cx + 1, ty, tailZ - i, tailC);
+      setVoxel(grid, cx, ty + 1, tailZ - i, tailC);
     }
-  } else if (E.type === 'long') {
-    // 長耳（ウサギ）
-    for (let h = 0; h < E.height; h++) {
-      fillFlat(grid, cx - E.dx, earY + h, cz - 1, cx - E.dx + E.width - 1, earY + h, cz, P.mainColor);
-      fillFlat(grid, cx + E.dx - E.width + 2, earY + h, cz - 1, cx + E.dx + 1, earY + h, cz, P.mainColor);
-      // 内側ピンク
-      setVoxel(grid, cx - E.dx, earY + h, cz - 1, E.innerColor);
-      setVoxel(grid, cx + E.dx + 1, earY + h, cz - 1, E.innerColor);
-    }
-  } else if (E.type === 'floppy') {
-    // 垂れ耳（イヌ）
-    const earBaseY = headY + hh - 2;
-    for (let h = 0; h < E.height; h++) {
-      fillFlat(grid, hx1 - E.width, earBaseY - h, cz - 1, hx1 - 1, earBaseY - h, cz, E.innerColor);
-      fillFlat(grid, hx1 + hw, earBaseY - h, cz - 1, hx1 + hw + E.width - 1, earBaseY - h, cz, E.innerColor);
-    }
-  }
-  // 'tiny' = 耳なし（ペンギン等）
-
-  // ===== 7. しっぽ =====
-  const tailZ = bz1 + bd;
-  const tailY = bodyY + Math.floor(bh / 2);
-  if (P.tail.type === 'stub') {
-    for (let i = 0; i < P.tail.length; i++) {
-      setVoxel(grid, cx, tailY, tailZ + i, P.tail.color ?? P.mainColor);
-    }
-  } else if (P.tail.type === 'long') {
-    for (let i = 0; i < P.tail.length; i++) {
-      const ty = tailY + Math.round(Math.sin(i * 0.5) * 1);
-      setVoxel(grid, cx, ty, tailZ + i, P.tail.color ?? P.mainColor);
-      setVoxel(grid, cx, ty + 1, tailZ + i, P.tail.color ?? P.mainColor);
-    }
-  } else if (P.tail.type === 'fluffy') {
-    for (let i = 0; i < P.tail.length; i++) {
-      const w = i < P.tail.length - 1 ? 1 : 0;
-      const c = i >= P.tail.length - 2 ? (P.tail.tipColor ?? P.mainColor) : (P.tail.color ?? P.mainColor);
+  } else if (P.tailType === 'fluffy') {
+    for (let i = 0; i < P.tailLength; i++) {
+      const w = Math.min(2, Math.floor(i * 0.5) + 1);
+      const c = i >= P.tailLength - 2 ? (P.tailTipColor ?? tailC) : tailC;
       for (let dx = -w; dx <= w; dx++) {
         for (let dy = -w; dy <= w; dy++) {
-          setVoxel(grid, cx + dx, tailY + dy, tailZ + i, c);
+          if (dx * dx + dy * dy <= w * w + 1) {
+            setVoxel(grid, cx + dx, tailY + dy, tailZ - i, c);
+          }
         }
       }
     }
-  }
-
-  // ===== 8. アクセサリ =====
-  const accY = headY + hh + (E.type !== 'tiny' ? E.height : 0);
-  if (options.accessory === 'ribbon') {
-    // ピンクリボン（頭の上）
-    setVoxel(grid, cx, accY, cz, '#FF1493');
-    setVoxel(grid, cx - 1, accY, cz, '#FF69B4');
-    setVoxel(grid, cx + 1, accY, cz, '#FF69B4');
-    setVoxel(grid, cx - 2, accY, cz, '#FF69B4');
-    setVoxel(grid, cx + 2, accY, cz, '#FF69B4');
-    setVoxel(grid, cx, accY + 1, cz, '#FF1493');
-  } else if (options.accessory === 'crown') {
-    // 王冠
-    fillFlat(grid, cx - 2, accY, cz - 1, cx + 2, accY, cz + 1, '#FFD700');
-    setVoxel(grid, cx - 2, accY + 1, cz, '#FFD700');
-    setVoxel(grid, cx, accY + 1, cz, '#FFD700');
-    setVoxel(grid, cx + 2, accY + 1, cz, '#FFD700');
-    setVoxel(grid, cx, accY + 1, cz - 1, '#FF0000');
-  } else if (options.accessory === 'scarf') {
-    const sy = bodyY + bh - 1;
-    fillFlat(grid, bx1 - 1, sy, bz1 - 1, bx1 + bw, sy, bz1 + bd, '#FF4444');
-    fillFlat(grid, bx1 - 1, sy + 1, bz1 - 1, bx1 + bw, sy + 1, bz1 + bd, '#CC3333');
-    // たれ
-    for (let dy = 0; dy < 3; dy++) {
-      setVoxel(grid, bx1 + bw, sy - dy, bz1, '#FF4444');
-    }
-  } else if (options.accessory === 'hat') {
-    fillFlat(grid, cx - 3, accY, cz - 2, cx + 3, accY, cz + 2, '#8B4513');
-    fillFlat(grid, cx - 2, accY + 1, cz - 1, cx + 2, accY + 2, cz + 1, '#8B4513');
-    fillFlat(grid, cx - 2, accY + 1, cz - 1, cx + 2, accY + 1, cz + 1, '#FF4444');
   }
 
   // ===== 9. 持ち物 =====
-  const itemX = armRx + aw;
-  const itemY = armY + 1;
-  if (options.heldItem === 'honey') {
-    // ハチミツ壺
-    fillFlat(grid, itemX, itemY, cz - 1, itemX + 2, itemY + 3, cz + 1, '#FFD54F');
-    fillFlat(grid, itemX, itemY + 3, cz - 1, itemX + 2, itemY + 3, cz + 1, '#8B4513');
-    setVoxel(grid, itemX + 1, itemY + 4, cz, '#6B3E1E');
+  const itemX = armRX + P.armW + 1;
+  const itemY = armY + 2;
+  if (options.heldItem === 'yarn_ball') {
+    drawYarnBall(grid, itemX + 2, itemY + 2, cz, 3, '#5BC0EB');
+  } else if (options.heldItem === 'seed') {
+    drawSunflowerSeed(grid, itemX, itemY, cz);
+  } else if (options.heldItem === 'honey') {
+    // ハチミツ壺（高精度）
+    fillRoundedBox3D(grid, itemX, itemY, cz - 2, itemX + 3, itemY + 4, cz + 1, '#FFD54F', 1);
+    fillBox(grid, itemX, itemY + 4, cz - 2, itemX + 3, itemY + 4, cz + 1, '#8B4513');
+    fillBox(grid, itemX + 1, itemY + 5, cz - 1, itemX + 2, itemY + 5, cz, '#6B3E1E');
+    // ハチミツたれ
+    setVoxel(grid, itemX + 1, itemY + 3, cz - 2, '#FFAB00');
   } else if (options.heldItem === 'flower') {
-    // 花
-    for (let dy = 0; dy < 3; dy++) setVoxel(grid, itemX + 1, itemY + dy, cz, '#228B22');
-    setVoxel(grid, itemX + 1, itemY + 3, cz, '#FFD700');
-    setVoxel(grid, itemX, itemY + 3, cz, '#FF69B4');
-    setVoxel(grid, itemX + 2, itemY + 3, cz, '#FF69B4');
-    setVoxel(grid, itemX + 1, itemY + 4, cz, '#FF69B4');
+    // 花束
+    for (let dy = 0; dy < 4; dy++) setVoxel(grid, itemX + 1, itemY + dy, cz, '#228B22');
+    setVoxel(grid, itemX + 1, itemY + 4, cz, '#FFD700');
+    setVoxel(grid, itemX, itemY + 4, cz, '#FF69B4');
+    setVoxel(grid, itemX + 2, itemY + 4, cz, '#FF69B4');
+    setVoxel(grid, itemX + 1, itemY + 5, cz, '#FF69B4');
+    setVoxel(grid, itemX, itemY + 5, cz, '#FF96B4');
+    setVoxel(grid, itemX + 2, itemY + 5, cz, '#FF96B4');
   } else if (options.heldItem === 'star') {
-    setVoxel(grid, itemX + 1, itemY + 2, cz, '#FFFFFF');
+    setVoxel(grid, itemX + 1, itemY + 3, cz, '#FFFFFF');
     setVoxel(grid, itemX, itemY + 2, cz, '#FFD700');
     setVoxel(grid, itemX + 2, itemY + 2, cz, '#FFD700');
-    setVoxel(grid, itemX + 1, itemY + 3, cz, '#FFD700');
+    setVoxel(grid, itemX + 1, itemY + 4, cz, '#FFD700');
     setVoxel(grid, itemX + 1, itemY + 1, cz, '#FFD700');
-  } else if (options.heldItem === 'sword') {
-    // 剣（ペンギン参考）
-    for (let dy = 0; dy < 5; dy++) setVoxel(grid, itemX + 1, itemY + dy, cz, '#C0C0C0');
-    setVoxel(grid, itemX, itemY + 2, cz, '#8B4513');
-    setVoxel(grid, itemX + 2, itemY + 2, cz, '#8B4513');
-    setVoxel(grid, itemX + 1, itemY + 5, cz, '#E0E0E0');
-  } else if (options.heldItem === 'shield') {
-    // 盾（ペンギン参考）
-    fillFlat(grid, armLx - 2, armY, cz - 2, armLx - 1, armY + 3, cz + 1, '#6B8EC0');
-    fillFlat(grid, armLx - 2, armY + 1, cz - 1, armLx - 1, armY + 2, cz, '#FFFFFF');
+    setVoxel(grid, itemX - 1, itemY + 2, cz, '#FFD700');
+    setVoxel(grid, itemX + 3, itemY + 2, cz, '#FFD700');
   }
 
   return grid;
 }
 
 // ============================================================
-// プリセットショートカット
+// プリセットショートカット（参考画像の持ち物に合わせる）
 // ============================================================
 export function generateBearAvatar(seed: number = 42): VoxelData {
   return generateCubicAvatar('bear', { expression: 'happy', heldItem: 'honey' }, seed);
 }
 export function generateCatAvatar(seed: number = 100): VoxelData {
-  return generateCubicAvatar('cat', { expression: 'happy', accessory: 'ribbon' }, seed);
+  return generateCubicAvatar('cat', { expression: 'happy', heldItem: 'yarn_ball' }, seed);
 }
 export function generateRabbitAvatar(seed: number = 200): VoxelData {
-  return generateCubicAvatar('rabbit', { expression: 'happy', heldItem: 'flower' }, seed);
+  return generateCubicAvatar('rabbit', { expression: 'happy' }, seed);
 }
 export function generateDogAvatar(seed: number = 300): VoxelData {
-  return generateCubicAvatar('dog', { expression: 'happy', accessory: 'scarf' }, seed);
+  return generateCubicAvatar('dog', { expression: 'happy' }, seed);
 }
 export function generatePandaAvatar(seed: number = 400): VoxelData {
-  return generateCubicAvatar('panda', { expression: 'happy', heldItem: 'star' }, seed);
+  return generateCubicAvatar('panda', { expression: 'happy' }, seed);
 }
 export function generateFoxAvatar(seed: number = 500): VoxelData {
   return generateCubicAvatar('fox', { expression: 'wink' }, seed);
 }
 export function generatePenguinAvatar(seed: number = 600): VoxelData {
-  return generateCubicAvatar('penguin', { expression: 'happy', heldItem: 'sword' }, seed);
+  return generateCubicAvatar('penguin', { expression: 'happy' }, seed);
 }
 export function generateHamsterAvatar(seed: number = 700): VoxelData {
-  return generateCubicAvatar('hamster', { expression: 'happy', heldItem: 'flower' }, seed);
+  return generateCubicAvatar('hamster', { expression: 'happy', heldItem: 'seed' }, seed);
 }
+
+// ============================================================
+// 旧API互換のexport
+// ============================================================
+export { type AvatarPlanV5 as CubicBodyPlan };
+export const CUBIC_PLANS = PLANS;
