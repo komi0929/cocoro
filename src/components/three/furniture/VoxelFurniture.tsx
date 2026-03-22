@@ -1,63 +1,59 @@
 /**
- * cocoro — Voxel Furniture Factory Phase 6
- * 量産エンジン(VoxelFurniture.ts)直結 + 既存100家具フォールバック
+ * cocoro — Voxel Furniture Factory Phase 7
+ * 量産エンジン(VoxelFurniture.ts) 全100種直結
  *
- * 優先順位:
- * 1. ENGINE_MAP → 量産エンジン VoxelGrid ベース（高品質）
- * 2. FURNITURE_MAP → 既存手作りコンポーネント（レガシー）
+ * FURNITURE_GENERATOR_MAP → VoxelGrid ベース（全家具）
+ * レガシーコンポーネントはフォールバックとして保持
  */
 
 import React, { Suspense, useMemo } from 'react';
 import type { FurnitureItem } from '@/types/cocoro';
 import { VoxelGrid, type VoxelData } from '../voxel/VoxelGrid';
-import {
-  generateSofa, generateFridge, generateTV, generateWallClock,
-  generateTable, generateChair, generateLamp, generatePottedPlant,
-  generateBookshelf, generateBed, generateCushion, generateCake,
-  generateHoneyJar, generateFlowerVase, generateCoffeeTable,
-  generateEasel, generateBookStack, generateYarnBall,
-} from '../voxel/VoxelFurniture';
+import { FURNITURE_GENERATOR_MAP } from '../voxel/VoxelFurniture';
 
 // ============================================================
-// 量産エンジン家具マップ — VoxelGrid ベース高品質レンダリング
-// ここに登録するだけで本番に自動反映される
+// 量産エンジン家具 — VoxelGrid ベースレンダリング
+// FURNITURE_GENERATOR_MAP に登録された全家具が自動的に使用される
 // ============================================================
-type EngineEntry = { fn: (seed?: number) => VoxelData; voxelSize: number };
-const ENGINE_MAP: Record<string, EngineEntry> = {
-  sofa:         { fn: generateSofa, voxelSize: 0.03 },
-  sofa_red:     { fn: (s) => generateSofa(s ?? 101), voxelSize: 0.03 },
-  sofa_green:   { fn: (s) => generateSofa(s ?? 102), voxelSize: 0.03 },
-  mini_fridge:  { fn: generateFridge, voxelSize: 0.03 },
-  // monitor は TV で代用
-  table:        { fn: generateTable, voxelSize: 0.04 },
-  low_table:    { fn: generateTable, voxelSize: 0.035 },
-  chair:        { fn: generateChair, voxelSize: 0.04 },
-  lamp:         { fn: generateLamp, voxelSize: 0.04 },
-  plant:        { fn: generatePottedPlant, voxelSize: 0.04 },
-  plant_tall:   { fn: generatePottedPlant, voxelSize: 0.05 },
-  shelf:        { fn: generateBookshelf, voxelSize: 0.03 },
-  bed:          { fn: generateBed, voxelSize: 0.03 },
-  cushion:      { fn: generateCushion, voxelSize: 0.04 },
-  clock:        { fn: generateWallClock, voxelSize: 0.05 },
-  bonsai:       { fn: generatePottedPlant, voxelSize: 0.04 },
-};
+
+/** デフォルトの voxelSize 推定: グリッドサイズから自動計算 */
+function estimateVoxelSize(data: VoxelData): number {
+  const maxH = data.length;
+  const maxD = data[0]?.length ?? 1;
+  const maxW = data[0]?.[0]?.length ?? 1;
+  const maxDim = Math.max(maxW, maxH, maxD);
+  // 目標: 家具が概ね 0.4〜1.2 ワールドユニットに収まる
+  if (maxDim <= 6) return 0.08;
+  if (maxDim <= 10) return 0.06;
+  if (maxDim <= 16) return 0.04;
+  if (maxDim <= 24) return 0.03;
+  return 0.025;
+}
 
 /** 量産エンジン家具をVoxelGridで描画するコンポーネント */
-function EngineRenderedFurniture({ entry, item }: { entry: EngineEntry; item: FurnitureItem }) {
-  const data = useMemo(() => entry.fn(42), [entry]);
-  // Center the model at origin
+function EngineRenderedFurniture({ furnitureId }: { furnitureId: string }) {
+  const data = useMemo(() => {
+    const gen = FURNITURE_GENERATOR_MAP[furnitureId];
+    return gen ? gen() : null;
+  }, [furnitureId]);
+
+  if (!data) return null;
+
+  const voxelSize = estimateVoxelSize(data);
   const W = data[0]?.[0]?.length ?? 1;
   const D = data[0]?.length ?? 1;
+
   return (
     <VoxelGrid
       data={data}
-      voxelSize={entry.voxelSize}
+      voxelSize={voxelSize}
       enableAO
       aoIntensity={0.55}
-      position={[-W * entry.voxelSize / 2, 0, -D * entry.voxelSize / 2]}
+      position={[-W * voxelSize / 2, 0, -D * voxelSize / 2]}
     />
   );
 }
+
 
 // --- チル系 ---
 import {
@@ -227,9 +223,9 @@ const FURNITURE_MAP: Record<string, React.FC<{ item: FurnitureItem }>> = {
 };
 
 export function VoxelFurniture({ item, onClick, isSelected }: Props) {
-  const engineEntry = ENGINE_MAP[item.type];
+  const hasEngine = !!FURNITURE_GENERATOR_MAP[item.type];
   const Component = FURNITURE_MAP[item.type];
-  if (!engineEntry && !Component) return null;
+  if (!hasEngine && !Component) return null;
 
   return (
     <Suspense fallback={null}>
@@ -270,13 +266,12 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
             </mesh>
           </>
         )}
-        {/* 量産エンジン版があればそちらを優先、なければレガシーコンポーネント */}
-        {engineEntry
-          ? <EngineRenderedFurniture entry={engineEntry} item={item} />
+        {/* 量産エンジン版があれば優先、なければレガシーコンポーネント */}
+        {hasEngine
+          ? <EngineRenderedFurniture furnitureId={item.type} />
           : Component && <Component item={item} />
         }
       </group>
     </Suspense>
   );
 }
-
