@@ -149,22 +149,29 @@ interface AvatarSpec {
 
 function buildAvatar(spec: AvatarSpec): VoxelData {
   const S = spec;
-  const totalW = Math.max(S.headW, S.bodyW) + S.armW * 2 + 10;
-  const earH = 6;
-  const totalH = S.legH + S.bodyH + S.headH + earH + 4;
-  const totalD = Math.max(S.headD, S.bodyD) + 10;
+  const totalW = Math.max(S.headW, S.bodyW) + S.armW * 2 + 14;
+  const earH = 8;
+  const totalH = S.legH + S.bodyH + S.headH + earH + 6;
+  const totalD = Math.max(S.headD, S.bodyD) + 14;
   const g = createGrid(totalW, totalH, totalD);
   const cx = Math.floor(totalW / 2), cz = Math.floor(totalD / 2);
 
-  // ===== LEGS =====
+  // ===== LEGS WITH PAW FEET =====
   const legY = 0;
   const lx1 = cx - S.legSpacing - S.legW, lx2 = cx + S.legSpacing + 1;
   const lz1 = cz - Math.floor(S.legD / 2);
-  fillBox(g, lx1, legY, lz1, lx1+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base);
-  fillBox(g, lx2, legY, lz1, lx2+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base);
-  // Leg shadow (bottom row)
-  fillBox(g, lx1, legY, lz1, lx1+S.legW-1, legY, lz1+S.legD-1, S.body.shadow);
-  fillBox(g, lx2, legY, lz1, lx2+S.legW-1, legY, lz1+S.legD-1, S.body.shadow);
+  // Main leg columns
+  fillRoundedBox3D(g, lx1, legY, lz1, lx1+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base, 0);
+  fillRoundedBox3D(g, lx2, legY, lz1, lx2+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base, 0);
+  // Paw feet — 1 block wider on each side at the bottom 2 rows
+  fillBox(g, lx1-1, legY, lz1, lx1+S.legW, legY+1, lz1+S.legD-1, S.body.shadow);
+  fillBox(g, lx2-1, legY, lz1, lx2+S.legW, legY+1, lz1+S.legD-1, S.body.shadow);
+  // Foot front extension — 1 block forward
+  fillBox(g, lx1, legY, lz1+S.legD-1, lx1+S.legW-1, legY+1, lz1+S.legD, S.body.shadow);
+  fillBox(g, lx2, legY, lz1+S.legD-1, lx2+S.legW-1, legY+1, lz1+S.legD, S.body.shadow);
+  // Bottom shadow
+  fillBox(g, lx1-1, legY, lz1, lx1+S.legW, legY, lz1+S.legD, adjustBrightness(S.body.base, 0.6));
+  fillBox(g, lx2-1, legY, lz1, lx2+S.legW, legY, lz1+S.legD, adjustBrightness(S.body.base, 0.6));
 
   // ===== BODY =====
   const bodyY = S.legH;
@@ -175,21 +182,28 @@ function buildAvatar(spec: AvatarSpec): VoxelData {
   // Body bottom shadow
   fillBox(g, bx1+1, bodyY, bz1+1, bx1+S.bodyW-2, bodyY, bz1+S.bodyD-2, S.body.shadow);
 
-  // ===== BELLY (rectangle on front face) =====
+  // ===== BELLY (on front face) =====
   const bodyFZ = bz1 + S.bodyD - 1;
   const bellyCX = cx - Math.floor(S.bellyW / 2);
   const bellyCY = bodyY + 1;
   fillBox(g, bellyCX, bellyCY, bodyFZ, bellyCX+S.bellyW-1, bellyCY+S.bellyH-1, bodyFZ, S.belly.base);
 
-  // ===== ARMS (straight rectangular blocks) =====
+  // ===== ARMS WITH PAW HANDS =====
   const armY = bodyY + S.bodyH - S.armH;
   const armLX = bx1 - S.armW, armRX = bx1 + S.bodyW;
   const az1 = cz - Math.floor(S.armD / 2);
-  fillBox(g, armLX, armY, az1, armLX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
-  fillBox(g, armRX, armY, az1, armRX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
-  // Arm shadows
-  fillBox(g, armLX, armY, az1, armLX+S.armW-1, armY, az1+S.armD-1, S.body.shadow);
-  fillBox(g, armRX, armY, az1, armRX+S.armW-1, armY, az1+S.armD-1, S.body.shadow);
+  // Main arm columns
+  fillBox(g, armLX, armY+2, az1, armLX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
+  fillBox(g, armRX, armY+2, az1, armRX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
+  // Hand/paw at bottom — 1 block wider, 2 rows tall
+  fillBox(g, armLX-1, armY, az1, armLX+S.armW, armY+2, az1+S.armD-1, S.body.base);
+  fillBox(g, armRX-1, armY, az1, armRX+S.armW, armY+2, az1+S.armD-1, S.body.base);
+  // Hand shadow at bottom
+  fillBox(g, armLX-1, armY, az1, armLX+S.armW, armY, az1+S.armD-1, S.body.shadow);
+  fillBox(g, armRX-1, armY, az1, armRX+S.armW, armY, az1+S.armD-1, S.body.shadow);
+  // Arm top highlight (shoulder)
+  fillBox(g, armLX, armY+S.armH-1, az1, armLX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.highlight);
+  fillBox(g, armRX, armY+S.armH-1, az1, armRX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.highlight);
 
   // ===== HEAD =====
   const headY = bodyY + S.bodyH;
@@ -197,25 +211,60 @@ function buildAvatar(spec: AvatarSpec): VoxelData {
   fillRoundedBox3D(g, hx1, headY, hz1, hx1+S.headW-1, headY+S.headH-1, hz1+S.headD-1, S.body.base, 1);
   // Head top highlight
   fillBox(g, hx1+1, headY+S.headH-1, hz1+1, hx1+S.headW-2, headY+S.headH-1, hz1+S.headD-2, S.body.highlight);
+  // Head side shadow (subtle, left and right)
+  for (let y = headY+1; y < headY+S.headH-1; y++) {
+    for (let z = hz1+1; z < hz1+S.headD-1; z++) {
+      setVoxel(g, hx1, y, z, S.body.shadow);
+      setVoxel(g, hx1+S.headW-1, y, z, S.body.shadow);
+    }
+  }
   const headFZ = hz1 + S.headD - 1;
 
-  // ===== FACE =====
-  // Muzzle area (white elliptical zone on front face)
-  paintMuzzle(g, cx, headY + Math.floor(S.headH * 0.35), headFZ, Math.floor(S.headW * 0.3), Math.floor(S.headH * 0.3), S.belly.base);
+  // ===== 3D MUZZLE PROTRUSION =====
+  // The muzzle is a 3D shape protruding 2 blocks from the front face
+  const muzzleW = Math.floor(S.headW * 0.55); // ~55% of head width
+  const muzzleH = Math.floor(S.headH * 0.4);  // ~40% of head height
+  const muzzleD = 2; // protrudes 2 blocks forward
+  const muzzleX1 = cx - Math.floor(muzzleW / 2);
+  const muzzleY1 = headY + 1; // starts from bottom of head
+  const muzzleFZ = headFZ + 1; // starts from front face
+  // Main muzzle body
+  fillRoundedBox3D(g, muzzleX1, muzzleY1, muzzleFZ, muzzleX1+muzzleW-1, muzzleY1+muzzleH-1, muzzleFZ+muzzleD-1, S.belly.base, 1);
+  // Muzzle top surface highlight
+  fillBox(g, muzzleX1+1, muzzleY1+muzzleH-1, muzzleFZ, muzzleX1+muzzleW-2, muzzleY1+muzzleH-1, muzzleFZ+muzzleD-1, S.belly.highlight);
+  // Also paint muzzle area on the flat face (so it blends)
+  paintMuzzle(g, cx, headY + Math.floor(S.headH * 0.35), headFZ,
+    Math.floor(S.headW * 0.45), Math.floor(S.headH * 0.38), S.belly.base);
 
-  // Eyes (3×3 black with white highlight)
-  const eyeY = headY + Math.floor(S.headH * 0.5);
+  // ===== FACE (drawn on the MUZZLE front face, not the head face) =====
+  const faceFZ = muzzleFZ + muzzleD - 1; // front face of the muzzle
+
+  // Nose — on top of the muzzle protrusion
+  const noseY = muzzleY1 + muzzleH - 1;
+  setVoxel(g, cx-1, noseY, faceFZ, S.noseColor);
+  setVoxel(g, cx, noseY, faceFZ, S.noseColor);
+  setVoxel(g, cx-1, noseY, faceFZ+1, S.noseColor); // extra protrusion
+  setVoxel(g, cx, noseY, faceFZ+1, S.noseColor);
+
+  // Eyes (3×3 black with white highlight) — on the HEAD front face (above muzzle)
+  const eyeY = headY + Math.floor(S.headH * 0.62);
   drawEye(g, cx - S.eyeSpacing - 2, eyeY, headFZ);
   drawEye(g, cx + S.eyeSpacing, eyeY, headFZ);
 
-  // Nose
-  drawNose(g, cx - 1, headY + Math.floor(S.headH * 0.35), headFZ, S.noseColor);
+  // Mouth — on the muzzle front face
+  drawMouth(g, cx, muzzleY1 + 1, faceFZ, 4);
 
-  // Mouth
-  drawMouth(g, cx, headY + Math.floor(S.headH * 0.2), headFZ, 4);
-
-  // Face extras (stripes, patches, etc.)
+  // Face extras (stripes, patches, blush, etc.)
   if (S.drawFaceExtras) S.drawFaceExtras(g, cx, headY, S.headW, S.headH, headFZ);
+
+  // ===== BODY-HEAD TRANSITION (smooth neck) =====
+  // Fill the gap where body meets head on the sides
+  const neckY = bodyY + S.bodyH - 1;
+  const transW = Math.floor((S.headW - S.bodyW) / 2);
+  if (transW > 0) {
+    fillBox(g, bx1-transW, neckY, bz1+1, bx1, neckY, bz1+S.bodyD-2, S.body.base);
+    fillBox(g, bx1+S.bodyW-1, neckY, bz1+1, bx1+S.bodyW-1+transW, neckY, bz1+S.bodyD-2, S.body.base);
+  }
 
   // ===== EARS =====
   S.buildEars(g, cx, headY + S.headH, hz1, hz1 + S.headD - 1, S.headW);
