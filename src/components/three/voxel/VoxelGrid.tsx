@@ -216,27 +216,29 @@ function buildVoxelMesh(data: VoxelData, voxelSize: number, enableAO: boolean, a
             );
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
 
-            // AO
+            // AO (Minecraft-style per-vertex occlusion)
             let ao = 1.0;
             if (enableAO) {
               const aoLevel = computeVertexAO(data, x, y, z, fi, vi);
-              // 0=最暗, 3=最明
-              ao = 1.0 - (3 - aoLevel) * aoIntensity * 0.25;
+              // 0=最暗(完全遮蔽), 3=最明(遮蔽なし)
+              // 二次関数カーブでより自然なAOグラデーション
+              const aoNorm = aoLevel / 3;
+              ao = 1.0 - (1.0 - aoNorm * aoNorm) * aoIntensity;
             }
             aos.push(ao);
 
-            // 面シェーディング: 法線方向に基づく明暗差
-            // +Y面(上)=1.12, 側面=1.0, -Y面(底)=0.78
+            // 面シェーディング: 各面に異なるブライトネスで立体感を強調
+            // 参考画像のナノブロックは上面が明確に明るく、底面が暗い
             let faceBrightness = 1.0;
-            if (face.normal[1] > 0.5) faceBrightness = 1.12;       // 上面: 明るく
-            else if (face.normal[1] < -0.5) faceBrightness = 0.78; // 底面: 暗く
-            else if (face.normal[2] > 0.5) faceBrightness = 1.04;  // 正面: やや明るく
-            else if (face.normal[2] < -0.5) faceBrightness = 0.88; // 背面: やや暗く
-            else if (face.normal[0] > 0.5) faceBrightness = 0.95;  // 右面
-            else if (face.normal[0] < -0.5) faceBrightness = 0.92; // 左面
+            if (face.normal[1] > 0.5) faceBrightness = 1.18;       // 上面: 明るく光沢
+            else if (face.normal[1] < -0.5) faceBrightness = 0.62; // 底面: かなり暗く
+            else if (face.normal[2] > 0.5) faceBrightness = 1.06;  // 正面: やや明るく
+            else if (face.normal[2] < -0.5) faceBrightness = 0.82; // 背面: 暗め
+            else if (face.normal[0] > 0.5) faceBrightness = 0.90;  // 右面
+            else if (face.normal[0] < -0.5) faceBrightness = 0.86; // 左面
 
             const fb = faceBrightness * ao;
-            // Color with AO + face shading baked
+            // Color with AO + face shading baked into vertex color
             colors.push(
               Math.min(1, color.r * fb),
               Math.min(1, color.g * fb),
@@ -278,7 +280,7 @@ export function VoxelGrid({
   rotation,
   scale = 1,
   enableAO = true,
-  aoIntensity = 0.35,
+  aoIntensity = 0.55,
   castShadow = true,
   receiveShadow = true,
 }: VoxelGridProps) {
@@ -300,8 +302,8 @@ export function VoxelGrid({
   const material = useMemo(() => {
     return new THREE.MeshStandardMaterial({
       vertexColors: true,
-      roughness: 0.55,    // やや光沢感のあるナノブロック風
-      metalness: 0.08,
+      roughness: 0.38,    // ナノブロック風の光沢感（参考画像は艶あり）
+      metalness: 0.12,    // わずかな金属感で高級感
       flatShading: true,  // ボクセルらしいフラットシェーディング
     });
   }, []);

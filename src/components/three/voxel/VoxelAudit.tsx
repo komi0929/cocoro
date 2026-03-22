@@ -163,12 +163,14 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
       <div style={S.canvasWrap}>
         {slotReady && data ? (
           <Canvas camera={{ position: [0, 3, 8], fov: 35 }} style={{ background: '#12122a' }}>
-            <ambientLight intensity={0.85} />
-            <directionalLight position={[3, 8, 8]} intensity={1.4} />
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[3, 8, 5]} intensity={1.6} color="#ffffff" />
+            <directionalLight position={[-4, 3, -2]} intensity={0.5} color="#8888cc" />
+            <directionalLight position={[0, -2, -5]} intensity={0.3} color="#442244" />
             {model.emissive ? (
               <EmissiveVoxelGrid data={data} voxelSize={model.voxelSize} emissiveColor="#FF4500" emissiveIntensity={1.5} />
             ) : (
-              <VoxelGrid data={data} voxelSize={model.voxelSize} enableAO aoIntensity={0.35} />
+              <VoxelGrid data={data} voxelSize={model.voxelSize} enableAO aoIntensity={0.55} />
             )}
             <OrbitControls autoRotate autoRotateSpeed={0.5} />
             <gridHelper args={[4, 20, '#222', '#1a1a1a']} />

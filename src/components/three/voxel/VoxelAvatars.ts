@@ -1,533 +1,766 @@
 /**
- * VoxelAvatars v9 — High-Quality Primitive-Based Avatars
+ * VoxelAvatars v10 — Hardcoded Voxel-Perfect Avatars
  *
- * DESIGN RULES (from NORTH_STAR reference analysis):
- * 1. USE HIGH-QUALITY PRIMITIVES from VoxelPrimitives.ts
- * 2. SPECIES-SPECIFIC PROPORTIONS: each animal has unique silhouette
- * 3. 3D MUZZLE: protrudes from face using fillSteppedSphere
- * 4. ELLIPTICAL BELLY: paintEllipse2D, never rectangular
- * 5. SHAPED LIMBS: arms taper to paws, legs have feet
- * 6. DETAILED EYES: drawDetailedEye with proper highlights
+ * 参考画像 NORTH_STAR_2 を1ボクセル単位で再現。
+ * プロシージャル生成ではなく、各アバターの正確な形状をハードコード。
  */
 import { VoxelData, createGrid, setVoxel, fillBox } from './VoxelGrid';
-import {
-  fillRoundedBox3D, fillSteppedSphere, fillTaperedBox3D,
-  paintEllipse2D, fillGradientBox,
-  drawDetailedEye, drawNose3D,
-  drawBlush, adjustBrightness,
-  applyHorizontalStripes,
-} from './VoxelPrimitives';
 
 // ============================================================
-// Color helpers
+// Color constants — 参考画像から抽出
 // ============================================================
-type CP = { base: string; shadow: string; highlight: string };
-function cp(base: string): CP {
-  return { base, shadow: adjustBrightness(base, 0.75), highlight: adjustBrightness(base, 1.15) };
-}
+const BEAR = {
+  body: '#8B5E3C',      // メイン茶色
+  dark: '#6B4226',      // ダークブラウン（パウ、影）
+  light: '#A67B5B',     // ライトブラウン（ベリー、マズル）
+  nose: '#1A1A1A',      // 黒（鼻）
+  eye: '#1A1A1A',       // 黒（目）
+  highlight: '#FFFFFF',  // 白（目のハイライト）
+  muzzle: '#C4956A',    // マズル色
+  belly: '#C4956A',     // ベリーの明るい茶
+};
+
+const CAT = {
+  body: '#9E9E9E',
+  dark: '#707070',
+  stripe: '#787878',
+  light: '#BDBDBD',
+  nose: '#FFB0B0',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  muzzle: '#E0E0E0',
+  inner_ear: '#FFB6C1',
+  belly: '#FFFFFF',
+};
+
+const RABBIT = {
+  body: '#D4BC96',
+  dark: '#B89E78',
+  light: '#E8D8C0',
+  nose: '#FFB0B0',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  muzzle: '#F0E4D4',
+  inner_ear: '#FFAABB',
+  belly: '#F5EDE0',
+  paw: '#C8C8C8',
+};
+
+const DOG = {
+  body: '#F0E8E0',
+  patch: '#C49050',
+  dark: '#D8D0C8',
+  nose: '#2D1B0E',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  muzzle: '#FFFFFF',
+  tongue: '#FF6B8A',
+  collar: '#4488CC',
+  medal: '#FFD700',
+};
+
+const PANDA = {
+  body: '#F5F5F5',
+  black: '#1A1A1A',
+  muzzle: '#FFFFFF',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  nose: '#1A1A1A',
+};
+
+const FOX = {
+  body: '#E07830',
+  dark: '#C06020',
+  light: '#FFF5E6',
+  nose: '#1A1A1A',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  muzzle: '#FFF5E6',
+  belly: '#FFF5E6',
+  tail_tip: '#FFFFFF',
+};
+
+const PENGUIN = {
+  body: '#3A5080',
+  dark: '#2A3D60',
+  belly: '#FFFFFF',
+  beak: '#FF8C00',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  feet: '#FF8C00',
+  cheek: '#FFB6C1',
+};
+
+const HAMSTER = {
+  body: '#E8C8A0',
+  dark: '#C8A880',
+  light: '#FFF0E0',
+  nose: '#1A1A1A',
+  eye: '#1A1A1A',
+  highlight: '#FFFFFF',
+  cheek: '#F0D8B8',
+  stripe: '#C4A070',
+  belly: '#FFF0E0',
+  paw: '#FFB6C1',
+  seed: '#4A3508',
+};
 
 // ============================================================
-// Mouth helper (simple, kept inline)
+// Helper: paint a slice (Z-layer) from a string pattern
 // ============================================================
-function drawMouthLine(g: VoxelData, cx: number, y: number, z: number, w = 4, color = '#555555') {
-  for (let dx = 0; dx < w; dx++) setVoxel(g, cx - Math.floor(w/2) + dx, y, z, color);
-}
+type PaletteMap = Record<string, string>;
 
-/** Draw horizontal stripes on front face */
-function drawStripes(g: VoxelData, x1: number, x2: number, y: number, z: number, color: string, spacing = 3, count = 3) {
-  for (let i = 0; i < count; i++) {
-    const sy = y - i * spacing;
-    for (let x = x1; x <= x2; x++) setVoxel(g, x, sy, z, color);
-  }
-}
-
-// ============================================================
-// Ear builders
-// ============================================================
-function buildPointedEars(g: VoxelData, cx: number, topY: number, fz: number, bz: number, headW: number, bodyColor: string, innerColor: string, h = 3) {
-  const earDx = Math.floor(headW / 2) - 1;
-  for (let hi = 0; hi < h; hi++) {
-    const w = Math.max(1, 2 - Math.floor(hi * 0.7));
-    for (let dx = 0; dx < w; dx++) {
-      for (let dz = fz; dz <= bz; dz++) {
-        const inner = dx === 0 && dz === fz + 1 && hi < h - 1;
-        setVoxel(g, cx - earDx + dx, topY + hi, dz, inner ? innerColor : bodyColor);
-        setVoxel(g, cx + earDx - dx + 1, topY + hi, dz, inner ? innerColor : bodyColor);
-      }
+/** 
+ * Paint a Z-slice from a string pattern.
+ * Each character maps to a color via palette. '.' = empty.
+ * Pattern rows are bottom-to-top (y=0 is first row).
+ */
+function paintSlice(
+  g: VoxelData, z: number, xOff: number, yOff: number,
+  rows: string[], palette: PaletteMap,
+): void {
+  for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+    const y = yOff + rowIdx;
+    const row = rows[rowIdx]!;
+    for (let col = 0; col < row.length; col++) {
+      const ch = row[col]!;
+      if (ch === '.' || ch === ' ') continue;
+      const color = palette[ch];
+      if (color) setVoxel(g, xOff + col, y, z, color);
     }
   }
 }
 
-function buildRoundEars(g: VoxelData, cx: number, topY: number, fz: number, bz: number, headW: number, bodyColor: string, innerColor: string) {
-  const earDx = Math.floor(headW / 2) - 1;
-  // 3×3 round ears (bigger, more visible)
-  for (let dz = fz; dz <= bz; dz++) {
-    // Bottom row (3 wide)
-    setVoxel(g, cx - earDx - 1, topY, dz, bodyColor);
-    setVoxel(g, cx - earDx, topY, dz, bodyColor);
-    setVoxel(g, cx - earDx + 1, topY, dz, bodyColor);
-    setVoxel(g, cx + earDx - 1, topY, dz, bodyColor);
-    setVoxel(g, cx + earDx, topY, dz, bodyColor);
-    setVoxel(g, cx + earDx + 1, topY, dz, bodyColor);
-    // Middle row (3 wide)
-    setVoxel(g, cx - earDx - 1, topY + 1, dz, bodyColor);
-    setVoxel(g, cx - earDx, topY + 1, dz, bodyColor);
-    setVoxel(g, cx - earDx + 1, topY + 1, dz, bodyColor);
-    setVoxel(g, cx + earDx - 1, topY + 1, dz, bodyColor);
-    setVoxel(g, cx + earDx, topY + 1, dz, bodyColor);
-    setVoxel(g, cx + earDx + 1, topY + 1, dz, bodyColor);
-    // Top row (1 wide — rounded top)
-    setVoxel(g, cx - earDx, topY + 2, dz, bodyColor);
-    setVoxel(g, cx + earDx, topY + 2, dz, bodyColor);
-  }
-  // Inner color (visible on front face, 2×2 area)
-  const ifz = fz + Math.floor((bz - fz) / 2); // mid-depth for inner
-  setVoxel(g, cx - earDx, topY, ifz, innerColor);
-  setVoxel(g, cx - earDx, topY + 1, ifz, innerColor);
-  setVoxel(g, cx + earDx, topY, ifz, innerColor);
-  setVoxel(g, cx + earDx, topY + 1, ifz, innerColor);
-}
-
-function buildLongEars(g: VoxelData, cx: number, topY: number, fz: number, bz: number, _headW: number, bodyColor: string, innerColor: string, h = 7) {
-  const earDx = 3;
-  for (let hi = 0; hi < h; hi++) {
-    const w = hi < h - 1 ? 2 : 1;
-    for (let dx = 0; dx < w; dx++) for (let dz = fz; dz <= bz; dz++) {
-      const inner = dx === 0 && dz > fz && dz < bz;
-      setVoxel(g, cx - earDx + dx, topY + hi, dz, inner ? innerColor : bodyColor);
-      setVoxel(g, cx + earDx - dx + 1, topY + hi, dz, inner ? innerColor : bodyColor);
-    }
-  }
-}
-
-function buildFloppyEars(g: VoxelData, cx: number, midY: number, fz: number, bz: number, headW: number, bodyColor: string, h = 5) {
-  const earDx = Math.floor(headW / 2) + 1;
-  for (let hi = 0; hi < h; hi++) for (let dz = fz; dz <= bz; dz++) {
-    setVoxel(g, cx - earDx, midY - hi, dz, bodyColor);
-    setVoxel(g, cx - earDx - 1, midY - hi, dz, bodyColor);
-    setVoxel(g, cx + earDx, midY - hi, dz, bodyColor);
-    setVoxel(g, cx + earDx + 1, midY - hi, dz, bodyColor);
+/**
+ * Paint multiple Z-slices from front to back.
+ * slices[0] = front face (highest Z), slices[last] = back face.
+ */
+function paintModel(
+  g: VoxelData, xOff: number, yOff: number, zStart: number,
+  slices: string[][], palette: PaletteMap,
+): void {
+  for (let si = 0; si < slices.length; si++) {
+    paintSlice(g, zStart - si, xOff, yOff, slices[si]!, palette);
   }
 }
 
 // ============================================================
-// Generic avatar builder
+// BEAR — 参考画像からボクセル単位で精密再現
+// Grid: 16W × 24H × 12D
 // ============================================================
-interface AvatarSpec {
-  body: CP; belly: CP;
-  // Head dimensions
-  headW: number; headH: number; headD: number;
-  // Body dimensions (each species has unique proportions)
-  bodyW: number; bodyH: number; bodyD: number;
-  // Arm dimensions
-  armW: number; armH: number; armD: number;
-  armPawW?: number; // hand/paw width at bottom (default: armW+2)
-  // Leg dimensions
-  legW: number; legH: number; legD: number;
-  legSpacing: number;
-  legPawW?: number; // foot width at bottom (default: legW+2)
-  // Belly ellipse (painted on front face)
-  bellyRX: number; bellyRY: number;
-  // Species-specific muzzle (3D protrusion)
-  muzzleW: number; muzzleH: number; muzzleD: number;
-  noseColor: string; noseSize?: number;
-  eyeW?: number; eyeH?: number; // eye dimensions (default 3×3)
-  eyeSpacing: number;
-  // Callbacks for species-specific parts
-  buildEars: (g: VoxelData, cx: number, topY: number, fz: number, bz: number, headW: number) => void;
-  buildTail?: (g: VoxelData, cx: number, y: number, z: number) => void;
-  buildItem?: (g: VoxelData, x: number, y: number, z: number) => void;
-  drawFaceExtras?: (g: VoxelData, cx: number, headY: number, headW: number, headH: number, fz: number) => void;
-  buildSpecial?: (g: VoxelData, cx: number, cz: number, headY: number, bodyY: number, headW: number, headH: number, bodyW: number, bodyH: number, armLX: number, armRX: number, armY: number, legY: number) => void;
-}
+export function generateBearAvatar(_seed = 42): VoxelData {
+  const W = 18, H = 26, D = 14;
+  const g = createGrid(W, H, D);
+  const B = BEAR.body, D_ = BEAR.dark, L = BEAR.light;
+  const N = BEAR.nose, E = BEAR.eye, Hi = BEAR.highlight;
+  const M = BEAR.muzzle, Be = BEAR.belly;
 
-function buildAvatar(spec: AvatarSpec): VoxelData {
-  const S = spec;
-  const pawW = S.armPawW ?? S.armW + 2;
-  const footW = S.legPawW ?? S.legW + 2;
-  const eyeW = S.eyeW ?? 3;
-  const eyeH = S.eyeH ?? 3;
-  const noseSize = S.noseSize ?? 2;
+  // === FEET (y=0..1) ===
+  // Left foot
+  fillBox(g, 3,0,4, 6,0,8, D_);   // foot pad (dark)
+  fillBox(g, 3,1,4, 6,1,8, B);    // foot top
+  // Right foot
+  fillBox(g, 11,0,4, 14,0,8, D_);
+  fillBox(g, 11,1,4, 14,1,8, B);
 
-  const totalW = Math.max(S.headW, S.bodyW) + pawW * 2 + 14;
-  const earH = 8;
-  const totalH = S.legH + S.bodyH + S.headH + earH + 6;
-  const totalD = Math.max(S.headD, S.bodyD) + S.muzzleD + 14;
-  const g = createGrid(totalW, totalH, totalD);
-  const cx = Math.floor(totalW / 2), cz = Math.floor(totalD / 2);
+  // === LEGS (y=2..5) ===
+  fillBox(g, 4,2,5, 6,5,7, B);    // left leg
+  fillBox(g, 11,2,5, 13,5,7, B);  // right leg
 
-  // ===== LEGS WITH PAW FEET =====
-  const legY = 0;
-  const lx1 = cx - S.legSpacing - S.legW, lx2 = cx + S.legSpacing + 1;
-  const lz1 = cz - Math.floor(S.legD / 2);
-  // Main leg columns
-  fillRoundedBox3D(g, lx1, legY + 2, lz1, lx1+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base, 0);
-  fillRoundedBox3D(g, lx2, legY + 2, lz1, lx2+S.legW-1, legY+S.legH-1, lz1+S.legD-1, S.body.base, 0);
-  // Paw feet — wider at bottom, using species-specific footW
-  const fhw = Math.floor(footW / 2);
-  const lcx1 = lx1 + Math.floor(S.legW / 2), lcx2 = lx2 + Math.floor(S.legW / 2);
-  fillBox(g, lcx1 - fhw, legY, lz1, lcx1 + fhw, legY + 1, lz1 + S.legD, S.body.shadow);
-  fillBox(g, lcx2 - fhw, legY, lz1, lcx2 + fhw, legY + 1, lz1 + S.legD, S.body.shadow);
-  // Bottom paw pads (darkest)
-  fillBox(g, lcx1 - fhw, legY, lz1, lcx1 + fhw, legY, lz1 + S.legD, adjustBrightness(S.body.base, 0.55));
-  fillBox(g, lcx2 - fhw, legY, lz1, lcx2 + fhw, legY, lz1 + S.legD, adjustBrightness(S.body.base, 0.55));
-
-  // ===== BODY =====
-  const bodyY = S.legH;
-  const bx1 = cx - Math.floor(S.bodyW / 2), bz1 = cz - Math.floor(S.bodyD / 2);
-  fillRoundedBox3D(g, bx1, bodyY, bz1, bx1+S.bodyW-1, bodyY+S.bodyH-1, bz1+S.bodyD-1, S.body.base, 1);
-  // Body top highlight
-  fillBox(g, bx1+1, bodyY+S.bodyH-1, bz1+1, bx1+S.bodyW-2, bodyY+S.bodyH-1, bz1+S.bodyD-2, S.body.highlight);
-  // Body bottom shadow
-  fillBox(g, bx1+1, bodyY, bz1+1, bx1+S.bodyW-2, bodyY, bz1+S.bodyD-2, S.body.shadow);
-
-  // ===== BELLY (ELLIPTICAL — using paintEllipse2D) =====
-  const bodyFZ = bz1 + S.bodyD - 1;
-  const bellyCY = bodyY + Math.floor(S.bodyH * 0.45);
-  paintEllipse2D(g, cx, bellyCY, bodyFZ, S.bellyRX, S.bellyRY, S.belly.base);
-
-  // ===== ARMS WITH PAW HANDS =====
-  const armY = bodyY + S.bodyH - S.armH;
-  const armLX = bx1 - S.armW, armRX = bx1 + S.bodyW;
-  const az1 = cz - Math.floor(S.armD / 2);
-  // Main arm columns
-  fillBox(g, armLX, armY+2, az1, armLX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
-  fillBox(g, armRX, armY+2, az1, armRX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.base);
-  // Paw hands — wider at bottom, using pawW
-  const phw = Math.floor(pawW / 2);
-  const acx1 = armLX + Math.floor(S.armW / 2), acx2 = armRX + Math.floor(S.armW / 2);
-  fillBox(g, acx1 - phw, armY, az1, acx1 + phw, armY+2, az1+S.armD-1, S.body.base);
-  fillBox(g, acx2 - phw, armY, az1, acx2 + phw, armY+2, az1+S.armD-1, S.body.base);
-  // Hand bottom shadow
-  fillBox(g, acx1 - phw, armY, az1, acx1 + phw, armY, az1+S.armD-1, S.body.shadow);
-  fillBox(g, acx2 - phw, armY, az1, acx2 + phw, armY, az1+S.armD-1, S.body.shadow);
-  // Arm top highlight (shoulder)
-  fillBox(g, armLX, armY+S.armH-1, az1, armLX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.highlight);
-  fillBox(g, armRX, armY+S.armH-1, az1, armRX+S.armW-1, armY+S.armH-1, az1+S.armD-1, S.body.highlight);
-
-  // ===== HEAD =====
-  const headY = bodyY + S.bodyH;
-  const hx1 = cx - Math.floor(S.headW / 2), hz1 = cz - Math.floor(S.headD / 2);
-  fillRoundedBox3D(g, hx1, headY, hz1, hx1+S.headW-1, headY+S.headH-1, hz1+S.headD-1, S.body.base, 1);
-  // Head top highlight
-  fillBox(g, hx1+1, headY+S.headH-1, hz1+1, hx1+S.headW-2, headY+S.headH-1, hz1+S.headD-2, S.body.highlight);
-  // Head side shadow
-  for (let y = headY+1; y < headY+S.headH-1; y++) {
-    for (let z = hz1+1; z < hz1+S.headD-1; z++) {
-      setVoxel(g, hx1, y, z, S.body.shadow);
-      setVoxel(g, hx1+S.headW-1, y, z, S.body.shadow);
+  // === BODY (y=6..14) ===
+  // Main body block
+  fillBox(g, 3,6,4, 14,14,9, B);
+  // Body front face highlight (belly)
+  // Rounded belly mark - elliptical on front face
+  for (let dy = 0; dy < 7; dy++) {
+    const y = 7 + dy;
+    const halfW = dy <= 1 || dy >= 5 ? 2 : (dy <= 2 || dy >= 4 ? 3 : 4);
+    for (let dx = -halfW; dx <= halfW; dx++) {
+      setVoxel(g, 9 + dx, y, 9, Be);
     }
   }
-  const headFZ = hz1 + S.headD - 1;
 
-  // ===== 3D MUZZLE (species-specific ellipsoid protrusion) =====
-  const muzzleCY = headY + Math.floor(S.headH * 0.35);
-  const muzzleFZ = headFZ + Math.floor(S.muzzleD / 2);
-  // Paint muzzle area on the flat head face first
-  paintEllipse2D(g, cx, muzzleCY, headFZ, Math.floor(S.muzzleW * 0.7), Math.floor(S.muzzleH * 0.9), S.belly.base);
-  // 3D muzzle protrusion using ellipsoid
-  fillSteppedSphere(g, cx, muzzleCY, muzzleFZ,
-    Math.floor(S.muzzleW / 2), Math.floor(S.muzzleH / 2), Math.ceil(S.muzzleD / 2),
-    S.belly.base);
+  // Body corners cut (rounded look)
+  setVoxel(g, 3,6,4, null as unknown as string);   // bottom-left-front
+  setVoxel(g, 14,6,4, null as unknown as string);  // bottom-right-front
+  setVoxel(g, 3,6,9, null as unknown as string);   // bottom-left-back
+  setVoxel(g, 14,6,9, null as unknown as string);  // bottom-right-back
+  setVoxel(g, 3,14,4, null as unknown as string);  // top-left-front
+  setVoxel(g, 14,14,4, null as unknown as string); // top-right-front
 
-  // ===== FACE =====
-  const faceFZ = muzzleFZ + Math.ceil(S.muzzleD / 2); // front of muzzle
+  // === ARMS (y=7..14) ===
+  // Left arm (hangs down from body side)
+  fillBox(g, 1,7,5, 3,13,7, B);
+  fillBox(g, 1,7,5, 3,7,7, D_);   // paw (dark bottom)
+  // Right arm
+  fillBox(g, 14,7,5, 16,13,7, B);
+  fillBox(g, 14,7,5, 16,7,7, D_); // paw
 
-  // Nose (3D, on top of muzzle)
-  drawNose3D(g, cx, muzzleCY + Math.floor(S.muzzleH / 2), faceFZ - 1, S.noseColor, noseSize);
-
-  // Eyes (high-quality, on HEAD face above muzzle)
-  const eyeY = headY + Math.floor(S.headH * 0.62);
-  drawDetailedEye(g, cx - S.eyeSpacing - Math.floor(eyeW / 2), eyeY, headFZ,
-    { width: eyeW, height: eyeH, pupilColor: '#1A1A1A', highlightCount: 1 });
-  drawDetailedEye(g, cx + S.eyeSpacing + Math.floor(eyeW / 2), eyeY, headFZ,
-    { width: eyeW, height: eyeH, pupilColor: '#1A1A1A', highlightCount: 1 });
-
-  // Mouth (on muzzle face)
-  drawMouthLine(g, cx, muzzleCY - Math.floor(S.muzzleH / 2) + 1, faceFZ - 1, 4);
-
-  // Face extras (stripes, patches, blush, etc.)
-  if (S.drawFaceExtras) S.drawFaceExtras(g, cx, headY, S.headW, S.headH, headFZ);
-
-  // ===== BODY-HEAD TRANSITION =====
-  const neckY = bodyY + S.bodyH - 1;
-  const transW = Math.floor((S.headW - S.bodyW) / 2);
-  if (transW > 0) {
-    fillBox(g, bx1-transW, neckY, bz1+1, bx1, neckY, bz1+S.bodyD-2, S.body.base);
-    fillBox(g, bx1+S.bodyW-1, neckY, bz1+1, bx1+S.bodyW-1+transW, neckY, bz1+S.bodyD-2, S.body.base);
+  // === HEAD (y=15..23) ===
+  fillBox(g, 3,15,3, 14,23,10, B);
+  // Head corners cut (rounded)
+  // Front face corners
+  for (const [x,y,z] of [[3,15,3],[14,15,3],[3,23,3],[14,23,3],
+    [3,15,10],[14,15,10],[3,23,10],[14,23,10],
+    [3,22,3],[14,22,3],[3,16,3],[14,16,3]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
   }
 
-  // ===== EARS =====
-  S.buildEars(g, cx, headY + S.headH, hz1, hz1 + S.headD - 1, S.headW);
+  // === MUZZLE (protrudes 2 blocks forward from head face) ===
+  // y=16..19, x=6..11, z=10..11
+  fillBox(g, 6,16,10, 11,19,11, M);
+  // Muzzle front face top highlight
+  fillBox(g, 7,19,11, 10,19,11, BEAR.highlight);
 
-  // ===== TAIL =====
-  if (S.buildTail) S.buildTail(g, cx, bodyY + Math.floor(S.bodyH / 2), bz1 - 1);
+  // === NOSE (on muzzle, y=19, z=12) ===
+  setVoxel(g, 8,19,12, N);
+  setVoxel(g, 9,19,12, N);
+  // Nose protrusion
+  setVoxel(g, 8,19,11, N);
+  setVoxel(g, 9,19,11, N);
 
-  // ===== HELD ITEM =====
-  if (S.buildItem) S.buildItem(g, armRX + S.armW, armY + 1, cz);
+  // === EYES (3×3 black with white highlight, on head front face z=10) ===
+  // Left eye at x=5..7, y=19..21
+  fillBox(g, 5,19,10, 7,21,10, E);
+  setVoxel(g, 5,21,10, Hi);  // highlight top-left
+  // Right eye at x=10..12, y=19..21
+  fillBox(g, 10,19,10, 12,21,10, E);
+  setVoxel(g, 10,21,10, Hi); // highlight top-left
 
-  // ===== SPECIAL =====
-  if (S.buildSpecial) S.buildSpecial(g, cx, cz, headY, bodyY, S.headW, S.headH, S.bodyW, S.bodyH, armLX, armRX, armY, legY);
+  // === MOUTH ===
+  setVoxel(g, 8,16,12, '#555555');
+  setVoxel(g, 9,16,12, '#555555');
+
+  // === EARS (small round, y=24..25) ===
+  // Left ear
+  fillBox(g, 4,24,5, 6,25,8, B);
+  fillBox(g, 5,24,6, 5,24,7, L);  // inner ear
+  // Right ear
+  fillBox(g, 11,24,5, 13,25,8, B);
+  fillBox(g, 12,24,6, 12,24,7, L); // inner ear
+
+  // === TAIL (small round bump behind body) ===
+  setVoxel(g, 8,10,3, B);
+  setVoxel(g, 9,10,3, B);
+  setVoxel(g, 8,11,3, B);
+  setVoxel(g, 9,11,3, B);
 
   return g;
 }
 
 // ============================================================
-// Yarn ball (for cat)
+// CAT — 参考画像: グレーの縞模様、三角耳、毛糸玉
+// Grid: 16W × 24H × 12D
 // ============================================================
-function makeYarnBall(g: VoxelData, x: number, y: number, z: number, r = 3, color = '#5BC0EB') {
-  const dark = adjustBrightness(color, 0.85);
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
-    if (dx*dx + dy*dy + dz*dz <= r*r) {
-      const isGroove = (dy + dx) % 3 === 0;
-      setVoxel(g, x+dx, y+dy, z+dz, isGroove ? dark : color);
+export function generateCatAvatar(_seed = 100): VoxelData {
+  const W = 18, H = 26, D = 14;
+  const g = createGrid(W, H, D);
+  const C = CAT;
+
+  // FEET
+  fillBox(g, 4,0,5, 6,1,7, C.dark);
+  fillBox(g, 11,0,5, 13,1,7, C.dark);
+
+  // LEGS
+  fillBox(g, 4,2,5, 6,4,7, C.body);
+  fillBox(g, 11,2,5, 13,4,7, C.body);
+
+  // BODY
+  fillBox(g, 3,5,4, 14,12,9, C.body);
+  // Belly (white front)
+  for (let dy = 0; dy < 5; dy++) {
+    const y = 6 + dy;
+    const hw = dy <= 0 || dy >= 4 ? 2 : 3;
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 9 + dx, y, 9, C.belly);
+  }
+
+  // ARMS
+  fillBox(g, 1,6,5, 3,11,7, C.body);
+  fillBox(g, 1,6,5, 3,6,7, C.dark);
+  fillBox(g, 14,6,5, 16,11,7, C.body);
+  fillBox(g, 14,6,5, 16,6,7, C.dark);
+
+  // HEAD (slightly wider than body, very rounded)
+  fillBox(g, 3,13,3, 14,22,10, C.body);
+  // Corner cuts
+  for (const [x,y,z] of [[3,13,3],[14,13,3],[3,22,3],[14,22,3],
+    [3,13,10],[14,13,10],[3,22,10],[14,22,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // Stripes on head (horizontal dark gray lines)
+  for (let sx = 5; sx <= 12; sx++) {
+    setVoxel(g, sx, 21, 10, C.stripe);
+    setVoxel(g, sx, 19, 10, C.stripe);
+    setVoxel(g, sx, 22, 6, C.stripe);
+    setVoxel(g, sx, 20, 6, C.stripe);
+  }
+
+  // MUZZLE
+  fillBox(g, 6,14,10, 11,17,11, C.muzzle);
+
+  // NOSE
+  setVoxel(g, 8,17,11, C.nose);
+  setVoxel(g, 9,17,11, C.nose);
+
+  // EYES
+  fillBox(g, 5,17,10, 7,19,10, C.eye);
+  setVoxel(g, 5,19,10, C.highlight);
+  fillBox(g, 10,17,10, 12,19,10, C.eye);
+  setVoxel(g, 10,19,10, C.highlight);
+
+  // POINTED EARS
+  fillBox(g, 3,23,5, 5,25,8, C.body);
+  setVoxel(g, 4,24,6, C.inner_ear);
+  setVoxel(g, 4,23,7, C.inner_ear);
+  fillBox(g, 12,23,5, 14,25,8, C.body);
+  setVoxel(g, 13,24,6, C.inner_ear);
+  setVoxel(g, 13,23,7, C.inner_ear);
+  // Pointed tip
+  setVoxel(g, 4,25,6, C.body);
+  setVoxel(g, 4,25,7, C.body);
+  setVoxel(g, 13,25,6, C.body);
+  setVoxel(g, 13,25,7, C.body);
+
+  // YARN BALL (held near right arm)
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+    if (dx*dx+dy*dy+dz*dz <= 5) setVoxel(g, 17+dx, 8+dy, 6+dz, '#5BC0EB');
+  }
+
+  // TAIL (curved, behind body)
+  for (let i = 0; i < 5; i++) {
+    const ty = 8 + Math.round(Math.sin(i * 0.5) * 1.5);
+    setVoxel(g, 8, ty, 3 - i, C.body);
+    setVoxel(g, 9, ty, 3 - i, C.body);
+  }
+
+  return g;
+}
+
+// ============================================================
+// RABBIT — 参考画像: ベージュ、長い耳、小さい体
+// ============================================================
+export function generateRabbitAvatar(_seed = 200): VoxelData {
+  const W = 18, H = 30, D = 14;
+  const g = createGrid(W, H, D);
+  const R = RABBIT;
+
+  // FEET
+  fillBox(g, 4,0,5, 7,1,8, R.paw);
+  fillBox(g, 10,0,5, 13,1,8, R.paw);
+
+  // LEGS
+  fillBox(g, 5,2,5, 7,4,7, R.body);
+  fillBox(g, 10,2,5, 12,4,7, R.body);
+
+  // BODY
+  fillBox(g, 4,5,4, 13,12,9, R.body);
+  // Belly
+  for (let dy = 0; dy < 5; dy++) {
+    const y = 6 + dy;
+    const hw = dy <= 0 || dy >= 4 ? 2 : 3;
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 9 + dx, y, 9, R.belly);
+  }
+
+  // ARMS (thin)
+  fillBox(g, 2,6,5, 4,11,7, R.body);
+  fillBox(g, 2,6,5, 4,6,7, R.paw);
+  fillBox(g, 13,6,5, 15,11,7, R.body);
+  fillBox(g, 13,6,5, 15,6,7, R.paw);
+
+  // HEAD (round, big)
+  fillBox(g, 3,13,3, 14,22,10, R.body);
+  for (const [x,y,z] of [[3,13,3],[14,13,3],[3,22,3],[14,22,3],
+    [3,13,10],[14,13,10],[3,22,10],[14,22,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // MUZZLE
+  fillBox(g, 6,14,10, 11,17,11, R.muzzle);
+
+  // NOSE (small pink)
+  setVoxel(g, 8,17,11, R.nose);
+  setVoxel(g, 9,17,11, R.nose);
+
+  // EYES
+  fillBox(g, 5,17,10, 7,19,10, R.eye);
+  setVoxel(g, 5,19,10, R.highlight);
+  fillBox(g, 10,17,10, 12,19,10, R.eye);
+  setVoxel(g, 10,19,10, R.highlight);
+
+  // Cheek blush
+  setVoxel(g, 4,16,10, '#FFB6C1');
+  setVoxel(g, 4,17,10, '#FFB6C1');
+  setVoxel(g, 13,16,10, '#FFB6C1');
+  setVoxel(g, 13,17,10, '#FFB6C1');
+
+  // LONG EARS (tall, 7 blocks)
+  fillBox(g, 5,23,5, 7,29,8, R.body);
+  fillBox(g, 6,23,6, 6,28,7, R.inner_ear); // inner pink
+  fillBox(g, 10,23,5, 12,29,8, R.body);
+  fillBox(g, 11,23,6, 11,28,7, R.inner_ear);
+
+  // TAIL (small white puff)
+  fillBox(g, 8,8,3, 9,9,3, R.belly);
+
+  return g;
+}
+
+// ============================================================
+// DOG — 参考画像: 白い体、茶パッチ、首輪
+// ============================================================
+export function generateDogAvatar(_seed = 300): VoxelData {
+  const W = 18, H = 26, D = 14;
+  const g = createGrid(W, H, D);
+  const Dg = DOG;
+
+  // FEET
+  fillBox(g, 3,0,4, 6,1,8, Dg.dark);
+  fillBox(g, 11,0,4, 14,1,8, Dg.dark);
+
+  // LEGS
+  fillBox(g, 4,2,5, 6,5,7, Dg.body);
+  fillBox(g, 11,2,5, 13,5,7, Dg.body);
+
+  // BODY
+  fillBox(g, 3,6,4, 14,14,9, Dg.body);
+
+  // ARMS
+  fillBox(g, 1,7,5, 3,13,7, Dg.body);
+  fillBox(g, 14,7,5, 16,13,7, Dg.body);
+
+  // HEAD
+  fillBox(g, 3,15,3, 14,23,10, Dg.body);
+  for (const [x,y,z] of [[3,15,3],[14,15,3],[3,23,3],[14,23,3],
+    [3,15,10],[14,15,10],[3,23,10],[14,23,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // Brown patch (top-right of head, like reference)
+  for (let y = 20; y <= 23; y++) {
+    for (let x = 8; x <= 14; x++) {
+      for (let z = 3; z <= 10; z++) {
+        if (g[y]?.[z]?.[x] != null) setVoxel(g, x, y, z, Dg.patch);
+      }
     }
   }
+  // Patch on right ear area
+  fillBox(g, 10,20,10, 13,23,10, Dg.patch);
+
+  // MUZZLE
+  fillBox(g, 6,16,10, 11,19,11, Dg.muzzle);
+
+  // NOSE (big black)
+  fillBox(g, 7,19,11, 10,19,12, Dg.nose);
+
+  // EYES
+  fillBox(g, 5,19,10, 7,21,10, Dg.eye);
+  setVoxel(g, 5,21,10, '#FFFFFF');
+  fillBox(g, 10,19,10, 12,21,10, Dg.eye);
+  setVoxel(g, 10,21,10, '#FFFFFF');
+
+  // TONGUE (small red on muzzle)
+  setVoxel(g, 8,16,12, Dg.tongue);
+  setVoxel(g, 9,16,12, Dg.tongue);
+
+  // COLLAR (blue ring around body top)
+  for (let x = 3; x <= 14; x++) for (let z = 4; z <= 9; z++) {
+    if (g[14]?.[z]?.[x] != null) setVoxel(g, x, 14, z, Dg.collar);
+  }
+  // Medal
+  setVoxel(g, 9, 13, 9, Dg.medal);
+
+  // FLOPPY EARS (droop down from head sides)
+  fillBox(g, 2,19,5, 3,23,8, Dg.patch);
+  fillBox(g, 14,19,5, 15,23,8, Dg.patch);
+  fillBox(g, 2,17,5, 3,19,8, Dg.patch); // ear droop down
+
+  // TAIL
+  for (let i = 0; i < 4; i++) setVoxel(g, 9, 10+i, 3-i, Dg.body);
+
+  return g;
 }
 
 // ============================================================
-// Avatar definitions — each species has UNIQUE proportions
+// PANDA — 参考画像: 白黒、黒い目パッチ、黒い四肢
 // ============================================================
-
-// ===== BEAR: stocky body, round head, small ears, prominent muzzle =====
-export function generateBearAvatar(_seed = 42): VoxelData {
-  return buildAvatar({
-    body: cp('#A07030'), belly: cp('#D4B478'),
-    headW: 14, headH: 12, headD: 11,
-    bodyW: 12, bodyH: 11, bodyD: 10,
-    armW: 3, armH: 8, armD: 4, armPawW: 5,
-    legW: 4, legH: 5, legD: 5, legSpacing: 1, legPawW: 6,
-    bellyRX: 4, bellyRY: 4,
-    muzzleW: 8, muzzleH: 6, muzzleD: 3,
-    noseColor: '#2D1B0E', noseSize: 2, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildRoundEars(g, cx, y, fz, bz, hw, '#A07030', '#C49060'),
-    buildTail: (g, cx, y, z) => {
-      fillSteppedSphere(g, cx, y, z, 1.5, 1.5, 1, '#A07030');
-    },
-    drawFaceExtras: (g, cx, headY, headW, headH, fz) => {
-      drawBlush(g, cx, headY + Math.floor(headH * 0.4), fz, Math.floor(headW / 2) - 2, '#FFB6C1', 1);
-    },
-    buildItem: (g, x, y, z) => {
-      // Honey jar
-      fillSteppedSphere(g, x+2, y+2, z, 2, 2.5, 2, '#FFD54F');
-      fillBox(g, x, y+4, z-1, x+3, y+5, z+1, '#8B4513');
-      setVoxel(g, x+2, y+2, z+2, '#E6B800'); // honey drip
-    },
-  });
-}
-
-// ===== CAT: slender, pointed ears, small muzzle, whisker area =====
-export function generateCatAvatar(_seed = 100): VoxelData {
-  return buildAvatar({
-    body: cp('#9E9E9E'), belly: cp('#FFFFFF'),
-    headW: 13, headH: 11, headD: 9,
-    bodyW: 10, bodyH: 9, bodyD: 8,
-    armW: 2, armH: 7, armD: 3, armPawW: 4,
-    legW: 3, legH: 4, legD: 3, legSpacing: 1, legPawW: 4,
-    bellyRX: 3, bellyRY: 3,
-    muzzleW: 6, muzzleH: 4, muzzleD: 2,
-    noseColor: '#FFB0B0', noseSize: 1, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildPointedEars(g, cx, y, fz, bz, hw, '#9E9E9E', '#FFB6C1', 3),
-    buildTail: (g, cx, y, z) => {
-      for (let i = 0; i < 6; i++) {
-        const ty = y + Math.round(Math.sin(i * 0.5) * 1.5);
-        setVoxel(g, cx, ty, z - i, '#9E9E9E');
-        setVoxel(g, cx+1, ty, z - i, '#9E9E9E');
-      }
-    },
-    buildItem: (g, x, y, z) => makeYarnBall(g, x + 2, y + 2, z, 3, '#5BC0EB'),
-    drawFaceExtras: (g, cx, headY, headW, headH, fz) => {
-      const sc = '#707070';
-      const hx1 = cx - Math.floor(headW / 2) + 2;
-      const hx2 = cx + Math.floor(headW / 2) - 2;
-      drawStripes(g, hx1, hx2, headY + headH - 2, fz, sc, 3, 3);
-    },
-  });
-}
-
-// ===== RABBIT: large head, long ears, small body, flat muzzle =====
-export function generateRabbitAvatar(_seed = 200): VoxelData {
-  return buildAvatar({
-    body: cp('#D4BC96'), belly: cp('#F5EDE0'),
-    headW: 14, headH: 12, headD: 10,
-    bodyW: 10, bodyH: 9, bodyD: 8,
-    armW: 2, armH: 6, armD: 3, armPawW: 3,
-    legW: 4, legH: 4, legD: 4, legSpacing: 1, legPawW: 5,
-    bellyRX: 3, bellyRY: 3,
-    muzzleW: 6, muzzleH: 5, muzzleD: 2,
-    noseColor: '#FFB0B0', noseSize: 1, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildLongEars(g, cx, y, fz, bz, hw, '#D4BC96', '#FFAABB', 7),
-    drawFaceExtras: (g, cx, headY, _hw, headH, fz) => {
-      drawBlush(g, cx, headY + Math.floor(headH * 0.35), fz, 4, '#FFB6C1', 1);
-    },
-  });
-}
-
-// ===== DOG: medium body, floppy ears, brown patch, collar =====
-export function generateDogAvatar(_seed = 300): VoxelData {
-  return buildAvatar({
-    body: cp('#F0E8E0'), belly: cp('#FFFFFF'),
-    headW: 13, headH: 11, headD: 10,
-    bodyW: 11, bodyH: 10, bodyD: 9,
-    armW: 3, armH: 8, armD: 3, armPawW: 5,
-    legW: 4, legH: 5, legD: 4, legSpacing: 1, legPawW: 5,
-    bellyRX: 4, bellyRY: 3,
-    muzzleW: 7, muzzleH: 5, muzzleD: 3,
-    noseColor: '#2D1B0E', noseSize: 2, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildFloppyEars(g, cx, y - 2, fz, bz, hw, '#C49050', 5),
-    buildTail: (g, cx, y, z) => {
-      for (let i = 0; i < 5; i++) setVoxel(g, cx, y + i, z - i, '#F0E8E0');
-    },
-    drawFaceExtras: (g, cx, headY, headW, headH, fz) => {
-      // Brown patch on top-right of head
-      const pc = '#C49050';
-      for (let dy = Math.floor(headH * 0.6); dy < headH; dy++) {
-        for (let dx = 0; dx < Math.floor(headW / 2); dx++) {
-          setVoxel(g, cx + dx, headY + dy, fz, pc);
-        }
-      }
-      // Tongue
-      drawMouthLine(g, cx, headY + Math.floor(headH * 0.15), fz, 2, '#FF6B8A');
-    },
-    buildSpecial: (g, cx, cz, _hY, bodyY, _hw, _hh, bodyW, bodyH) => {
-      // Blue collar
-      const collarY = bodyY + bodyH - 1;
-      const bx1 = cx - Math.floor(bodyW / 2);
-      const bz1 = cz - Math.floor(9 / 2);
-      for (let dx = 0; dx < bodyW; dx++) for (let dz = 0; dz < 9; dz++) {
-        if (g[collarY]?.[bz1+dz]?.[bx1+dx] != null) setVoxel(g, bx1+dx, collarY, bz1+dz, '#4488CC');
-      }
-      setVoxel(g, cx, collarY - 1, cz + Math.floor(9 / 2), '#FFD700');
-    },
-  });
-}
-
-// ===== PANDA: round body, black eye patches, black limbs =====
 export function generatePandaAvatar(_seed = 400): VoxelData {
-  return buildAvatar({
-    body: cp('#F5F5F5'), belly: cp('#FFFFFF'),
-    headW: 14, headH: 12, headD: 10,
-    bodyW: 12, bodyH: 10, bodyD: 9,
-    armW: 3, armH: 8, armD: 4, armPawW: 5,
-    legW: 4, legH: 5, legD: 4, legSpacing: 1, legPawW: 6,
-    bellyRX: 4, bellyRY: 4,
-    muzzleW: 7, muzzleH: 5, muzzleD: 2,
-    noseColor: '#1A1A1A', noseSize: 2, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildRoundEars(g, cx, y, fz, bz, hw, '#1A1A1A', '#1A1A1A'),
-    buildSpecial: (g, cx, cz, headY, bodyY, headW, headH, bodyW, _bH, armLX, armRX, armY, legY) => {
-      const bk = '#1A1A1A';
-      const headFZ = cz + Math.floor(10 / 2) - 1;
-      // Black eye patches (diamond-shaped around eyes)
-      for (let dy = -1; dy <= 3; dy++) {
-        const w = (dy <= 0 || dy >= 3) ? 2 : 3;
-        for (let dx = 0; dx < w; dx++) {
-          setVoxel(g, cx - 3 - dx, headY + Math.floor(headH * 0.5) + dy, headFZ, bk);
-          setVoxel(g, cx + 3 + dx, headY + Math.floor(headH * 0.5) + dy, headFZ, bk);
-        }
-      }
-      // Black arms
-      const az1 = cz - 1;
-      fillBox(g, armLX, armY, az1, armLX+2, armY+7, az1+2, bk);
-      fillBox(g, armRX, armY, az1, armRX+2, armY+7, az1+2, bk);
-      // Black legs
-      const lz1 = cz - 2;
-      fillBox(g, cx-1-4, legY, lz1, cx-1-1, legY+4, lz1+3, bk);
-      fillBox(g, cx+2, legY, lz1, cx+5, legY+4, lz1+3, bk);
-    },
-  });
+  const W = 18, H = 26, D = 14;
+  const g = createGrid(W, H, D);
+  const P = PANDA;
+
+  // FEET (black)
+  fillBox(g, 3,0,4, 6,1,8, P.black);
+  fillBox(g, 11,0,4, 14,1,8, P.black);
+
+  // LEGS (black)
+  fillBox(g, 4,2,5, 6,5,7, P.black);
+  fillBox(g, 11,2,5, 13,5,7, P.black);
+
+  // BODY (white)
+  fillBox(g, 3,6,4, 14,14,9, P.body);
+
+  // ARMS (black)
+  fillBox(g, 1,7,5, 3,13,7, P.black);
+  fillBox(g, 14,7,5, 16,13,7, P.black);
+
+  // HEAD (white)
+  fillBox(g, 3,15,3, 14,23,10, P.body);
+  for (const [x,y,z] of [[3,15,3],[14,15,3],[3,23,3],[14,23,3],
+    [3,15,10],[14,15,10],[3,23,10],[14,23,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // MUZZLE (white, protruding)
+  fillBox(g, 6,16,10, 11,19,11, P.muzzle);
+
+  // NOSE
+  setVoxel(g, 8,19,11, P.nose);
+  setVoxel(g, 9,19,11, P.nose);
+
+  // BLACK EYE PATCHES (diamond-shaped, larger than eyes)
+  // Left patch
+  for (let dy = -2; dy <= 2; dy++) {
+    const w = Math.abs(dy) <= 1 ? 2 : 1;
+    for (let dx = 0; dx < w; dx++) {
+      setVoxel(g, 5-dx, 20+dy, 10, P.black);
+      setVoxel(g, 6-dx, 20+dy, 10, P.black);
+    }
+  }
+  // Right patch
+  for (let dy = -2; dy <= 2; dy++) {
+    const w = Math.abs(dy) <= 1 ? 2 : 1;
+    for (let dx = 0; dx < w; dx++) {
+      setVoxel(g, 11+dx, 20+dy, 10, P.black);
+      setVoxel(g, 12+dx, 20+dy, 10, P.black);
+    }
+  }
+
+  // EYES (white highlight on black patches)
+  setVoxel(g, 5, 20, 10, P.highlight);
+  setVoxel(g, 12, 20, 10, P.highlight);
+
+  // EARS (black round)
+  fillBox(g, 3,23,5, 5,25,8, P.black);
+  fillBox(g, 12,23,5, 14,25,8, P.black);
+
+  return g;
 }
 
-// ===== FOX: slim body, tall pointed ears, LONG muzzle, bushy tail =====
+// ============================================================
+// FOX — 参考画像: オレンジ、白い顔V、大きな三角耳、ふさふさ尻尾
+// ============================================================
 export function generateFoxAvatar(_seed = 500): VoxelData {
-  return buildAvatar({
-    body: cp('#E07830'), belly: cp('#FFF5E6'),
-    headW: 12, headH: 10, headD: 9,
-    bodyW: 9, bodyH: 9, bodyD: 7,
-    armW: 2, armH: 7, armD: 3, armPawW: 3,
-    legW: 3, legH: 4, legD: 3, legSpacing: 1, legPawW: 4,
-    bellyRX: 3, bellyRY: 3,
-    muzzleW: 5, muzzleH: 4, muzzleD: 4, // LONG muzzle for fox!
-    noseColor: '#1A1A1A', noseSize: 1, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildPointedEars(g, cx, y, fz, bz, hw, '#E07830', '#FFF5E6', 5),
-    buildTail: (g, cx, y, z) => {
-      // Bushy tail using ellipsoid
-      fillSteppedSphere(g, cx, y, z - 3, 2, 3, 3, '#E07830');
-      // White tail tip
-      fillSteppedSphere(g, cx, y, z - 5, 1.5, 2, 1.5, '#FFFFFF');
-    },
-    drawFaceExtras: (g, cx, headY, headW, headH, fz) => {
-      // White lower face V-shape
-      for (let dy = 0; dy < Math.floor(headH * 0.5); dy++) {
-        const w = Math.floor(headW * 0.3) - Math.floor(dy * 0.5);
-        if (w <= 0) continue;
-        for (let dx = -w; dx <= w; dx++) setVoxel(g, cx + dx, headY + dy, fz, '#FFF5E6');
+  const W = 18, H = 26, D = 16;
+  const g = createGrid(W, H, D);
+  const F = FOX;
+
+  // FEET (dark)
+  fillBox(g, 4,0,6, 6,1,8, F.dark);
+  fillBox(g, 11,0,6, 13,1,8, F.dark);
+
+  // LEGS
+  fillBox(g, 4,2,6, 6,4,8, F.body);
+  fillBox(g, 11,2,6, 13,4,8, F.body);
+
+  // BODY (narrower than bear — fox is slim)
+  fillBox(g, 4,5,5, 13,12,10, F.body);
+  // White belly
+  for (let dy = 0; dy < 5; dy++) {
+    const y = 6 + dy;
+    const hw = dy <= 0 || dy >= 4 ? 2 : 3;
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 9 + dx, y, 10, F.belly);
+  }
+
+  // ARMS (thin)
+  fillBox(g, 2,6,6, 4,11,8, F.body);
+  fillBox(g, 2,6,6, 4,6,8, F.dark);
+  fillBox(g, 13,6,6, 15,11,8, F.body);
+  fillBox(g, 13,6,6, 15,6,8, F.dark);
+
+  // HEAD
+  fillBox(g, 4,13,4, 13,21,11, F.body);
+  for (const [x,y,z] of [[4,13,4],[13,13,4],[4,21,4],[13,21,4],
+    [4,13,11],[13,13,11],[4,21,11],[13,21,11]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // White face V-shape (inverted triangle on front)
+  for (let dy = 0; dy < 5; dy++) {
+    const y = 14 + dy;
+    const hw = 4 - dy;
+    if (hw <= 0) continue;
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 9 + dx, y, 11, F.light);
+  }
+
+  // MUZZLE (longer — fox has pointed muzzle)
+  fillBox(g, 7,14,11, 10,17,13, F.muzzle);
+
+  // NOSE
+  setVoxel(g, 8,17,13, F.nose);
+  setVoxel(g, 9,17,13, F.nose);
+
+  // EYES
+  fillBox(g, 5,17,11, 7,19,11, F.eye);
+  setVoxel(g, 5,19,11, F.highlight);
+  fillBox(g, 10,17,11, 12,19,11, F.eye);
+  setVoxel(g, 10,19,11, F.highlight);
+
+  // TALL POINTED EARS (5 blocks tall)
+  for (let h = 0; h < 5; h++) {
+    const w = Math.max(1, 3 - h);
+    for (let dx = 0; dx < w; dx++) {
+      for (let dz = 5; dz <= 9; dz++) {
+        setVoxel(g, 4+dx, 22+h, dz, F.body);
+        setVoxel(g, 13-dx, 22+h, dz, F.body);
       }
-    },
-  });
+    }
+  }
+  // Inner ear (light)
+  setVoxel(g, 5, 23, 7, F.light);
+  setVoxel(g, 12, 23, 7, F.light);
+
+  // BUSHY TAIL (behind body, fluffy)
+  for (let dy = -2; dy <= 3; dy++) {
+    for (let dz = -3; dz <= 0; dz++) {
+      const r = 2.5 - Math.abs(dz + 1.5) * 0.5;
+      for (let dx = -Math.floor(r); dx <= Math.floor(r); dx++) {
+        const c = dz <= -2 ? F.tail_tip : F.body;
+        setVoxel(g, 9+dx, 8+dy, 4+dz, c);
+      }
+    }
+  }
+
+  return g;
 }
 
-// ===== PENGUIN: short, round body, tiny muzzle (beak), no ears, orange feet =====
+// ============================================================
+// PENGUIN — 参考画像: 青い体、白い腹、オレンジくちばし/足
+// ============================================================
 export function generatePenguinAvatar(_seed = 600): VoxelData {
-  return buildAvatar({
-    body: cp('#3A5080'), belly: cp('#FFFFFF'),
-    headW: 11, headH: 10, headD: 9,
-    bodyW: 10, bodyH: 10, bodyD: 9,
-    armW: 2, armH: 7, armD: 2, armPawW: 3,
-    legW: 3, legH: 2, legD: 3, legSpacing: 1, legPawW: 4,
-    bellyRX: 4, bellyRY: 4,
-    muzzleW: 4, muzzleH: 3, muzzleD: 2, // Tiny beak
-    noseColor: '#FF8C00', noseSize: 1, eyeSpacing: 2,
-    eyeW: 2, eyeH: 2,
-    buildEars: () => {},
-    drawFaceExtras: (g, cx, headY, _hw, headH, fz) => {
-      // Pink cheeks
-      drawBlush(g, cx, headY + Math.floor(headH * 0.4), fz, 3, '#FFB6C1', 1);
-    },
-    buildSpecial: (g, cx, cz, _hY, _bY, _hw, _hh, _bw, _bh, _alx, _arx, _ay, legY) => {
-      // Orange feet
-      const lz = cz - 1;
-      fillBox(g, cx-4, legY, lz, cx-2, legY, lz+2, '#FF8C00');
-      fillBox(g, cx+2, legY, lz, cx+4, legY, lz+2, '#FF8C00');
-    },
-  });
+  const W = 16, H = 22, D = 14;
+  const g = createGrid(W, H, D);
+  const Pg = PENGUIN;
+
+  // ORANGE FEET
+  fillBox(g, 3,0,5, 6,0,8, Pg.feet);
+  fillBox(g, 9,0,5, 12,0,8, Pg.feet);
+
+  // SHORT LEGS
+  fillBox(g, 4,1,6, 6,2,7, Pg.body);
+  fillBox(g, 9,1,6, 11,2,7, Pg.body);
+
+  // BODY (round, wide belly)
+  fillBox(g, 3,3,4, 12,11,9, Pg.body);
+  // White belly (large oval)
+  for (let dy = 0; dy < 7; dy++) {
+    const y = 4 + dy;
+    const hw = dy <= 0 || dy >= 6 ? 2 : (dy <= 1 || dy >= 5 ? 3 : 4);
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 8 + dx, y, 9, Pg.belly);
+  }
+
+  // FLIPPERS (instead of arms — thin, angled)
+  fillBox(g, 1,5,5, 3,10,7, Pg.body);
+  fillBox(g, 12,5,5, 14,10,7, Pg.body);
+
+  // HEAD (round, slightly blue)
+  fillBox(g, 3,12,3, 12,20,10, Pg.body);
+  for (const [x,y,z] of [[3,12,3],[12,12,3],[3,20,3],[12,20,3],
+    [3,12,10],[12,12,10],[3,20,10],[12,20,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // White face area
+  fillBox(g, 5,13,10, 10,18,10, Pg.belly);
+
+  // BEAK (orange, protruding)
+  fillBox(g, 6,15,10, 9,16,12, Pg.beak);
+
+  // EYES (small, 2×2)
+  fillBox(g, 5,17,10, 6,18,10, Pg.eye);
+  setVoxel(g, 5,18,10, Pg.highlight);
+  fillBox(g, 9,17,10, 10,18,10, Pg.eye);
+  setVoxel(g, 9,18,10, Pg.highlight);
+
+  // CHEEKS
+  setVoxel(g, 4,15,10, Pg.cheek);
+  setVoxel(g, 4,16,10, Pg.cheek);
+  setVoxel(g, 11,15,10, Pg.cheek);
+  setVoxel(g, 11,16,10, Pg.cheek);
+
+  return g;
 }
 
-// ===== HAMSTER: huge head, tiny body, cheek pouches, round =====
+// ============================================================
+// HAMSTER — 参考画像: 巨大な頭、小さい体、頬袋、ひまわりの種
+// ============================================================
 export function generateHamsterAvatar(_seed = 700): VoxelData {
-  return buildAvatar({
-    body: cp('#E8C8A0'), belly: cp('#FFF0E0'),
-    headW: 15, headH: 13, headD: 11,
-    bodyW: 10, bodyH: 7, bodyD: 8,
-    armW: 2, armH: 5, armD: 3, armPawW: 3,
-    legW: 3, legH: 3, legD: 3, legSpacing: 1, legPawW: 4,
-    bellyRX: 3, bellyRY: 3,
-    muzzleW: 6, muzzleH: 5, muzzleD: 2,
-    noseColor: '#1A1A1A', noseSize: 1, eyeSpacing: 3,
-    buildEars: (g, cx, y, fz, bz, hw) => buildRoundEars(g, cx, y, fz, bz, hw, '#E8C8A0', '#FFB6C1'),
-    buildItem: (g, x, y, z) => {
-      fillBox(g, x, y, z-1, x+2, y+3, z+1, '#4A3508');
-      setVoxel(g, x+1, y+3, z, '#6B5510');
-    },
-    drawFaceExtras: (g, cx, headY, headW, headH, fz) => {
-      // Cheek pouches (wider than head)
-      const cy = headY + Math.floor(headH * 0.35);
-      const px = Math.floor(headW / 2);
-      for (let dy = -2; dy <= 2; dy++) {
-        for (let dx = 0; dx <= 1; dx++) {
-          setVoxel(g, cx - px - dx, cy + dy, fz, '#F0D8B8');
-          setVoxel(g, cx + px + dx, cy + dy, fz, '#F0D8B8');
-        }
-      }
-      // Head stripe
-      setVoxel(g, cx, headY + headH - 2, fz, '#C4A070');
-      setVoxel(g, cx+1, headY + headH - 2, fz, '#C4A070');
-    },
-    buildSpecial: (g, cx, cz, _hY, _bY, _hw, _hh, _bw, _bh, _alx, _arx, _ay, legY) => {
-      const lz = cz - 1;
-      fillBox(g, cx-3, legY, lz, cx-1, legY, lz+2, '#FFB6C1');
-      fillBox(g, cx+1, legY, lz, cx+3, legY, lz+2, '#FFB6C1');
-    },
-  });
+  const W = 18, H = 22, D = 14;
+  const g = createGrid(W, H, D);
+  const Hm = HAMSTER;
+
+  // TINY FEET (pink)
+  fillBox(g, 5,0,5, 7,0,7, Hm.paw);
+  fillBox(g, 10,0,5, 12,0,7, Hm.paw);
+
+  // SHORT LEGS
+  fillBox(g, 5,1,5, 7,2,7, Hm.body);
+  fillBox(g, 10,1,5, 12,2,7, Hm.body);
+
+  // SMALL BODY
+  fillBox(g, 4,3,4, 13,8,9, Hm.body);
+  // Belly
+  for (let dy = 0; dy < 4; dy++) {
+    const y = 4 + dy;
+    const hw = dy <= 0 || dy >= 3 ? 2 : 3;
+    for (let dx = -hw; dx <= hw; dx++) setVoxel(g, 9 + dx, y, 9, Hm.belly);
+  }
+
+  // TINY ARMS
+  fillBox(g, 2,4,5, 4,7,7, Hm.body);
+  fillBox(g, 13,4,5, 15,7,7, Hm.body);
+
+  // HUGE HEAD (larger than body!)
+  fillBox(g, 2,9,3, 15,20,10, Hm.body);
+  for (const [x,y,z] of [[2,9,3],[15,9,3],[2,20,3],[15,20,3],
+    [2,9,10],[15,9,10],[2,20,10],[15,20,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // CHEEK POUCHES (protrude beyond head!)
+  fillBox(g, 1,12,5, 2,16,8, Hm.cheek);
+  fillBox(g, 15,12,5, 16,16,8, Hm.cheek);
+
+  // Head stripe
+  for (let z = 3; z <= 10; z++) {
+    setVoxel(g, 8, 20, z, Hm.stripe);
+    setVoxel(g, 9, 20, z, Hm.stripe);
+  }
+
+  // MUZZLE
+  fillBox(g, 6,10,10, 11,14,11, Hm.light);
+
+  // NOSE
+  setVoxel(g, 8,14,11, Hm.nose);
+  setVoxel(g, 9,14,11, Hm.nose);
+
+  // EYES
+  fillBox(g, 5,14,10, 7,16,10, Hm.eye);
+  setVoxel(g, 5,16,10, '#FFFFFF');
+  fillBox(g, 10,14,10, 12,16,10, Hm.eye);
+  setVoxel(g, 10,16,10, '#FFFFFF');
+
+  // ROUND EARS
+  fillBox(g, 3,20,5, 5,21,8, Hm.body);
+  setVoxel(g, 4,20,6, Hm.paw);
+  fillBox(g, 12,20,5, 14,21,8, Hm.body);
+  setVoxel(g, 13,20,6, Hm.paw);
+
+  // SUNFLOWER SEED (held in paws)
+  fillBox(g, 7,5,10, 9,7,11, Hm.seed);
+  setVoxel(g, 8,7,11, '#6B5510');
+
+  return g;
 }
 
 // ============================================================

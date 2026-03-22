@@ -38,7 +38,7 @@ export function VoxelRockModel({ position, rotation, scale = 1, voxelSize = 0.08
 
 export function VoxelCrystalModel({ position, rotation, scale = 1, voxelSize = 0.06, seed = 400, height = 18 }: BaseProps & { height?: number }) {
   const data = useMemo(() => generateCrystal(height, seed), [height, seed]);
-  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} enableAO aoIntensity={0.25} />;
+  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} enableAO aoIntensity={0.55} />;
 }
 
 export function VoxelCoralModel({ position, rotation, scale = 1, voxelSize = 0.06, seed = 500 }: BaseProps) {
