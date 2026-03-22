@@ -45,14 +45,14 @@ type ModelDef = {
 
 const ALL_MODELS: ModelDef[] = [
   // アバター
-  { id: 'avatar-bear', name: '🐻 クマ', category: 'アバター', fn: generateBearAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-cat', name: '🐱 ネコ', category: 'アバター', fn: generateCatAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-rabbit', name: '🐰 ウサギ', category: 'アバター', fn: generateRabbitAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-dog', name: '🐶 イヌ', category: 'アバター', fn: generateDogAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-panda', name: '🐼 パンダ', category: 'アバター', fn: generatePandaAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-fox', name: '🦊 キツネ', category: 'アバター', fn: generateFoxAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-penguin', name: '🐧 ペンギン', category: 'アバター', fn: generatePenguinAvatar, voxelSize: 0.05, rank: 'A' },
-  { id: 'avatar-hamster', name: '🐹 ハムスター', category: 'アバター', fn: generateHamsterAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-bear', name: '🐻 クマ', category: 'アバター', fn: generateBearAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-cat', name: '🐱 ネコ', category: 'アバター', fn: generateCatAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-rabbit', name: '🐰 ウサギ', category: 'アバター', fn: generateRabbitAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-dog', name: '🐶 イヌ', category: 'アバター', fn: generateDogAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-panda', name: '🐼 パンダ', category: 'アバター', fn: generatePandaAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-fox', name: '🦊 キツネ', category: 'アバター', fn: generateFoxAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-penguin', name: '🐧 ペンギン', category: 'アバター', fn: generatePenguinAvatar, voxelSize: 0.12, rank: 'A' },
+  { id: 'avatar-hamster', name: '🐹 ハムスター', category: 'アバター', fn: generateHamsterAvatar, voxelSize: 0.12, rank: 'A' },
   // 家具・アイテム
   { id: 'fur-honey', name: '🍯 ハチミツ壺', category: '家具', fn: generateHoneyJar, voxelSize: 0.06, rank: 'S' },
   { id: 'fur-table', name: '🪑 テーブル', category: '家具', fn: generateTable, voxelSize: 0.06, rank: 'A' },
