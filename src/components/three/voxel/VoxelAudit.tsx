@@ -17,7 +17,8 @@ import { OrbitControls } from '@react-three/drei';
 import { VoxelGrid, EmissiveVoxelGrid, type VoxelData } from './VoxelGrid';
 import {
   generateBearAvatar, generateCatAvatar, generateRabbitAvatar,
-  generateDogAvatar, generatePandaAvatar,
+  generateDogAvatar, generatePandaAvatar, generateFoxAvatar,
+  generatePenguinAvatar, generateHamsterAvatar,
 } from './VoxelAvatars';
 import {
   generateHoneyJar, generateTable, generateChair, generateLamp,
@@ -44,11 +45,14 @@ type ModelDef = {
 
 const ALL_MODELS: ModelDef[] = [
   // アバター
-  { id: 'avatar-bear', name: '🐻 クマ', category: 'アバター', fn: generateBearAvatar, voxelSize: 0.06, rank: 'A' },
-  { id: 'avatar-cat', name: '🐱 ネコ', category: 'アバター', fn: generateCatAvatar, voxelSize: 0.06, rank: 'A' },
-  { id: 'avatar-rabbit', name: '🐰 ウサギ', category: 'アバター', fn: generateRabbitAvatar, voxelSize: 0.06, rank: 'A' },
-  { id: 'avatar-dog', name: '🐶 イヌ', category: 'アバター', fn: generateDogAvatar, voxelSize: 0.06, rank: 'A' },
-  { id: 'avatar-panda', name: '🐼 パンダ', category: 'アバター', fn: generatePandaAvatar, voxelSize: 0.06, rank: 'A' },
+  { id: 'avatar-bear', name: '🐻 クマ', category: 'アバター', fn: generateBearAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-cat', name: '🐱 ネコ', category: 'アバター', fn: generateCatAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-rabbit', name: '🐰 ウサギ', category: 'アバター', fn: generateRabbitAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-dog', name: '🐶 イヌ', category: 'アバター', fn: generateDogAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-panda', name: '🐼 パンダ', category: 'アバター', fn: generatePandaAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-fox', name: '🦊 キツネ', category: 'アバター', fn: generateFoxAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-penguin', name: '🐧 ペンギン', category: 'アバター', fn: generatePenguinAvatar, voxelSize: 0.05, rank: 'A' },
+  { id: 'avatar-hamster', name: '🐹 ハムスター', category: 'アバター', fn: generateHamsterAvatar, voxelSize: 0.05, rank: 'A' },
   // 家具・アイテム
   { id: 'fur-honey', name: '🍯 ハチミツ壺', category: '家具', fn: generateHoneyJar, voxelSize: 0.06, rank: 'S' },
   { id: 'fur-table', name: '🪑 テーブル', category: '家具', fn: generateTable, voxelSize: 0.06, rank: 'A' },
@@ -81,14 +85,20 @@ const ALL_MODELS: ModelDef[] = [
 ];
 
 function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: number; onSeedChange: (s: number) => void }) {
-  const data = useMemo(() => model.fn(seed), [model, seed]);
+  const data = useMemo(() => {
+    try { return model.fn(seed); } catch (e) { console.error(`Model ${model.id} failed:`, e); return [[[]]] as VoxelData; }
+  }, [model, seed]);
   const rankColors: Record<string, string> = { S: '#FFD700', A: '#4CAF50', B: '#FF9800', C: '#F44336' };
+  // ボクセル数を自動計算
+  let voxelCount = 0;
+  for (const layer of data) { for (const row of layer) { for (const v of row) { if (v) voxelCount++; } } }
   return (
     <div style={S.card}>
       <div style={S.cardHeader}>
         <span style={S.cardName}>{model.name}</span>
         <span style={{ ...S.badge, background: rankColors[model.rank] ?? '#888' }}>{model.rank}</span>
         <span style={S.catBadge}>{model.category}</span>
+        <span style={{ fontSize: 10, color: '#555' }}>{voxelCount.toLocaleString()} voxels</span>
       </div>
       <div style={S.canvasWrap}>
         <Canvas camera={{ position: [3, 2, 3], fov: 45 }} style={{ background: '#12122a' }}>
@@ -113,7 +123,7 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
 }
 
 export function VoxelAuditPage() {
-  const [filter, setFilter] = useState('全て');
+  const [filter, setFilter] = useState('アバター');
   const [seeds, setSeeds] = useState<Record<string, number>>({});
   const categories = ['全て', 'アバター', '家具', '環境', '旧モデル'];
   const filtered = filter === '全て' ? ALL_MODELS : ALL_MODELS.filter(m => m.category === filter);

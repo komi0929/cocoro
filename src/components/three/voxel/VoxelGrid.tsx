@@ -389,10 +389,11 @@ export function createGrid(sizeX: number, sizeY: number, sizeZ: number): VoxelDa
 export function setVoxel(
   grid: VoxelData, x: number, y: number, z: number, color: string | VoxelBlock,
 ): void {
-  if (y >= 0 && y < grid.length &&
-      z >= 0 && z < grid[y]!.length &&
-      x >= 0 && x < grid[y]![z]!.length) {
-    grid[y]![z]![x] = color;
+  const rx = Math.round(x), ry = Math.round(y), rz = Math.round(z);
+  if (ry >= 0 && ry < grid.length &&
+      rz >= 0 && rz < grid[ry]!.length &&
+      rx >= 0 && rx < grid[ry]![rz]!.length) {
+    grid[ry]![rz]![rx] = color;
   }
 }
 
