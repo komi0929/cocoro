@@ -22,6 +22,9 @@ import {
   generateHoneyJar, generateTable, generateChair, generateLamp,
   generateCushion, generatePottedPlant, generateBookshelf,
   generateBed, generateCake,
+  generateSofa, generateFridge, generateTV, generateWallClock,
+  generateFlowerVase, generateCoffeeTable, generateEasel,
+  generateBookStack, generateYarnBall,
 } from './VoxelFurniture';
 import {
   generateIslandBase, generatePremiumPalmTree, generateBush,
@@ -54,7 +57,11 @@ const ALL_MODELS: ModelDef[] = [
   { id: 'avatar-penguin', name: '🐧 ペンギン', category: 'アバター', fn: generatePenguinAvatar, voxelSize: 0.12, rank: 'A' },
   { id: 'avatar-hamster', name: '🐹 ハムスター', category: 'アバター', fn: generateHamsterAvatar, voxelSize: 0.12, rank: 'A' },
   // 家具・アイテム
-  { id: 'fur-honey', name: '🍯 ハチミツ壺', category: '家具', fn: generateHoneyJar, voxelSize: 0.06, rank: 'S' },
+  { id: 'fur-sofa', name: '🛋️ ソファ', category: '家具', fn: generateSofa, voxelSize: 0.04, rank: 'A' },
+  { id: 'fur-fridge', name: '🧊 冷蔵庫', category: '家具', fn: generateFridge, voxelSize: 0.05, rank: 'A' },
+  { id: 'fur-tv', name: '📺 テレビ', category: '家具', fn: generateTV, voxelSize: 0.06, rank: 'A' },
+  { id: 'fur-clock', name: '🕐 壁時計', category: '家具', fn: generateWallClock, voxelSize: 0.08, rank: 'A' },
+  { id: 'fur-honey', name: '🍯 ハチミツ壺', category: '家具', fn: generateHoneyJar, voxelSize: 0.06, rank: 'A' },
   { id: 'fur-table', name: '🪑 テーブル', category: '家具', fn: generateTable, voxelSize: 0.06, rank: 'A' },
   { id: 'fur-chair', name: '💺 椅子', category: '家具', fn: generateChair, voxelSize: 0.06, rank: 'A' },
   { id: 'fur-lamp', name: '💡 ランプ', category: '家具', fn: generateLamp, voxelSize: 0.06, rank: 'A' },
@@ -63,6 +70,11 @@ const ALL_MODELS: ModelDef[] = [
   { id: 'fur-bookshelf', name: '📚 本棚', category: '家具', fn: generateBookshelf, voxelSize: 0.05, rank: 'A' },
   { id: 'fur-bed', name: '🛏️ ベッド', category: '家具', fn: generateBed, voxelSize: 0.05, rank: 'A' },
   { id: 'fur-cake', name: '🎂 ケーキ', category: '家具', fn: generateCake, voxelSize: 0.06, rank: 'A' },
+  { id: 'fur-flower', name: '🌺 花瓶', category: '家具', fn: generateFlowerVase, voxelSize: 0.06, rank: 'A' },
+  { id: 'fur-coffee', name: '☕ コーヒーテーブル', category: '家具', fn: generateCoffeeTable, voxelSize: 0.06, rank: 'A' },
+  { id: 'fur-easel', name: '🎨 イーゼル', category: '家具', fn: generateEasel, voxelSize: 0.06, rank: 'A' },
+  { id: 'fur-books', name: '📖 本の山', category: '家具', fn: generateBookStack, voxelSize: 0.08, rank: 'A' },
+  { id: 'fur-yarn', name: '🧶 毛糸玉', category: '家具', fn: generateYarnBall, voxelSize: 0.08, rank: 'A' },
   // 環境
   { id: 'env-island', name: '🏝️ 浮島', category: '環境', fn: generateIslandBase, voxelSize: 0.04, rank: 'S' },
   { id: 'env-palm', name: '🌴 ヤシの木（プレミアム）', category: '環境', fn: generatePremiumPalmTree, voxelSize: 0.04, rank: 'S' },
