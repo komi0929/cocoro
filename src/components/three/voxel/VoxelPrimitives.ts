@@ -353,6 +353,77 @@ export function drawCollar(
 }
 
 // ============================================================
+// テーパー形状: 先細り/先太りボックス
+// ============================================================
+
+/** テーパーボックス: Y軸方向に幅が変化するボックス。
+ * bottomW/bottomD が底面、topW/topD が頂面。中間はリニア補間。*/
+export function fillTaperedBox3D(
+  grid: VoxelData,
+  cx: number, y1: number, cz: number,
+  bottomW: number, topW: number,
+  bottomD: number, topD: number,
+  height: number, color: string,
+): void {
+  for (let y = 0; y < height; y++) {
+    const t = height > 1 ? y / (height - 1) : 0;
+    const w = Math.round(bottomW + (topW - bottomW) * t);
+    const d = Math.round(bottomD + (topD - bottomD) * t);
+    const x1 = cx - Math.floor(w / 2);
+    const z1 = cz - Math.floor(d / 2);
+    fillBox(grid, x1, y1 + y, z1, x1 + w - 1, y1 + y, z1 + d - 1, color);
+  }
+}
+
+// ============================================================
+// 2D楕円塗り: 表面にellipseを描画
+// ============================================================
+
+/** 指定面(z固定)に楕円を塗る。ベリー/マズル等の柔らかい形に使用 */
+export function paintEllipse2D(
+  grid: VoxelData,
+  cx: number, cy: number, z: number,
+  rx: number, ry: number, color: string,
+): void {
+  for (let dy = -ry; dy <= ry; dy++) {
+    for (let dx = -rx; dx <= rx; dx++) {
+      if ((dx / rx) ** 2 + (dy / ry) ** 2 <= 1.0) {
+        setVoxel(grid, cx + dx, cy + dy, z, color);
+      }
+    }
+  }
+}
+
+// ============================================================
+// グラデーションボックス: Y方向に色が変化
+// ============================================================
+
+/** Y軸方向にbottomColor→topColorへグラデーションするボックス */
+export function fillGradientBox(
+  grid: VoxelData,
+  x1: number, y1: number, z1: number,
+  x2: number, y2: number, z2: number,
+  bottomColor: string, topColor: string,
+): void {
+  const height = y2 - y1;
+  for (let y = y1; y <= y2; y++) {
+    const t = height > 0 ? (y - y1) / height : 0;
+    const color = lerpColor(bottomColor, topColor, t);
+    fillBox(grid, x1, y, z1, x2, y, z2, color);
+  }
+}
+
+/** 色の線形補間 */
+export function lerpColor(c1: string, c2: string, t: number): string {
+  const r1 = parseInt(c1.slice(1, 3), 16), g1 = parseInt(c1.slice(3, 5), 16), b1 = parseInt(c1.slice(5, 7), 16);
+  const r2 = parseInt(c2.slice(1, 3), 16), g2 = parseInt(c2.slice(3, 5), 16), b2 = parseInt(c2.slice(5, 7), 16);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+}
+
+// ============================================================
 // ユーティリティ
 // ============================================================
 
@@ -365,3 +436,4 @@ export function adjustBrightness(hex: string, factor: number): string {
     Math.min(255, Math.max(0, Math.round(g * factor))).toString(16).padStart(2, '0') +
     Math.min(255, Math.max(0, Math.round(b * factor))).toString(16).padStart(2, '0');
 }
+
