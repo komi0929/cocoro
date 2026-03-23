@@ -15,6 +15,11 @@ import {
   VoxelData, createGrid, setVoxel, fillBox, fillSphere,
   fillCylinder, fillEllipsoid, drawLine,
 } from './VoxelGrid';
+import {
+  fillRoundedBox, fillGradientEllipsoid, fillNoisySphere,
+  fillOrganicRoots, drawKawaiiFace,
+  adjustBrightness, noisyPick, seededRand as designSeededRand,
+} from './VoxelDesign';
 
 // ============================================================
 // 設定型定義
@@ -36,7 +41,16 @@ export type PrimitiveOp =
   | { type: 'scatter'; area: { from: [number, number, number]; to: [number, number, number] }; density: number; color: string | { palette: string; index?: number } }
   | { type: 'repeat'; op: PrimitiveOp; count: number; offset: [number, number, number] }
   | { type: 'ring'; center: [number, number, number]; radius: number; height: number; color: string | { palette: string; index?: number } }
-  | { type: 'taper'; base: [number, number, number]; baseRadius: number; topRadius: number; height: number; color: string | { palette: string; index?: number } };
+  | { type: 'taper'; base: [number, number, number]; baseRadius: number; topRadius: number; height: number; color: string | { palette: string; index?: number } }
+  // === High-quality primitives (VoxelDesign integration) ===
+  | { type: 'rounded_box'; from: [number, number, number]; to: [number, number, number]; color: string | { palette: string; index?: number }; cornerCut?: number }
+  | { type: 'gradient_ellipsoid'; center: [number, number, number]; radii: [number, number, number]; bottomColor: string; topColor: string }
+  | { type: 'noisy_sphere'; center: [number, number, number]; radius: number; palette: string[]; noiseAmount?: number }
+  | { type: 'organic_roots'; center: [number, number, number]; count: number; length: number; palette: string[] }
+  | { type: 'kawaii_face'; center: [number, number]; faceZ: number; eyeColor?: string; noseColor?: string; blushColor?: string; eyeSize?: 'small' | 'medium' | 'large' }
+  | { type: 'noisy_fill'; from: [number, number, number]; to: [number, number, number]; palette: string[]; variance?: number }
+  | { type: 'highlight'; positions: [number, number, number][]; color: string }
+  | { type: 'shade_gradient'; from: [number, number, number]; to: [number, number, number]; baseColor: string; direction: 'y' | 'x' | 'z'; factor?: number };
 
 /** モデル設定（1つのアセットを定義） */
 export interface ModelConfig {
@@ -227,6 +241,63 @@ function executeOp(
             if (dx * dx + dz * dz <= r * r) {
               setVoxel(grid, bx + dx, by + y, bz + dz, color);
             }
+          }
+        }
+      }
+      break;
+    }
+    // === High-quality primitives ===
+    case 'rounded_box': {
+      const color = resolveColor(op.color, palettes, seed);
+      fillRoundedBox(grid, op.from[0], op.from[1], op.from[2], op.to[0], op.to[1], op.to[2], color, op.cornerCut ?? 1);
+      break;
+    }
+    case 'gradient_ellipsoid': {
+      fillGradientEllipsoid(grid, op.center[0], op.center[1], op.center[2], op.radii[0], op.radii[1], op.radii[2], op.bottomColor, op.topColor);
+      break;
+    }
+    case 'noisy_sphere': {
+      fillNoisySphere(grid, op.center[0], op.center[1], op.center[2], op.radius, op.palette, seed, op.noiseAmount ?? 0.15);
+      break;
+    }
+    case 'organic_roots': {
+      fillOrganicRoots(grid, op.center[0], op.center[1], op.center[2], op.count, op.length, op.palette, seed);
+      break;
+    }
+    case 'kawaii_face': {
+      drawKawaiiFace(grid, op.center[0], op.center[1], op.faceZ, op.eyeColor ?? '#111111', op.noseColor ?? '#FF8C00', op.blushColor ?? '#FFB6C1', op.eyeSize ?? 'medium');
+      break;
+    }
+    case 'noisy_fill': {
+      const variance = op.variance ?? 0.1;
+      for (let y = op.from[1]; y <= op.to[1]; y++) {
+        for (let z = op.from[2]; z <= op.to[2]; z++) {
+          for (let x = op.from[0]; x <= op.to[0]; x++) {
+            const voxelSeed = seed + x * 7 + y * 13 + z * 19;
+            setVoxel(grid, x, y, z, noisyPick(op.palette, voxelSeed, variance));
+          }
+        }
+      }
+      break;
+    }
+    case 'highlight': {
+      for (const [hx, hy, hz] of op.positions) {
+        setVoxel(grid, hx, hy, hz, op.color);
+      }
+      break;
+    }
+    case 'shade_gradient': {
+      const dir = op.direction;
+      const f = op.factor ?? 0.3;
+      const [gx1, gy1, gz1] = op.from;
+      const [gx2, gy2, gz2] = op.to;
+      const maxDim = dir === 'y' ? gy2 - gy1 : dir === 'x' ? gx2 - gx1 : gz2 - gz1;
+      for (let y = gy1; y <= gy2; y++) {
+        for (let z = gz1; z <= gz2; z++) {
+          for (let x = gx1; x <= gx2; x++) {
+            const pos = dir === 'y' ? y - gy1 : dir === 'x' ? x - gx1 : z - gz1;
+            const t = maxDim > 0 ? pos / maxDim : 0;
+            setVoxel(grid, x, y, z, adjustBrightness(op.baseColor, 1 - f + f * t));
           }
         }
       }
