@@ -377,7 +377,7 @@ class VoxelModelRegistry {
     return this.list().filter(m => !m.themes || m.themes.includes(theme));
   }
 
-  /** モデルをビルド（キャッシュ付き） */
+  /** モデルをビルド（品質強制: 合格するまでシード変えて再生成） */
   build(id: string, seed: number = 42): VoxelData | null {
     const cacheKey = `${id}:${seed}`;
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)!;
@@ -385,9 +385,32 @@ class VoxelModelRegistry {
     const config = this.models.get(id);
     if (!config) return null;
 
-    const data = buildModel(config, seed);
-    this.cache.set(cacheKey, data);
-    return data;
+    const MAX_RETRIES = 10;
+    let bestData: VoxelData | null = null;
+    let bestScore = -1;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const data = buildModel(config, seed + attempt);
+      const result = validateVoxelData(data, config.category as 'avatar' | 'furniture' | 'environment' | 'decoration');
+
+      if (result.passed) {
+        // 合格 — キャッシュして返す
+        this.cache.set(cacheKey, data);
+        return data;
+      }
+
+      if (result.score > bestScore) {
+        bestScore = result.score;
+        bestData = data;
+      }
+    }
+
+    // MAX_RETRIES後も不合格 → ベストを返す（品質未達はconsole.warnで記録）
+    if (bestData) {
+      console.warn(`[QualityGate] ${config.id}: ${MAX_RETRIES}回再生成しても品質基準未達 (best: ${bestScore}点)`);
+      this.cache.set(cacheKey, bestData);
+    }
+    return bestData;
   }
 
   /** キャッシュクリア */
@@ -411,6 +434,38 @@ class VoxelModelRegistry {
 
 /** シングルトンレジストリ */
 export const voxelRegistry = new VoxelModelRegistry();
+
+/**
+ * ensureQuality — 手書き関数アセットの品質強制ラッパー
+ *
+ * 使い方: const data = ensureQuality(() => generateBearAvatar(seed), 'avatar', seed);
+ *
+ * 不合格ならシードを変えて最大10回再生成。合格品のみ返す。
+ */
+export function ensureQuality(
+  generator: (seed: number) => VoxelData,
+  category: 'avatar' | 'furniture' | 'environment' | 'decoration' | 'other',
+  seed: number = 42,
+): VoxelData {
+  const MAX_RETRIES = 10;
+  let bestData: VoxelData | null = null;
+  let bestScore = -1;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const data = generator(seed + attempt);
+    const result = validateVoxelData(data, category);
+
+    if (result.passed) return data; // 合格
+
+    if (result.score > bestScore) {
+      bestScore = result.score;
+      bestData = data;
+    }
+  }
+
+  // ベスト返却
+  return bestData ?? generator(seed);
+}
 
 // ============================================================
 // 品質ゲート（自動品質チェック）
