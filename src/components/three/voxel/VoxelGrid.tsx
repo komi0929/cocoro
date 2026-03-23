@@ -206,23 +206,13 @@ function buildVoxelMesh(data: VoxelData, voxelSize: number, enableAO: boolean, a
           const nz = z + face.dir[2];
           if (isBlock(getVoxel(data, nx, ny, nz))) continue;
 
-          // 4頂点追加 (bevel inset: 各頂点を角から少し内側にずらして丸みを出す)
-          const inset = voxelSize * 0.08; // 8% inset for subtle bevel
+          // 4頂点追加
           for (let vi = 0; vi < 4; vi++) {
             const corner = face.corners[vi]!;
-            // 各コーナー座標(0 or 1)に応じてinsetを適用
-            // corner=0 → +inset, corner=1 → -inset
-            const ix = corner[0]! === 0 ? inset : -inset;
-            const iy = corner[1]! === 0 ? inset : -inset;
-            const iz = corner[2]! === 0 ? inset : -inset;
-            // 法線方向にはinsetを適用しない(面の位置は維持)
-            const applyX = Math.abs(face.normal[0]) < 0.5 ? ix : 0;
-            const applyY = Math.abs(face.normal[1]) < 0.5 ? iy : 0;
-            const applyZ = Math.abs(face.normal[2]) < 0.5 ? iz : 0;
             positions.push(
-              ox + corner[0]! * voxelSize + applyX,
-              oy + corner[1]! * voxelSize + applyY,
-              oz + corner[2]! * voxelSize + applyZ,
+              ox + corner[0]! * voxelSize,
+              oy + corner[1]! * voxelSize,
+              oz + corner[2]! * voxelSize,
             );
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
 
@@ -294,37 +284,131 @@ export function VoxelGrid({
   castShadow = true,
   receiveShadow = true,
 }: VoxelGridProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.InstancedMesh>(null);
 
-  const geometry = useMemo(() => {
-    const meshData = buildVoxelMesh(data, voxelSize, enableAO, aoIntensity);
-    if (meshData.positions.length === 0) return null;
+  // ボクセルデータを展開: 位置と色の配列
+  const { count, positions: voxPositions, colors: voxColors } = useMemo(() => {
+    const positions: [number, number, number][] = [];
+    const colors: THREE.Color[] = [];
+    const sizeY = data.length;
+    if (sizeY === 0) return { count: 0, positions: [] as [number, number, number][], colors: [] as THREE.Color[] };
+    const sizeZ = data[0]!.length;
+    const sizeX = data[0]![0]!.length;
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(meshData.positions, 3));
-    geo.setAttribute('normal', new THREE.Float32BufferAttribute(meshData.normals, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(meshData.colors, 3));
-    geo.setIndex(meshData.indices);
-    geo.computeBoundingSphere();
-    return geo;
+    for (let y = 0; y < sizeY; y++) {
+      for (let z = 0; z < sizeZ; z++) {
+        for (let x = 0; x < sizeX; x++) {
+          const cell = getVoxel(data, x, y, z);
+          if (!isBlock(cell)) continue;
+
+          const col = new THREE.Color(getColor(cell));
+
+          // 面シェーディング + AO を近似的にvertex colorにbake
+          if (enableAO) {
+            // 周囲のブロック数をカウントしてAOを計算
+            let occluders = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dz2 = -1; dz2 <= 1; dz2++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  if (dx === 0 && dy === 0 && dz2 === 0) continue;
+                  if (isBlock(getVoxel(data, x + dx, y + dy, z + dz2))) occluders++;
+                }
+              }
+            }
+            const aoFactor = 1.0 - (occluders / 26) * aoIntensity * 0.6;
+            col.multiplyScalar(aoFactor);
+          }
+
+          positions.push([
+            (x - sizeX / 2) * voxelSize,
+            y * voxelSize,
+            (z - sizeZ / 2) * voxelSize,
+          ]);
+          colors.push(col);
+        }
+      }
+    }
+
+    return { count: positions.length, positions, colors };
   }, [data, voxelSize, enableAO, aoIntensity]);
+
+  // InstancedMeshの行列と色を設定
+  useEffect(() => {
+    if (!meshRef.current || count === 0) return;
+
+    const dummy = new THREE.Object3D();
+    const blockScale = 0.93; // 93%スケールで微細な隙間を作り、ナノブロック感を演出
+
+    for (let i = 0; i < count; i++) {
+      const [px, py, pz] = voxPositions[i]!;
+      dummy.position.set(px, py, pz);
+      dummy.scale.setScalar(blockScale);
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+      meshRef.current.setColorAt(i, voxColors[i]!);
+    }
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) {
+      meshRef.current.instanceColor.needsUpdate = true;
+    }
+  }, [count, voxPositions, voxColors]);
+
+  // RoundedBox geometry (角丸キューブ)
+  const geometry = useMemo(() => {
+    const s = voxelSize;
+    const radius = s * 0.12; // 12%の角丸
+    const segments = 2; // 角丸のセグメント数(軽量化のため2)
+    // drei の RoundedBoxGeometry を直接生成
+    const { RoundedBoxGeometry } = require('@react-three/drei');
+    // RoundedBoxGeometryはクラスとしてexportされている場合とそうでない場合がある
+    // Three.js標準のBoxGeometryにbevelを近似
+    const geo = new THREE.BoxGeometry(s, s, s, 1, 1, 1);
+    // 各頂点を球面方向にわずかに膨らませてbevel効果を近似
+    const posAttr = geo.attributes.position!;
+    const center = new THREE.Vector3();
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+      const vz = posAttr.getZ(i);
+      // 各頂点を中心(0,0,0)からの方向に沿って正規化し、s/2とradiusの間でlerp
+      center.set(vx, vy, vz);
+      const maxComponent = Math.max(Math.abs(vx), Math.abs(vy), Math.abs(vz));
+      if (maxComponent > 0) {
+        // 角を丸める: 各軸で半径を超える分を削る
+        const nx = Math.min(Math.abs(vx), s / 2 - radius) * Math.sign(vx);
+        const ny = Math.min(Math.abs(vy), s / 2 - radius) * Math.sign(vy);
+        const nz = Math.min(Math.abs(vz), s / 2 - radius) * Math.sign(vz);
+        // 削った分を球面方向に移動
+        const dx = vx - nx;
+        const dy = vy - ny;
+        const dz = vz - nz;
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len > 0.0001) {
+          const scale2 = radius / len;
+          posAttr.setXYZ(i, nx + dx * scale2, ny + dy * scale2, nz + dz * scale2);
+        }
+      }
+    }
+    posAttr.needsUpdate = true;
+    geo.computeVertexNormals();
+    return geo;
+  }, [voxelSize]);
 
   const material = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.38,    // ナノブロック風の光沢感（参考画像は艶あり）
-      metalness: 0.12,    // わずかな金属感で高級感
-      flatShading: true,  // ボクセルらしいフラットシェーディング
+      roughness: 0.35,    // ナノブロック風の光沢感
+      metalness: 0.08,    // わずかな金属感
+      flatShading: false,  // スムーズシェーディングで角丸を活かす
     });
   }, []);
 
-  if (!geometry) return null;
+  if (count === 0) return null;
 
   return (
-    <mesh
+    <instancedMesh
       ref={meshRef}
-      geometry={geometry}
-      material={material}
+      args={[geometry, material, count]}
       position={position}
       rotation={rotation}
       scale={scale}
