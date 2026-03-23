@@ -13,6 +13,7 @@ import { ROOM_THEMES } from '@/types/cocoro';
 import type { RoomThemeDef } from '@/types/cocoro';
 import { ThemeParticles } from './ThemeParticles';
 import { ThemeDecorations } from './ThemeDecorations';
+import { ThemeArchitecture } from './ThemeArchitecture';
 import { FloorOverlay, WallOverlay, getFloorMaterialProps, getWallMaterialProps } from './ThemeMaterials';
 
 const ROOM_W = 8;
@@ -324,6 +325,9 @@ export function AjitRoom() {
 
       {/* ===== Theme Decorations ===== */}
       <ThemeDecorations theme={themeId} />
+
+      {/* ===== Theme Architecture (扉・天井照明・壁装飾・窓) ===== */}
+      <ThemeArchitecture theme={themeId} />
 
       {/* ===== Contact Shadows ===== */}
       <ContactShadows
