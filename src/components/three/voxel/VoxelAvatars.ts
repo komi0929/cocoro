@@ -227,6 +227,12 @@ export function generateBearAvatar(_seed = 42): VoxelData {
   fillBox(g, 10,19,10, 12,21,10, E);
   setVoxel(g, 10,21,10, Hi); // highlight top-left
 
+  // === CHEEKS (ほっぺ — ピンク) ===
+  setVoxel(g, 4,17,10, '#FFB6C1');
+  setVoxel(g, 4,18,10, '#FFB6C1');
+  setVoxel(g, 13,17,10, '#FFB6C1');
+  setVoxel(g, 13,18,10, '#FFB6C1');
+
   // === MOUTH ===
   setVoxel(g, 8,16,12, '#555555');
   setVoxel(g, 9,16,12, '#555555');
@@ -308,6 +314,12 @@ export function generateCatAvatar(_seed = 100): VoxelData {
   setVoxel(g, 5,19,10, C.highlight);
   fillBox(g, 10,17,10, 12,19,10, C.eye);
   setVoxel(g, 10,19,10, C.highlight);
+
+  // CHEEKS (ほっぺ — ピンク)
+  setVoxel(g, 4,15,10, '#FFB6C1');
+  setVoxel(g, 4,16,10, '#FFB6C1');
+  setVoxel(g, 13,15,10, '#FFB6C1');
+  setVoxel(g, 13,16,10, '#FFB6C1');
 
   // POINTED EARS
   fillBox(g, 3,23,5, 5,25,8, C.body);
@@ -459,6 +471,12 @@ export function generateDogAvatar(_seed = 300): VoxelData {
   fillBox(g, 10,19,10, 12,21,10, Dg.eye);
   setVoxel(g, 10,21,10, '#FFFFFF');
 
+  // CHEEKS (ほっぺ — ピンク)
+  setVoxel(g, 4,17,10, '#FFB6C1');
+  setVoxel(g, 4,18,10, '#FFB6C1');
+  setVoxel(g, 13,17,10, '#FFB6C1');
+  setVoxel(g, 13,18,10, '#FFB6C1');
+
   // TONGUE (small red on muzzle)
   setVoxel(g, 8,16,12, Dg.tongue);
   setVoxel(g, 9,16,12, Dg.tongue);
@@ -540,6 +558,12 @@ export function generatePandaAvatar(_seed = 400): VoxelData {
   setVoxel(g, 5, 20, 10, P.highlight);
   setVoxel(g, 12, 20, 10, P.highlight);
 
+  // CHEEKS (ほっぺ — ピンク)
+  setVoxel(g, 4,17,10, '#FFB6C1');
+  setVoxel(g, 4,18,10, '#FFB6C1');
+  setVoxel(g, 13,17,10, '#FFB6C1');
+  setVoxel(g, 13,18,10, '#FFB6C1');
+
   // EARS (black round)
   fillBox(g, 3,23,5, 5,25,8, P.black);
   fillBox(g, 12,23,5, 14,25,8, P.black);
@@ -605,6 +629,12 @@ export function generateFoxAvatar(_seed = 500): VoxelData {
   setVoxel(g, 5,19,11, F.highlight);
   fillBox(g, 10,17,11, 12,19,11, F.eye);
   setVoxel(g, 10,19,11, F.highlight);
+
+  // CHEEKS (ほっぺ — ピンク)
+  setVoxel(g, 4,15,11, '#FFB6C1');
+  setVoxel(g, 4,16,11, '#FFB6C1');
+  setVoxel(g, 13,15,11, '#FFB6C1');
+  setVoxel(g, 13,16,11, '#FFB6C1');
 
   // TALL POINTED EARS (5 blocks tall)
   for (let h = 0; h < 5; h++) {
