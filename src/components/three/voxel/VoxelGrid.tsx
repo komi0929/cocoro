@@ -358,12 +358,7 @@ export function VoxelGrid({
   const geometry = useMemo(() => {
     const s = voxelSize;
     const radius = s * 0.12; // 12%の角丸
-    const segments = 2; // 角丸のセグメント数(軽量化のため2)
-    // drei の RoundedBoxGeometry を直接生成
-    const { RoundedBoxGeometry } = require('@react-three/drei');
-    // RoundedBoxGeometryはクラスとしてexportされている場合とそうでない場合がある
-    // Three.js標準のBoxGeometryにbevelを近似
-    const geo = new THREE.BoxGeometry(s, s, s, 1, 1, 1);
+    const geo = new THREE.BoxGeometry(s, s, s, 2, 2, 2);
     // 各頂点を球面方向にわずかに膨らませてbevel効果を近似
     const posAttr = geo.attributes.position!;
     const center = new THREE.Vector3();
