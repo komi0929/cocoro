@@ -236,7 +236,7 @@ function ThemeWindow({
 function UndergroundArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.08]} doorColor="#4a3728" frameColor="#5C4033" knobColor="#8B7355" style="arch" />
+      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#4a3728" frameColor="#5C4033" knobColor="#8B7355" style="arch" />
       <PendantCeilingLight position={[-1.5, ROOM_H, -1.5]} lampColor="#8B7355" emissiveColor="#FFB347" intensity={1.5} shape="lantern" />
       <PendantCeilingLight position={[1.5, ROOM_H, 1.5]} lampColor="#8B7355" emissiveColor="#FFB347" intensity={1.2} shape="lantern" />
       {/* 壁掛けトーチ */}
@@ -256,6 +256,10 @@ function UndergroundArchitecture() {
       {/* 石柱 */}
       <NoisyCylinder args={[0.15, 0.18, ROOM_H, 8]} position={[-ROOM_W / 2 + 0.5, ROOM_H / 2, -ROOM_D / 2 + 0.5]} color="#5C4033" seed={620} />
       <NoisyCylinder args={[0.15, 0.18, ROOM_H, 8]} position={[ROOM_W / 2 - 0.5, ROOM_H / 2, -ROOM_D / 2 + 0.5]} color="#5C4033" seed={621} />
+      {/* 追加棚とフレーム(壁密度向上) */}
+      <WallShelfWithItems position={[-1.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#5C4033" itemColors={['#FF6B35', '#FFB347', '#8B4513', '#DAA520', '#CD853F']} />
+      <WallShelfWithItems position={[-1.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#5C4033" itemColors={['#CD853F', '#DEB887', '#D2691E', '#B8860B']} />
+      <WallFrame position={[-3, 2, -ROOM_D / 2 + 0.15]} frameColor="#5C4033" innerColor="#2F4F4F" size={[0.6, 0.5]} />
     </group>
   );
 }
@@ -263,11 +267,11 @@ function UndergroundArchitecture() {
 function TreehouseArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.08]} doorColor="#8B6914" frameColor="#5C3A1E" knobColor="#FFD700" style="standard" />
+      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#8B6914" frameColor="#5C3A1E" knobColor="#FFD700" style="standard" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#228B22" emissiveColor="#AAFF77" intensity={1.5} shape="dome" />
       <PendantCeilingLight position={[-2, ROOM_H, -2]} lampColor="#3CB371" emissiveColor="#77FF99" intensity={0.8} shape="crystal" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 0]} rotation={[0, -Math.PI / 2, 0]} frameColor="#5C3A1E" glassColor="#87CEEB" shape="round" glowColor="#AAFF77" />
-      <WallShelfWithItems position={[0.5, 2.2, -ROOM_D / 2 + 0.08]} shelfColor="#78350f" itemColors={['#FF6B6B', '#4ECDC4', '#FFE66D', '#a78bfa']} />
+      <WallShelfWithItems position={[0.5, 2.2, -ROOM_D / 2 + 0.2]} shelfColor="#78350f" itemColors={['#FF6B6B', '#4ECDC4', '#FFE66D', '#a78bfa']} />
       <WallFrame position={[-2, 2, -ROOM_D / 2 + 0.1]} frameColor="#5C3A1E" innerColor="#2E7D32" size={[0.5, 0.4]} />
       {/* ツタ */}
       {[-2, 0, 2].map((x, i) => (
@@ -276,6 +280,10 @@ function TreehouseArchitecture() {
           <NoisySphere args={[0.05, 6, 6]} position={[x + 0.2, ROOM_H - 0.3, -0.8 + i * 0.5]} color="#4CAF50" seed={710 + i} />
         </group>
       ))}
+      {/* 追加棚+フレーム(壁密度向上) */}
+      <WallShelfWithItems position={[2.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#78350f" itemColors={['#FFD700', '#4CAF50', '#FF9800', '#E91E63', '#2196F3']} />
+      <WallShelfWithItems position={[2.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#78350f" itemColors={['#8BC34A', '#FF5722', '#3F51B5', '#9C27B0']} />
+      <WallFrame position={[1.5, 2.4, -ROOM_D / 2 + 0.15]} frameColor="#5C3A1E" innerColor="#87CEEB" size={[0.5, 0.35]} />
     </group>
   );
 }
@@ -283,7 +291,7 @@ function TreehouseArchitecture() {
 function BeachArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[0, 0, -ROOM_D / 2 + 0.08]} doorColor="#D4A574" frameColor="#8B6914" knobColor="#C0C0C0" style="standard" />
+      <ThemeDoor position={[0, 0, -ROOM_D / 2 + 0.2]} doorColor="#D4A574" frameColor="#8B6914" knobColor="#C0C0C0" style="standard" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#F5F0E0" emissiveColor="#FFE4B5" intensity={2} shape="dome" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, -1]} rotation={[0, -Math.PI / 2, 0]} frameColor="#F5F0E0" glassColor="#87CEEB" shape="rect" glowColor="#87CEEB" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 1.5]} rotation={[0, -Math.PI / 2, 0]} frameColor="#F5F0E0" glassColor="#87CEEB" shape="rect" glowColor="#87CEEB" />
@@ -292,7 +300,11 @@ function BeachArchitecture() {
         <NoisyBox size={[0.12, 1.2, 0.04]} position={[0, 0, 0]} color="#FF6B6B" seed={800} lightnessSpread={0.15} />
       </group>
       <WallFrame position={[1.5, 2.3, -ROOM_D / 2 + 0.1]} frameColor="#D4A574" innerColor="#4FC3F7" size={[0.7, 0.45]} />
-      <WallShelfWithItems position={[-2, 2, -ROOM_D / 2 + 0.08]} shelfColor="#D4A574" itemColors={['#FFB6C1', '#E0E0E0', '#FFD700', '#FF8A80']} />
+      <WallShelfWithItems position={[-2, 2, -ROOM_D / 2 + 0.2]} shelfColor="#D4A574" itemColors={['#FFB6C1', '#E0E0E0', '#FFD700', '#FF8A80']} />
+      {/* 追加棚+フレーム */}
+      <WallShelfWithItems position={[2.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#D4A574" itemColors={['#87CEEB', '#FFD700', '#FF6B6B', '#4FC3F7', '#FFF176']} />
+      <WallShelfWithItems position={[2.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#D4A574" itemColors={['#FFB74D', '#81C784', '#64B5F6', '#E57373']} />
+      <WallFrame position={[-3, 2.3, -ROOM_D / 2 + 0.15]} frameColor="#D4A574" innerColor="#FFE0B2" size={[0.5, 0.4]} />
     </group>
   );
 }
@@ -300,7 +312,7 @@ function BeachArchitecture() {
 function SpaceArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2.5, 0, -ROOM_D / 2 + 0.08]} doorColor="#778899" frameColor="#555555" knobColor="#00BFFF" style="hatch" />
+      <ThemeDoor position={[2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#778899" frameColor="#555555" knobColor="#00BFFF" style="hatch" />
       <PendantCeilingLight position={[-1.5, ROOM_H, -1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[1.5, ROOM_H, 1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 0]} rotation={[0, -Math.PI / 2, 0]} frameColor="#555555" glassColor="#0D1B2A" shape="porthole" glowColor="#4FC3F7" />
@@ -326,7 +338,7 @@ function SpaceArchitecture() {
 function RooftopArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2.5, 0, -ROOM_D / 2 + 0.08]} doorColor="#78909C" frameColor="#546E7A" knobColor="#FFD54F" style="standard" />
+      <ThemeDoor position={[-2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#78909C" frameColor="#546E7A" knobColor="#FFD54F" style="standard" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#37474F" cordColor="#455A64" emissiveColor="#FFE082" intensity={2} shape="cage" />
       <PendantCeilingLight position={[-2.5, ROOM_H, 2]} lampColor="#37474F" cordColor="#455A64" emissiveColor="#FFE082" intensity={1} shape="industrial" />
       {/* フェンス */}
@@ -335,6 +347,9 @@ function RooftopArchitecture() {
       ))}
       <NoisyBox size={[0.04, 0.04, ROOM_D - 1]} position={[ROOM_W / 2 - 0.1, 1.2, 0]} color="#78909C" seed={1010} />
       <WallFrame position={[1, 1.8, -ROOM_D / 2 + 0.1]} frameColor="#37474F" innerColor="#FF5252" size={[0.8, 0.6]} />
+      {/* 追加棚+フレーム */}
+      <WallShelfWithItems position={[2.5, 2, -ROOM_D / 2 + 0.2]} shelfColor="#546E7A" itemColors={['#FFD54F', '#EF5350', '#66BB6A', '#42A5F5', '#AB47BC']} />
+      <WallShelfWithItems position={[-1, 1.8, -ROOM_D / 2 + 0.2]} shelfColor="#546E7A" itemColors={['#FF7043', '#26C6DA', '#D4E157', '#8D6E63']} />
     </group>
   );
 }
@@ -342,12 +357,16 @@ function RooftopArchitecture() {
 function RetroGamingArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-3, 0, -ROOM_D / 2 + 0.08]} doorColor="#C8976B" frameColor="#8B6914" knobColor="#f472b6" style="standard" />
+      <ThemeDoor position={[-3, 0, -ROOM_D / 2 + 0.2]} doorColor="#C8976B" frameColor="#8B6914" knobColor="#f472b6" style="standard" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#1e1b4b" emissiveColor="#f472b6" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[-2, ROOM_H, -2]} lampColor="#1e1b4b" emissiveColor="#67e8f9" intensity={1} shape="cage" />
       <WallFrame position={[-1, 2.2, -ROOM_D / 2 + 0.1]} frameColor="#312e81" innerColor="#7c3aed" size={[0.5, 0.7]} />
       <WallFrame position={[2, 2.2, -ROOM_D / 2 + 0.1]} frameColor="#312e81" innerColor="#f472b6" size={[0.4, 0.5]} />
-      <WallShelfWithItems position={[1, 1.5, -ROOM_D / 2 + 0.08]} shelfColor="#312e81" itemColors={['#f472b6', '#67e8f9', '#fbbf24', '#a78bfa', '#34d399']} />
+      <WallShelfWithItems position={[1, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#312e81" itemColors={['#f472b6', '#67e8f9', '#fbbf24', '#a78bfa', '#34d399']} />
+      {/* 追加棚+フレーム(壁密度向上) */}
+      <WallShelfWithItems position={[-1, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#312e81" itemColors={['#f472b6', '#34d399', '#fbbf24', '#67e8f9']} />
+      <WallShelfWithItems position={[2.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#312e81" itemColors={['#a78bfa', '#fbbf24', '#67e8f9', '#f472b6', '#34d399']} />
+      <WallFrame position={[0.5, 2.6, -ROOM_D / 2 + 0.15]} frameColor="#312e81" innerColor="#67e8f9" size={[0.6, 0.4]} />
       {/* ネオンLED */}
       <EmissiveBox size={[ROOM_W - 0.5, 0.02, 0.02]} position={[0, ROOM_H - 0.08, -ROOM_D / 2 + 0.15]} color="#f472b6" emissiveIntensity={3} />
       <EmissiveBox size={[0.02, 0.02, ROOM_D - 0.5]} position={[-ROOM_W / 2 + 0.15, ROOM_H - 0.08, 0]} color="#67e8f9" emissiveIntensity={3} />
@@ -359,7 +378,7 @@ function RetroGamingArchitecture() {
 function AquariumArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.08]} doorColor="#5A7A9C" frameColor="#2A5A8C" knobColor="#C0C0C0" style="hatch" />
+      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#5A7A9C" frameColor="#2A5A8C" knobColor="#C0C0C0" style="hatch" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={1.5} shape="crystal" />
       <PendantCeilingLight position={[-2, ROOM_H, 2]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={0.8} shape="crystal" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, -1]} rotation={[0, -Math.PI / 2, 0]} frameColor="#2A5A8C" glassColor="#0D47A1" shape="porthole" glowColor="#4FC3F7" />
@@ -374,7 +393,7 @@ function AquariumArchitecture() {
 function VolcanoArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.08]} doorColor="#3E2723" frameColor="#4E342E" knobColor="#FF8F00" style="arch" />
+      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#3E2723" frameColor="#4E342E" knobColor="#FF8F00" style="arch" />
       <PendantCeilingLight position={[-1, ROOM_H, -1]} lampColor="#4E342E" emissiveColor="#FF6D00" intensity={2} shape="lantern" />
       <PendantCeilingLight position={[1, ROOM_H, 1]} lampColor="#4E342E" emissiveColor="#FF6D00" intensity={2} shape="lantern" />
       {/* 壁トーチ */}
