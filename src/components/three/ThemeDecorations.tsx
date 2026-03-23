@@ -13,7 +13,7 @@ import {
   VoxelCoralModel, VoxelMushroomModel, VoxelLavaModel,
   VoxelSeaweedModel, VoxelBuildingModel, VoxelWaterTowerModel,
   VoxelSpaceConsoleModel, VoxelTreasureChestModel, VoxelJellyfishModel,
-  VoxelGrassModel,
+  VoxelGrassModel, VoxelFireplaceModel,
 } from './voxel/VoxelAssets';
 import { NoisyBox, NoisyCylinder, NoisySphere, EmissiveBox } from './furniture/VoxelBuilder';
 
@@ -316,17 +316,9 @@ function LoftDecorations() {
         ))}
       </group>
 
-      {/* Fireplace */}
-      <group position={[0, 0, -ROOM_D / 2 + 0.3]}>
-        <NoisyBox size={[1.3, 0.75, 0.55]} position={[0, 0.375, 0]} color="#8B4513" roughness={0.88} seed={3150} bevel={0.02} />
-        <NoisyBox size={[0.75, 0.5, 0.35]} position={[0, 0.3, 0.12]} color="#1a0a00" roughness={0.95} seed={3151} bevel={0.015} />
-        <NoisyCylinder args={[0.04, 0.04, 0.5]} position={[-0.1, 0.12, 0.2]} rotation={[0, 0.3, Math.PI / 2]} color="#5C3D1E" roughness={0.9} seed={3160} />
-        <EmissiveBox size={[0.08, 0.12, 0.05]} position={[-0.05, 0.2, 0.2]} color="#FF6B35" emissiveIntensity={2} />
-        <EmissiveBox size={[0.06, 0.1, 0.04]} position={[0.05, 0.22, 0.18]} color="#FF4500" emissiveIntensity={2.5} />
-        <EmissiveBox size={[0.04, 0.08, 0.03]} position={[0, 0.25, 0.2]} color="#FFD700" emissiveIntensity={1.8} />
-        <NoisyBox size={[1.5, 0.08, 0.6]} position={[0, 0.77, 0]} color="#654321" roughness={0.6} seed={3152} bevel={0.015} />
-        <pointLight ref={fireRef} position={[0, 0.3, 0.2]} color="#FF6B35" intensity={3} distance={4} decay={2} />
-      </group>
+      {/* Fireplace — VoxelGrid高精細 */}
+      <VoxelFireplaceModel position={[-0.7, 0, -ROOM_D / 2 + 0.3]} seed={3150} voxelSize={0.07} scale={1.2} />
+      <pointLight ref={fireRef} position={[0, 0.3, -ROOM_D / 2 + 0.5]} color="#FF6B35" intensity={3} distance={4} decay={2} />
 
       {/* Rug */}
       <NoisyBox size={[2, 0.015, 1.5]} position={[0, 0.008, 1]} color="#8B0000" roughness={0.95} seed={3210} bevel={0.005} />

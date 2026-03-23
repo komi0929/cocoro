@@ -298,6 +298,7 @@ function TreehouseArchitecture() {
       <VoxelLetterBlockModel position={[2.7, 2.65, -ROOM_D / 2 + 0.25]} letter="A" blockColor="#FF0000" seed={3010} />
       <VoxelLetterBlockModel position={[2.9, 2.65, -ROOM_D / 2 + 0.25]} letter="B" blockColor="#00AA00" seed={3011} />
       <VoxelLetterBlockModel position={[3.1, 2.65, -ROOM_D / 2 + 0.25]} letter="C" blockColor="#0000FF" seed={3012} />
+      <VoxelDoorModel position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#8B6914" frameColor="#5C3A1E" seed={3100} voxelSize={0.09} />
     </group>
   );
 }
