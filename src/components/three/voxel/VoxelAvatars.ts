@@ -764,13 +764,150 @@ export function generateHamsterAvatar(_seed = 700): VoxelData {
 }
 
 // ============================================================
+// FROG — 緑カエル: 大きな目、丸い体、ぴょんと跳ねるポーズ
+// Grid: 18W × 26H × 14D (他アバターと同じ)
+// ============================================================
+const FROG = {
+  body: '#4CAF50',      // メイングリーン
+  dark: '#388E3C',      // ダークグリーン（影、足裏）
+  light: '#81C784',     // ライトグリーン（ハイライト）
+  belly: '#C8E6C9',     // ベリー（白っぽいグリーン）
+  eye: '#1A1A1A',       // 黒（瞳）
+  eyeWhite: '#FFFFFF',  // 白目
+  highlight: '#FFFFFF',  // ハイライト
+  cheek: '#FFB6C1',     // ほっぺ（ピンク）
+  mouth: '#2E7D32',     // 口
+};
+
+export function generateFrogAvatar(_seed = 800): VoxelData {
+  const W = 18, H = 26, D = 14;
+  const g = createGrid(W, H, D);
+  const F = FROG;
+
+  // === FEET (y=0..1) — 水かき付きの広い足 ===
+  // Left foot (wide, webbed)
+  fillBox(g, 2,0,4, 7,0,9, F.dark);
+  fillBox(g, 3,1,5, 6,1,8, F.body);
+  // Webbing detail (front toes)
+  setVoxel(g, 2,0,9, F.light);
+  setVoxel(g, 4,0,9, F.light);
+  setVoxel(g, 7,0,9, F.light);
+  // Right foot
+  fillBox(g, 10,0,4, 15,0,9, F.dark);
+  fillBox(g, 11,1,5, 14,1,8, F.body);
+  setVoxel(g, 10,0,9, F.light);
+  setVoxel(g, 13,0,9, F.light);
+  setVoxel(g, 15,0,9, F.light);
+
+  // === LEGS (y=2..5) — 短くてがっしり ===
+  fillBox(g, 4,2,5, 6,4,7, F.body);
+  fillBox(g, 11,2,5, 13,4,7, F.body);
+  // Inner thigh highlight
+  fillBox(g, 5,3,6, 5,4,6, F.light);
+  fillBox(g, 12,3,6, 12,4,6, F.light);
+
+  // === BODY (y=5..13) — 丸くてぷっくり ===
+  fillBox(g, 3,5,4, 14,13,9, F.body);
+  // Belly (front face, lighter green-white)
+  for (let dy = 0; dy < 7; dy++) {
+    const y = 6 + dy;
+    const hw = dy <= 1 || dy >= 5 ? 2 : (dy <= 2 || dy >= 4 ? 3 : 4);
+    for (let dx = -hw; dx <= hw; dx++) {
+      setVoxel(g, 9 + dx, y, 9, F.belly);
+    }
+  }
+  // Body corners cut (rounded look)
+  setVoxel(g, 3,5,4, null as unknown as string);
+  setVoxel(g, 14,5,4, null as unknown as string);
+  setVoxel(g, 3,5,9, null as unknown as string);
+  setVoxel(g, 14,5,9, null as unknown as string);
+  setVoxel(g, 3,13,4, null as unknown as string);
+  setVoxel(g, 14,13,4, null as unknown as string);
+  // Back spine highlight
+  for (let y = 6; y <= 12; y++) {
+    setVoxel(g, 8, y, 4, F.light);
+    setVoxel(g, 9, y, 4, F.light);
+  }
+
+  // === ARMS (y=6..12) — 短めの腕 ===
+  fillBox(g, 1,6,5, 3,12,7, F.body);
+  fillBox(g, 1,6,5, 3,6,7, F.dark);  // hand (dark)
+  fillBox(g, 14,6,5, 16,12,7, F.body);
+  fillBox(g, 14,6,5, 16,6,7, F.dark);
+
+  // === HEAD (y=14..23) — 横に大きく丸い ===
+  fillBox(g, 2,14,3, 15,22,10, F.body);
+  // Head top (rounded)
+  fillBox(g, 3,23,4, 14,23,9, F.body);
+  // Corner cuts for roundness
+  for (const [x,y,z] of [[2,14,3],[15,14,3],[2,22,3],[15,22,3],
+    [2,14,10],[15,14,10],[2,22,10],[15,22,10],
+    [2,23,3],[15,23,3],[2,23,10],[15,23,10]]) {
+    setVoxel(g, x as number, y as number, z as number, null as unknown as string);
+  }
+
+  // === EYES (y=18..22) — カエルの特徴的な大きく飛び出た目 ===
+  // Eye bumps on top of head
+  // Left eye socket
+  fillBox(g, 3,21,9, 6,24,11, F.body);
+  // Left eye white
+  fillBox(g, 4,22,10, 5,23,11, F.eyeWhite);
+  // Left pupil
+  setVoxel(g, 4,23,11, F.eye);
+  setVoxel(g, 5,23,11, F.eye);
+  setVoxel(g, 4,22,11, F.eye);
+  setVoxel(g, 5,22,11, F.eye);
+  // Left highlight
+  setVoxel(g, 4,23,11, F.highlight);
+
+  // Right eye socket
+  fillBox(g, 11,21,9, 14,24,11, F.body);
+  // Right eye white
+  fillBox(g, 12,22,10, 13,23,11, F.eyeWhite);
+  // Right pupil
+  setVoxel(g, 12,23,11, F.eye);
+  setVoxel(g, 13,23,11, F.eye);
+  setVoxel(g, 12,22,11, F.eye);
+  setVoxel(g, 13,22,11, F.eye);
+  // Right highlight
+  setVoxel(g, 12,23,11, F.highlight);
+
+  // === CHEEKS (ほっぺ — ピンク) ===
+  setVoxel(g, 3,17,10, F.cheek);
+  setVoxel(g, 4,17,10, F.cheek);
+  setVoxel(g, 13,17,10, F.cheek);
+  setVoxel(g, 14,17,10, F.cheek);
+
+  // === MOUTH (wide, カエルらしい横に広い口) ===
+  // Wide smile on front face z=10
+  for (let x = 5; x <= 12; x++) {
+    setVoxel(g, x, 16, 10, F.mouth);
+  }
+  // Mouth corners curve up
+  setVoxel(g, 4, 17, 10, F.mouth);
+  setVoxel(g, 13, 17, 10, F.mouth);
+
+  // === NOSTRILS ===
+  setVoxel(g, 7, 19, 10, F.dark);
+  setVoxel(g, 10, 19, 10, F.dark);
+
+  // === SPOTS/PATTERN (背中の模様) ===
+  setVoxel(g, 5, 11, 4, F.dark);
+  setVoxel(g, 12, 9, 4, F.dark);
+  setVoxel(g, 7, 8, 4, F.dark);
+  setVoxel(g, 10, 12, 4, F.dark);
+
+  return g;
+}
+
+// ============================================================
 // Public API
 // ============================================================
 export function generateCubicAvatar(id: string, _opts: Record<string, string> = {}, s = 42): VoxelData {
   const m: Record<string, (s: number) => VoxelData> = {
     bear: generateBearAvatar, cat: generateCatAvatar, rabbit: generateRabbitAvatar,
     dog: generateDogAvatar, panda: generatePandaAvatar, fox: generateFoxAvatar,
-    penguin: generatePenguinAvatar, hamster: generateHamsterAvatar,
+    penguin: generatePenguinAvatar, frog: generateFrogAvatar,
   };
   return (m[id] ?? generateBearAvatar)(s);
 }
@@ -778,5 +915,5 @@ export function generateCubicAvatar(id: string, _opts: Record<string, string> = 
 export type CubicBodyPlan = { id: string };
 export const CUBIC_PLANS: Record<string, CubicBodyPlan> = {
   bear: { id: 'bear' }, cat: { id: 'cat' }, rabbit: { id: 'rabbit' }, dog: { id: 'dog' },
-  panda: { id: 'panda' }, fox: { id: 'fox' }, penguin: { id: 'penguin' }, hamster: { id: 'hamster' },
+  panda: { id: 'panda' }, fox: { id: 'fox' }, penguin: { id: 'penguin' }, frog: { id: 'frog' },
 };
