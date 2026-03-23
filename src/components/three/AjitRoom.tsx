@@ -209,7 +209,7 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
-      {/* Lower wainscot (暗い腰壁) */}
+      {/* Lower wainscot (暗い腰壁+縦パネル溝) */}
       <mesh position={[0, ROOM_H * 0.2, -ROOM_D / 2]} receiveShadow>
         <boxGeometry args={[ROOM_W, ROOM_H * 0.4, 0.16]} />
         <meshStandardMaterial
@@ -218,6 +218,19 @@ export function AjitRoom() {
           metalness={0.05}
         />
       </mesh>
+      {/* 縦パネル溝 (back wall腰壁) */}
+      {Array.from({ length: 16 }).map((_, i) => {
+        const x = -ROOM_W / 2 + 0.25 + i * (ROOM_W / 16);
+        return (
+          <mesh key={`bp-${i}`} position={[x, ROOM_H * 0.2, -ROOM_D / 2 + 0.082]}>
+            <boxGeometry args={[0.02, ROOM_H * 0.36, 0.005]} />
+            <meshStandardMaterial
+              color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.15, -0.28); return '#' + c.getHexString(); })()}
+              roughness={0.8}
+            />
+          </mesh>
+        );
+      })}
       {/* Wainscot cap rail (腰壁の上端レール) */}
       <mesh position={[0, ROOM_H * 0.4, -ROOM_D / 2 + 0.09]}>
         <boxGeometry args={[ROOM_W + 0.05, 0.06, 0.04]} />
@@ -257,6 +270,19 @@ export function AjitRoom() {
           metalness={0.05}
         />
       </mesh>
+      {/* 縦パネル溝 (left wall腰壁) */}
+      {Array.from({ length: 16 }).map((_, i) => {
+        const z = -ROOM_D / 2 + 0.25 + i * (ROOM_D / 16);
+        return (
+          <mesh key={`lp-${i}`} position={[-ROOM_W / 2 + 0.082, ROOM_H * 0.2, z]}>
+            <boxGeometry args={[0.005, ROOM_H * 0.36, 0.02]} />
+            <meshStandardMaterial
+              color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.15, -0.28); return '#' + c.getHexString(); })()}
+              roughness={0.8}
+            />
+          </mesh>
+        );
+      })}
       {/* Wainscot cap rail */}
       <mesh position={[-ROOM_W / 2 + 0.09, ROOM_H * 0.4, 0]}>
         <boxGeometry args={[0.04, 0.06, ROOM_D + 0.05]} />
@@ -290,11 +316,24 @@ export function AjitRoom() {
       <mesh position={[ROOM_W / 2, ROOM_H * 0.2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <boxGeometry args={[ROOM_D, ROOM_H * 0.4, 0.16]} />
         <meshStandardMaterial
-          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.12, -0.22); return '#' + c.getHexString(); })()}
           roughness={0.7}
           metalness={0.05}
         />
       </mesh>
+      {/* 縦パネル溝 (right wall腰壁) */}
+      {Array.from({ length: 16 }).map((_, i) => {
+        const z = -ROOM_D / 2 + 0.25 + i * (ROOM_D / 16);
+        return (
+          <mesh key={`rp-${i}`} position={[ROOM_W / 2 - 0.082, ROOM_H * 0.2, z]}>
+            <boxGeometry args={[0.005, ROOM_H * 0.36, 0.02]} />
+            <meshStandardMaterial
+              color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.15, -0.28); return '#' + c.getHexString(); })()}
+              roughness={0.8}
+            />
+          </mesh>
+        );
+      })}
       {/* Wainscot cap rail */}
       <mesh position={[ROOM_W / 2 - 0.09, ROOM_H * 0.4, 0]}>
         <boxGeometry args={[0.04, 0.06, ROOM_D + 0.05]} />
