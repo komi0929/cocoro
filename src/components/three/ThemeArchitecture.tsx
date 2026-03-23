@@ -300,7 +300,7 @@ function BeachArchitecture() {
 function SpaceArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2.5, 0, -ROOM_D / 2 + 0.08]} doorColor="#333333" frameColor="#555555" knobColor="#00BFFF" style="hatch" />
+      <ThemeDoor position={[2.5, 0, -ROOM_D / 2 + 0.08]} doorColor="#778899" frameColor="#555555" knobColor="#00BFFF" style="hatch" />
       <PendantCeilingLight position={[-1.5, ROOM_H, -1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[1.5, ROOM_H, 1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 0]} rotation={[0, -Math.PI / 2, 0]} frameColor="#555555" glassColor="#0D1B2A" shape="porthole" glowColor="#4FC3F7" />
@@ -342,7 +342,7 @@ function RooftopArchitecture() {
 function RetroGamingArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-3, 0, -ROOM_D / 2 + 0.08]} doorColor="#1e1b4b" frameColor="#312e81" knobColor="#f472b6" style="standard" />
+      <ThemeDoor position={[-3, 0, -ROOM_D / 2 + 0.08]} doorColor="#C8976B" frameColor="#8B6914" knobColor="#f472b6" style="standard" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#1e1b4b" emissiveColor="#f472b6" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[-2, ROOM_H, -2]} lampColor="#1e1b4b" emissiveColor="#67e8f9" intensity={1} shape="cage" />
       <WallFrame position={[-1, 2.2, -ROOM_D / 2 + 0.1]} frameColor="#312e81" innerColor="#7c3aed" size={[0.5, 0.7]} />
@@ -359,7 +359,7 @@ function RetroGamingArchitecture() {
 function AquariumArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.08]} doorColor="#1A3A5C" frameColor="#2A5A8C" knobColor="#C0C0C0" style="hatch" />
+      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.08]} doorColor="#5A7A9C" frameColor="#2A5A8C" knobColor="#C0C0C0" style="hatch" />
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={1.5} shape="crystal" />
       <PendantCeilingLight position={[-2, ROOM_H, 2]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={0.8} shape="crystal" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, -1]} rotation={[0, -Math.PI / 2, 0]} frameColor="#2A5A8C" glassColor="#0D47A1" shape="porthole" glowColor="#4FC3F7" />
