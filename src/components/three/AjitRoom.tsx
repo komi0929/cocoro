@@ -6,6 +6,7 @@
 
 import { useAjitStore } from '@/store/useAjitStore';
 import { useRoomStore } from '@/store/useRoomStore';
+import * as THREE from 'three';
 import { VoxelFurniture } from './furniture/VoxelFurniture';
 import { AvatarEntity } from './AvatarEntity';
 import { Environment, ContactShadows } from '@react-three/drei';
@@ -88,12 +89,11 @@ export function AjitRoom() {
         </>
       )}
 
-      {/* ===== VOXEL ISLAND FLOOR ===== */}
-      {/* Main floor surface */}
+      {/* ===== WOODEN PLANK FLOOR (見本準拠: 木目板1枚1枚) ===== */}
+      {/* Click handler on invisible plane */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0, 0]}
-        receiveShadow
+        position={[0, -0.001, 0]}
         name="floor"
         onClick={(e) => {
           e.stopPropagation();
@@ -101,14 +101,31 @@ export function AjitRoom() {
         }}
       >
         <planeGeometry args={[ROOM_W, ROOM_D]} />
-        <meshStandardMaterial
-          color={theme.floorColor}
-          roughness={floorMat.roughness}
-          metalness={floorMat.metalness}
-          emissive={floorMat.emissive}
-          emissiveIntensity={floorMat.emissiveIntensity ?? 0}
-        />
+        <meshStandardMaterial visible={false} />
       </mesh>
+      {/* Individual wooden planks */}
+      {Array.from({ length: Math.ceil(ROOM_W / 0.45) }).map((_, i) => {
+        const plankW = 0.42;
+        const gap = 0.03;
+        const x = -ROOM_W / 2 + (i + 0.5) * (plankW + gap);
+        if (x > ROOM_W / 2) return null;
+        // Alternate plank colors for natural wood look
+        const plankColor = i % 2 === 0 ? theme.floorColor : (() => {
+          const c = new THREE.Color(theme.floorColor);
+          c.multiplyScalar(0.92);
+          return '#' + c.getHexString();
+        })();
+        return (
+          <mesh key={`plank-${i}`} position={[x, 0, 0]} receiveShadow>
+            <boxGeometry args={[plankW, 0.04, ROOM_D - 0.1]} />
+            <meshStandardMaterial
+              color={plankColor}
+              roughness={floorMat.roughness}
+              metalness={floorMat.metalness}
+            />
+          </mesh>
+        );
+      })}
 
       {/* ===== Stepped Terrain Layers (voxel island edge) ===== */}
       {/* Layer 1: Grass/Top trim around edges */}
@@ -178,9 +195,10 @@ export function AjitRoom() {
       {/* ===== Floor Pattern Overlay ===== */}
       <FloorOverlay pattern={theme.floorPattern} color={theme.floorColor} />
 
-      {/* ===== Back Wall — with brick-like segments ===== */}
-      <mesh position={[0, ROOM_H / 2, -ROOM_D / 2]} name="wall-back" receiveShadow>
-        <boxGeometry args={[ROOM_W, ROOM_H, 0.15]} />
+      {/* ===== Back Wall — 腰壁2色化 (見本準拠) ===== */}
+      {/* Upper wall (明るい色) */}
+      <mesh position={[0, ROOM_H * 0.7, -ROOM_D / 2]} name="wall-back" receiveShadow>
+        <boxGeometry args={[ROOM_W, ROOM_H * 0.6, 0.15]} />
         <meshStandardMaterial
           color={theme.wallColor}
           roughness={wallMat.roughness}
@@ -191,25 +209,35 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
-      {/* Wall accent trim (top) */}
+      {/* Lower wainscot (暗い腰壁) */}
+      <mesh position={[0, ROOM_H * 0.2, -ROOM_D / 2]} receiveShadow>
+        <boxGeometry args={[ROOM_W, ROOM_H * 0.4, 0.16]} />
+        <meshStandardMaterial
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          roughness={0.7}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Wainscot cap rail (腰壁の上端レール) */}
+      <mesh position={[0, ROOM_H * 0.4, -ROOM_D / 2 + 0.09]}>
+        <boxGeometry args={[ROOM_W + 0.05, 0.06, 0.04]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.45} metalness={0.15} />
+      </mesh>
+      {/* Wall crown molding (top) */}
       <mesh position={[0, ROOM_H - 0.05, -ROOM_D / 2 + 0.08]}>
         <boxGeometry args={[ROOM_W + 0.1, 0.1, 0.02]} />
         <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
       </mesh>
-      {/* Wall base trim */}
-      <mesh position={[0, 0.05, -ROOM_D / 2 + 0.08]}>
-        <boxGeometry args={[ROOM_W + 0.1, 0.1, 0.04]} />
-        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
+      {/* Baseboard trim (巾木) */}
+      <mesh position={[0, 0.04, -ROOM_D / 2 + 0.09]}>
+        <boxGeometry args={[ROOM_W + 0.1, 0.08, 0.04]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.15} />
       </mesh>
 
-      {/* ===== Left Wall ===== */}
-      <mesh
-        position={[-ROOM_W / 2, ROOM_H / 2, 0]}
-        rotation={[0, Math.PI / 2, 0]}
-        name="wall-left"
-        receiveShadow
-      >
-        <boxGeometry args={[ROOM_D, ROOM_H, 0.15]} />
+      {/* ===== Left Wall — 腰壁2色化 ===== */}
+      {/* Upper */}
+      <mesh position={[-ROOM_W / 2, ROOM_H * 0.7, 0]} rotation={[0, Math.PI / 2, 0]} name="wall-left" receiveShadow>
+        <boxGeometry args={[ROOM_D, ROOM_H * 0.6, 0.15]} />
         <meshStandardMaterial
           color={theme.wallColor}
           roughness={wallMat.roughness}
@@ -220,24 +248,34 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
-      {/* Left wall trims */}
+      {/* Lower wainscot */}
+      <mesh position={[-ROOM_W / 2, ROOM_H * 0.2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[ROOM_D, ROOM_H * 0.4, 0.16]} />
+        <meshStandardMaterial
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          roughness={0.7}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Wainscot cap rail */}
+      <mesh position={[-ROOM_W / 2 + 0.09, ROOM_H * 0.4, 0]}>
+        <boxGeometry args={[0.04, 0.06, ROOM_D + 0.05]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.45} metalness={0.15} />
+      </mesh>
+      {/* Crown + baseboard */}
       <mesh position={[-ROOM_W / 2 + 0.08, ROOM_H - 0.05, 0]}>
         <boxGeometry args={[0.02, 0.1, ROOM_D + 0.1]} />
         <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
       </mesh>
-      <mesh position={[-ROOM_W / 2 + 0.08, 0.05, 0]}>
-        <boxGeometry args={[0.04, 0.1, ROOM_D + 0.1]} />
-        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
+      <mesh position={[-ROOM_W / 2 + 0.09, 0.04, 0]}>
+        <boxGeometry args={[0.04, 0.08, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.15} />
       </mesh>
 
-      {/* ===== Right Wall ===== */}
-      <mesh
-        position={[ROOM_W / 2, ROOM_H / 2, 0]}
-        rotation={[0, Math.PI / 2, 0]}
-        name="wall-right"
-        receiveShadow
-      >
-        <boxGeometry args={[ROOM_D, ROOM_H, 0.15]} />
+      {/* ===== Right Wall — 腰壁2色化 ===== */}
+      {/* Upper */}
+      <mesh position={[ROOM_W / 2, ROOM_H * 0.7, 0]} rotation={[0, Math.PI / 2, 0]} name="wall-right" receiveShadow>
+        <boxGeometry args={[ROOM_D, ROOM_H * 0.6, 0.15]} />
         <meshStandardMaterial
           color={theme.wallColor}
           roughness={wallMat.roughness}
@@ -248,14 +286,28 @@ export function AjitRoom() {
           opacity={wallMat.opacity ?? 1}
         />
       </mesh>
-      {/* Right wall trims */}
+      {/* Lower wainscot */}
+      <mesh position={[ROOM_W / 2, ROOM_H * 0.2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[ROOM_D, ROOM_H * 0.4, 0.16]} />
+        <meshStandardMaterial
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          roughness={0.7}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Wainscot cap rail */}
+      <mesh position={[ROOM_W / 2 - 0.09, ROOM_H * 0.4, 0]}>
+        <boxGeometry args={[0.04, 0.06, ROOM_D + 0.05]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.45} metalness={0.15} />
+      </mesh>
+      {/* Crown + baseboard */}
       <mesh position={[ROOM_W / 2 - 0.08, ROOM_H - 0.05, 0]}>
         <boxGeometry args={[0.02, 0.1, ROOM_D + 0.1]} />
         <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.3} />
       </mesh>
-      <mesh position={[ROOM_W / 2 - 0.08, 0.05, 0]}>
-        <boxGeometry args={[0.04, 0.1, ROOM_D + 0.1]} />
-        <meshStandardMaterial color={theme.neonColor} roughness={0.4} metalness={0.2} />
+      <mesh position={[ROOM_W / 2 - 0.09, 0.04, 0]}>
+        <boxGeometry args={[0.04, 0.08, ROOM_D + 0.1]} />
+        <meshStandardMaterial color={theme.accentColor} roughness={0.5} metalness={0.15} />
       </mesh>
 
       {/* ===== Ceiling with panel detail ===== */}
@@ -276,6 +328,30 @@ export function AjitRoom() {
           <meshStandardMaterial color={theme.ceilingColor} roughness={0.8} metalness={0.1} />
         </mesh>
       ))}
+
+      {/* ===== Ceiling Light Fixture (見本準拠: シーリングライト) ===== */}
+      <group position={[0, ROOM_H - 0.02, 0]}>
+        {/* Base plate */}
+        <mesh>
+          <cylinderGeometry args={[0.15, 0.15, 0.03, 8]} />
+          <meshStandardMaterial color="#8B7355" roughness={0.5} metalness={0.3} />
+        </mesh>
+        {/* Shade */}
+        <mesh position={[0, -0.12, 0]}>
+          <cylinderGeometry args={[0.25, 0.35, 0.15, 8]} />
+          <meshStandardMaterial color="#F5DEB3" roughness={0.6} metalness={0.1} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Bulb glow */}
+        <mesh position={[0, -0.1, 0]}>
+          <sphereGeometry args={[0.08, 8, 8]} />
+          <meshStandardMaterial
+            color="#FFF8DC"
+            emissive="#FFF8DC"
+            emissiveIntensity={3}
+            toneMapped={false}
+          />
+        </mesh>
+      </group>
 
 
       {/* ===== Wall Pattern Overlays ===== */}
