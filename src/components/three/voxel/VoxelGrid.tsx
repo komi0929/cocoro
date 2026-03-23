@@ -206,13 +206,23 @@ function buildVoxelMesh(data: VoxelData, voxelSize: number, enableAO: boolean, a
           const nz = z + face.dir[2];
           if (isBlock(getVoxel(data, nx, ny, nz))) continue;
 
-          // 4頂点追加
+          // 4頂点追加 (bevel inset: 各頂点を角から少し内側にずらして丸みを出す)
+          const inset = voxelSize * 0.08; // 8% inset for subtle bevel
           for (let vi = 0; vi < 4; vi++) {
             const corner = face.corners[vi]!;
+            // 各コーナー座標(0 or 1)に応じてinsetを適用
+            // corner=0 → +inset, corner=1 → -inset
+            const ix = corner[0]! === 0 ? inset : -inset;
+            const iy = corner[1]! === 0 ? inset : -inset;
+            const iz = corner[2]! === 0 ? inset : -inset;
+            // 法線方向にはinsetを適用しない(面の位置は維持)
+            const applyX = Math.abs(face.normal[0]) < 0.5 ? ix : 0;
+            const applyY = Math.abs(face.normal[1]) < 0.5 ? iy : 0;
+            const applyZ = Math.abs(face.normal[2]) < 0.5 ? iz : 0;
             positions.push(
-              ox + corner[0]! * voxelSize,
-              oy + corner[1]! * voxelSize,
-              oz + corner[2]! * voxelSize,
+              ox + corner[0]! * voxelSize + applyX,
+              oy + corner[1]! * voxelSize + applyY,
+              oz + corner[2]! * voxelSize + applyZ,
             );
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
 
