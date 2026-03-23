@@ -12,6 +12,7 @@ import {
   generateCoral, generateMushroom, generateLavaFlow, generateSeaweed,
   generateBuilding, generateWaterTower, generateSpaceConsole,
   generateTreasureChest, generateJellyfish, generateFloatingIsland,
+  generateDoor, generateFireplace, generateShelfFigurine, generateLetterBlock,
 } from './VoxelModels';
 
 interface BaseProps {
@@ -89,5 +90,27 @@ export function VoxelJellyfishModel({ position, rotation, scale = 1, voxelSize =
 
 export function VoxelFloatingIslandModel({ position, rotation, scale = 1, voxelSize = 0.08, seed = 1400 }: BaseProps) {
   const data = useMemo(() => ensureQuality((s) => generateFloatingIsland(s), 'environment', seed), [seed]);
+  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} />;
+}
+
+// === 高精細建築アセット ===
+
+export function VoxelDoorModel({ position, rotation, scale = 1, voxelSize = 0.08, seed = 2000, doorColor = '#C8976B', frameColor = '#5C3A1E' }: BaseProps & { doorColor?: string; frameColor?: string }) {
+  const data = useMemo(() => ensureQuality((s) => generateDoor(doorColor, frameColor, s), 'decoration', seed), [doorColor, frameColor, seed]);
+  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} enableAO aoIntensity={0.4} />;
+}
+
+export function VoxelFireplaceModel({ position, rotation, scale = 1, voxelSize = 0.08, seed = 2100 }: BaseProps) {
+  const data = useMemo(() => ensureQuality((s) => generateFireplace(s), 'decoration', seed), [seed]);
+  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} enableAO aoIntensity={0.5} />;
+}
+
+export function VoxelFigurineModel({ position, rotation, scale = 1, voxelSize = 0.03, seed = 2200, baseColor = '#4CAF50' }: BaseProps & { baseColor?: string }) {
+  const data = useMemo(() => ensureQuality((s) => generateShelfFigurine(baseColor, s), 'decoration', seed), [baseColor, seed]);
+  return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} />;
+}
+
+export function VoxelLetterBlockModel({ position, rotation, scale = 1, voxelSize = 0.04, seed = 2300, letter = 'A', blockColor = '#FF0000' }: BaseProps & { letter?: string; blockColor?: string }) {
+  const data = useMemo(() => ensureQuality((s) => generateLetterBlock(letter, blockColor, s), 'decoration', seed), [letter, blockColor, seed]);
   return <VoxelGrid data={data} voxelSize={voxelSize} position={position} rotation={rotation} scale={scale} />;
 }

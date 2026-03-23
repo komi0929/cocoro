@@ -886,3 +886,168 @@ export function generateFloatingIsland(seed: number = 1400): VoxelData {
 
   return grid;
 }
+
+// ============================================================
+// ドア (12×24×3 高精細パネルドア)
+// ============================================================
+
+const DOOR_WOOD = ['#C8976B', '#B8875B', '#D8A77B', '#A87B55', '#BE8D65'];
+const DOOR_WOOD_DARK = ['#8B6914', '#7A5D0E', '#9B7424', '#6B4E08'];
+const DOOR_FRAME = ['#5C3A1E', '#6B4A2E', '#4A2E14', '#7A5A3E'];
+const KNOB_METAL = ['#FFD700', '#DAA520', '#C0C0C0', '#B8860B'];
+
+export function generateDoor(doorColor: string, frameColor: string, seed: number): VoxelData {
+  const rand = seededRand(seed);
+  const grid = createGrid(14, 26, 4);
+
+  // フレーム (左右+上)
+  for (let y = 0; y < 24; y++) {
+    for (let z = 0; z < 3; z++) {
+      setVoxel(grid, 0, y, z, pick(DOOR_FRAME, seed + y));
+      setVoxel(grid, 1, y, z, pick(DOOR_FRAME, seed + y + 1));
+      setVoxel(grid, 12, y, z, pick(DOOR_FRAME, seed + y + 2));
+      setVoxel(grid, 13, y, z, pick(DOOR_FRAME, seed + y + 3));
+    }
+  }
+  // 上フレーム
+  for (let x = 0; x < 14; x++) {
+    for (let z = 0; z < 3; z++) {
+      setVoxel(grid, x, 23, z, pick(DOOR_FRAME, seed + x));
+      setVoxel(grid, x, 24, z, pick(DOOR_FRAME, seed + x + 1));
+    }
+  }
+
+  // ドア本体 (木目色)
+  for (let x = 2; x < 12; x++) {
+    for (let y = 0; y < 23; y++) {
+      const woodVariant = lerpColor(doorColor, DOOR_WOOD[Math.abs(x * 7 + y * 3 + seed) % DOOR_WOOD.length]!, 0.15 + rand() * 0.1);
+      setVoxel(grid, x, y, 1, woodVariant);
+      setVoxel(grid, x, y, 2, woodVariant);
+    }
+  }
+
+  // パネル4枚 (凹み = 色を暗く)
+  const panelDark = (c: string) => lerpColor(c, '#000000', 0.2);
+  // 上2パネル
+  for (let x = 3; x < 7; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+  for (let x = 7; x < 11; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+  // 下2パネル
+  for (let x = 3; x < 7; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+  for (let x = 7; x < 11; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+
+  // ドアノブ
+  setVoxel(grid, 10, 11, 3, pick(KNOB_METAL, seed));
+  setVoxel(grid, 10, 12, 3, pick(KNOB_METAL, seed + 1));
+
+  return grid;
+}
+
+// ============================================================
+// 暖炉 (16×14×10 高精細)
+// ============================================================
+
+const BRICK_REDS = ['#8B4513', '#A0522D', '#CD853F', '#6B3410', '#B8622E'];
+const BRICK_GRAYS = ['#696969', '#808080', '#5F5F5F'];
+
+export function generateFireplace(seed: number): VoxelData {
+  const rand = seededRand(seed);
+  const grid = createGrid(18, 16, 10);
+
+  // ベース (レンガ壁) — 開口部は除外
+  for (let x = 0; x < 18; x++) {
+    for (let y = 0; y < 14; y++) {
+      // 開口部(x:5-12, y:0-7)はスキップ
+      if (x >= 5 && x < 13 && y < 8) continue;
+      for (let z = 0; z < 3; z++) {
+        const brickHue = (x + y * 2 + seed) % 3 === 0 ? pick(BRICK_GRAYS, seed + x + y) : pick(BRICK_REDS, seed + x * y);
+        setVoxel(grid, x, y, z, brickHue);
+      }
+    }
+  }
+
+  // 開口部の奥壁 (dark)
+  for (let x = 5; x < 13; x++) {
+    for (let y = 0; y < 8; y++) {
+      setVoxel(grid, x, y, 0, '#1A1A1A');
+    }
+  }
+
+  // マントルピース (上の棚)
+  for (let x = -1; x < 19; x++) {
+    for (let z = 0; z < 5; z++) {
+      if (x >= 0 && x < 18) {
+        setVoxel(grid, x, 14, z, pick(DOOR_WOOD_DARK, seed + x));
+        setVoxel(grid, x, 15, z, pick(DOOR_WOOD_DARK, seed + x + 1));
+      }
+    }
+  }
+
+  // 炎 (開口部内)
+  for (let i = 0; i < 5; i++) {
+    const fx = 7 + Math.floor(rand() * 4);
+    const fy = 1 + Math.floor(rand() * 4);
+    setVoxel(grid, fx, fy, 1, pick(LAVA_HOT, seed + i));
+  }
+
+  // 側面の柱
+  for (let y = 0; y < 14; y++) {
+    for (let z = 0; z < 4; z++) {
+      setVoxel(grid, 3, y, z, pick(BRICK_REDS, seed + y * 3));
+      setVoxel(grid, 4, y, z, pick(BRICK_REDS, seed + y * 3 + 1));
+      setVoxel(grid, 13, y, z, pick(BRICK_REDS, seed + y * 3 + 2));
+      setVoxel(grid, 14, y, z, pick(BRICK_REDS, seed + y * 3 + 3));
+    }
+  }
+
+  return grid;
+}
+
+// ============================================================
+// 棚のミニフィギュア (6×8×6)
+// ============================================================
+
+export function generateShelfFigurine(baseColor: string, seed: number): VoxelData {
+  const rand = seededRand(seed);
+  const grid = createGrid(6, 8, 6);
+
+  // 体
+  fillBox(grid, 1, 0, 1, 4, 4, 4, baseColor);
+  // 頭
+  fillBox(grid, 1, 4, 1, 4, 3, 4, lerpColor(baseColor, '#FFFFFF', 0.15));
+  // 目
+  setVoxel(grid, 2, 6, 4, '#000000');
+  setVoxel(grid, 3, 6, 4, '#000000');
+  // 口
+  setVoxel(grid, 2, 5, 4, '#FF6B6B');
+
+  return grid;
+}
+
+// ============================================================
+// 文字ブロック (5×5×5)
+// ============================================================
+
+export function generateLetterBlock(letter: string, blockColor: string, seed: number): VoxelData {
+  const grid = createGrid(5, 5, 5);
+  // ブロック本体
+  fillBox(grid, 0, 0, 0, 5, 5, 5, blockColor);
+  // 正面に文字(ドット絵パターン)
+  const darkFace = lerpColor(blockColor, '#000000', 0.5);
+  // 簡易的な文字パターン
+  const patterns: Record<string, number[][]> = {
+    'A': [[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
+    'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
+    'C': [[0,1,1],[1,0,0],[1,0,0],[1,0,0],[0,1,1]],
+    'K': [[1,0,1],[1,1,0],[1,0,0],[1,1,0],[1,0,1]],
+  };
+  const pat = patterns[letter] ?? patterns['A']!;
+  for (let row = 0; row < 5 && row < pat.length; row++) {
+    for (let col = 0; col < 3 && col < pat[row]!.length; col++) {
+      if (pat[row]![col]) {
+        setVoxel(grid, col + 1, 4 - row, 4, darkFace);
+      }
+    }
+  }
+  return grid;
+}
+
