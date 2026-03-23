@@ -553,3 +553,93 @@ export function qualityGate(config: ModelConfig): QualityGateResult {
     checks,
   };
 }
+
+// ============================================================
+// 出力ベース品質チェック（全アセット対応）
+// ============================================================
+
+/** VoxelDataの出力品質を自動チェック（手書き関数・カタログ両対応） */
+export function validateVoxelData(
+  data: VoxelData,
+  category: 'avatar' | 'furniture' | 'environment' | 'decoration' | 'other' = 'other',
+): QualityGateResult {
+  const checks: QualityCheck[] = [];
+  let score = 0;
+
+  // 1. ボクセル数チェック
+  let voxelCount = 0;
+  const colorSet = new Set<string>();
+  let nonEmptyLayers = 0;
+  const totalLayers = data.length;
+
+  for (const layer of data) {
+    let layerHasVoxel = false;
+    for (const row of layer) {
+      for (const v of row) {
+        if (v) {
+          voxelCount++;
+          const c = typeof v === 'string' ? v : (v as { color: string }).color;
+          if (c) colorSet.add(c);
+          layerHasVoxel = true;
+        }
+      }
+    }
+    if (layerHasVoxel) nonEmptyLayers++;
+  }
+
+  const minVoxels: Record<string, number> = {
+    avatar: 150, furniture: 80, environment: 300, decoration: 100, other: 50,
+  };
+  const min = minVoxels[category] ?? 50;
+  const voxelPass = voxelCount >= min;
+  checks.push({
+    name: 'ボクセル数',
+    passed: voxelPass,
+    detail: `${voxelCount.toLocaleString()} (最小: ${min})`,
+  });
+  if (voxelPass) score += 25;
+
+  // 2. 色の多様性
+  const colorCount = colorSet.size;
+  const colorPass = colorCount >= 4;
+  checks.push({
+    name: '色の多様性',
+    passed: colorPass,
+    detail: `${colorCount}色 (最小: 4)`,
+  });
+  if (colorPass) score += 25;
+
+  // 3. 立体感（非空レイヤー率）
+  const layerRatio = totalLayers > 0 ? nonEmptyLayers / totalLayers : 0;
+  const layerPass = layerRatio >= 0.3;
+  checks.push({
+    name: '立体感',
+    passed: layerPass,
+    detail: `${Math.round(layerRatio * 100)}% レイヤー使用 (最小: 30%)`,
+  });
+  if (layerPass) score += 25;
+
+  // 4. 密度適正（空間に対するボクセル充填率）
+  const gridVolume = data.length * (data[0]?.length ?? 0) * (data[0]?.[0]?.length ?? 0);
+  const density = gridVolume > 0 ? voxelCount / gridVolume : 0;
+  const densityPass = density >= 0.05 && density <= 0.85;
+  checks.push({
+    name: '充填バランス',
+    passed: densityPass,
+    detail: `${Math.round(density * 100)}% (適正: 5-85%)`,
+  });
+  if (densityPass) score += 25;
+
+  let suggestedRank: 'S' | 'A' | 'B' | 'C';
+  if (score >= 90) suggestedRank = 'S';
+  else if (score >= 75) suggestedRank = 'A';
+  else if (score >= 50) suggestedRank = 'B';
+  else suggestedRank = 'C';
+
+  return {
+    passed: score >= 75,
+    score,
+    suggestedRank,
+    checks,
+  };
+}

@@ -37,7 +37,7 @@ import {
   generateSeaweed, generateBuilding, generateWaterTower,
   generateSpaceConsole, generateTreasureChest, generateJellyfish
 } from './VoxelModels';
-import { qualityGate, type QualityGateResult } from './VoxelEngine';
+import { qualityGate, validateVoxelData, type QualityGateResult } from './VoxelEngine';
 import { CATALOG } from './VoxelCatalog';
 
 const MAX_ACTIVE_CANVASES = 8;
@@ -48,6 +48,8 @@ type ModelDef = {
   voxelSize: number; emissive?: boolean;
   rank: 'S' | 'A' | 'B' | 'C';
   gateResult?: QualityGateResult;
+  /** カテゴリヒント（validateVoxelData用） */
+  qualityCategory?: 'avatar' | 'furniture' | 'environment' | 'decoration' | 'other';
 };
 
 const ALL_MODELS: ModelDef[] = [
@@ -168,7 +170,20 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
   let voxelCount = 0;
   if (data) { for (const layer of data) { for (const row of layer) { for (const v of row) { if (v) voxelCount++; } } } }
 
-  const gate = model.gateResult;
+  // 出力ベース品質チェック（全モデル共通）
+  const runtimeGate = useMemo(() => {
+    if (!data) return null;
+    const cat = model.qualityCategory ?? (
+      model.category === 'アバター' ? 'avatar' as const :
+      model.category === '家具' ? 'furniture' as const :
+      model.category === '環境' ? 'environment' as const :
+      model.category === '旧モデル' ? 'decoration' as const : 'other' as const
+    );
+    return validateVoxelData(data, cat);
+  }, [data, model.category, model.qualityCategory]);
+
+  // カタログ品質ゲート（あれば）またはランタイム品質チェックを表示
+  const gate = model.gateResult ?? runtimeGate;
 
   return (
     <div ref={ref} style={{ ...S.card, borderColor: gate ? (gate.passed ? '#4CAF50' : '#F44336') : '#1e1e3a' }}>
