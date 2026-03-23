@@ -266,10 +266,10 @@ export function VoxelFurniture({ item, onClick, isSelected }: Props) {
             </mesh>
           </>
         )}
-        {/* 量産エンジン版があれば優先、なければレガシーコンポーネント */}
-        {hasEngine
-          ? <EngineRenderedFurniture furnitureId={item.type} />
-          : Component && <Component item={item} />
+        {/* 高品質コンポーネントを優先、なければエンジンフォールバック */}
+        {Component
+          ? <Component item={item} />
+          : hasEngine && <EngineRenderedFurniture furnitureId={item.type} />
         }
       </group>
     </Suspense>

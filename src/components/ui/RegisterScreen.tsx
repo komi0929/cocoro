@@ -95,9 +95,9 @@ export function RegisterScreen({ onComplete, onDemo }: RegisterScreenProps) {
               width: '100%',
               maxWidth: 280,
               marginTop: 8,
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))',
-              border: '1px solid rgba(139,92,246,0.3)',
-              color: '#a78bfa',
+              background: 'linear-gradient(135deg, rgba(80, 40, 120, 0.6), rgba(60, 30, 80, 0.8))',
+              border: '2px solid rgba(139, 92, 246, 0.35)',
+              color: '#C4A8E0',
             }}
           >
             🎮 デモを試す（登録不要）
