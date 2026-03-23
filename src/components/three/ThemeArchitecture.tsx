@@ -261,6 +261,12 @@ function UndergroundArchitecture() {
       <WallShelfWithItems position={[-1.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#5C4033" itemColors={['#FF6B35', '#FFB347', '#8B4513', '#DAA520', '#CD853F']} />
       <WallShelfWithItems position={[-1.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#5C4033" itemColors={['#CD853F', '#DEB887', '#D2691E', '#B8860B']} />
       <WallFrame position={[-3, 2, -ROOM_D / 2 + 0.15]} frameColor="#5C4033" innerColor="#2F4F4F" size={[0.6, 0.5]} />
+      {/* VoxelGridフィギュア+文字ブロック */}
+      <VoxelFigurineModel position={[-1.3, 2.65, -ROOM_D / 2 + 0.25]} baseColor="#FF6B35" seed={4001} scale={0.8} />
+      <VoxelFigurineModel position={[-1.1, 2.65, -ROOM_D / 2 + 0.25]} baseColor="#DAA520" seed={4002} scale={0.8} />
+      <VoxelFigurineModel position={[-1.7, 1.65, -ROOM_D / 2 + 0.25]} baseColor="#8B4513" seed={4003} scale={0.8} />
+      <VoxelLetterBlockModel position={[-1.3, 1.65, -ROOM_D / 2 + 0.25]} letter="K" blockColor="#CD853F" seed={4010} />
+      <VoxelDoorModel position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#4a3728" frameColor="#5C4033" seed={4100} voxelSize={0.09} />
     </group>
   );
 }
@@ -313,6 +319,13 @@ function BeachArchitecture() {
       <WallShelfWithItems position={[2.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#D4A574" itemColors={['#87CEEB', '#FFD700', '#FF6B6B', '#4FC3F7', '#FFF176']} />
       <WallShelfWithItems position={[2.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#D4A574" itemColors={['#FFB74D', '#81C784', '#64B5F6', '#E57373']} />
       <WallFrame position={[-3, 2.3, -ROOM_D / 2 + 0.15]} frameColor="#D4A574" innerColor="#FFE0B2" size={[0.5, 0.4]} />
+      {/* VoxelGridフィギュア+文字ブロック */}
+      <VoxelFigurineModel position={[2.7, 2.65, -ROOM_D / 2 + 0.25]} baseColor="#87CEEB" seed={5001} scale={0.8} />
+      <VoxelFigurineModel position={[2.9, 2.65, -ROOM_D / 2 + 0.25]} baseColor="#FFD700" seed={5002} scale={0.8} />
+      <VoxelFigurineModel position={[-1.8, 2.15, -ROOM_D / 2 + 0.25]} baseColor="#FF6B6B" seed={5003} scale={0.8} />
+      <VoxelLetterBlockModel position={[2.7, 1.65, -ROOM_D / 2 + 0.25]} letter="B" blockColor="#4FC3F7" seed={5010} />
+      <VoxelLetterBlockModel position={[2.9, 1.65, -ROOM_D / 2 + 0.25]} letter="C" blockColor="#FFB74D" seed={5011} />
+      <VoxelDoorModel position={[0, 0, -ROOM_D / 2 + 0.2]} doorColor="#D4A574" frameColor="#8B6914" seed={5100} voxelSize={0.09} />
     </group>
   );
 }
@@ -339,6 +352,10 @@ function SpaceArchitecture() {
       {/* LED */}
       <EmissiveBox size={[ROOM_W - 0.5, 0.02, 0.02]} position={[0, ROOM_H - 0.08, -ROOM_D / 2 + 0.15]} color="#00BFFF" emissiveIntensity={4} />
       <EmissiveBox size={[0.02, 0.02, ROOM_D - 0.5]} position={[ROOM_W / 2 - 0.15, ROOM_H - 0.08, 0]} color="#00BFFF" emissiveIntensity={4} />
+      {/* VoxelGridフィギュア */}
+      <VoxelFigurineModel position={[-1, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#00BFFF" seed={6001} scale={0.8} />
+      <VoxelFigurineModel position={[-0.8, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#4FC3F7" seed={6002} scale={0.8} />
+      <VoxelDoorModel position={[2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#778899" frameColor="#555555" seed={6100} voxelSize={0.09} />
     </group>
   );
 }
@@ -358,6 +375,11 @@ function RooftopArchitecture() {
       {/* 追加棚+フレーム */}
       <WallShelfWithItems position={[2.5, 2, -ROOM_D / 2 + 0.2]} shelfColor="#546E7A" itemColors={['#FFD54F', '#EF5350', '#66BB6A', '#42A5F5', '#AB47BC']} />
       <WallShelfWithItems position={[-1, 1.8, -ROOM_D / 2 + 0.2]} shelfColor="#546E7A" itemColors={['#FF7043', '#26C6DA', '#D4E157', '#8D6E63']} />
+      {/* VoxelGridフィギュア+文字ブロック */}
+      <VoxelFigurineModel position={[2.7, 2.15, -ROOM_D / 2 + 0.25]} baseColor="#FFD54F" seed={7001} scale={0.8} />
+      <VoxelFigurineModel position={[2.9, 2.15, -ROOM_D / 2 + 0.25]} baseColor="#EF5350" seed={7002} scale={0.8} />
+      <VoxelLetterBlockModel position={[-0.8, 1.95, -ROOM_D / 2 + 0.25]} letter="A" blockColor="#FFD54F" seed={7010} />
+      <VoxelDoorModel position={[-2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#78909C" frameColor="#546E7A" seed={7100} voxelSize={0.09} />
     </group>
   );
 }
@@ -379,6 +401,14 @@ function RetroGamingArchitecture() {
       <EmissiveBox size={[ROOM_W - 0.5, 0.02, 0.02]} position={[0, ROOM_H - 0.08, -ROOM_D / 2 + 0.15]} color="#f472b6" emissiveIntensity={3} />
       <EmissiveBox size={[0.02, 0.02, ROOM_D - 0.5]} position={[-ROOM_W / 2 + 0.15, ROOM_H - 0.08, 0]} color="#67e8f9" emissiveIntensity={3} />
       <EmissiveBox size={[0.02, 0.02, ROOM_D - 0.5]} position={[ROOM_W / 2 - 0.15, ROOM_H - 0.08, 0]} color="#67e8f9" emissiveIntensity={3} />
+      {/* VoxelGridフィギュア+文字ブロック */}
+      <VoxelFigurineModel position={[1.2, 1.65, -ROOM_D / 2 + 0.25]} baseColor="#f472b6" seed={8001} scale={0.8} />
+      <VoxelFigurineModel position={[1.4, 1.65, -ROOM_D / 2 + 0.25]} baseColor="#67e8f9" seed={8002} scale={0.8} />
+      <VoxelFigurineModel position={[-0.8, 1.65, -ROOM_D / 2 + 0.25]} baseColor="#a78bfa" seed={8003} scale={0.8} />
+      <VoxelLetterBlockModel position={[2.7, 2.65, -ROOM_D / 2 + 0.25]} letter="A" blockColor="#f472b6" seed={8010} />
+      <VoxelLetterBlockModel position={[2.9, 2.65, -ROOM_D / 2 + 0.25]} letter="B" blockColor="#67e8f9" seed={8011} />
+      <VoxelLetterBlockModel position={[3.1, 2.65, -ROOM_D / 2 + 0.25]} letter="C" blockColor="#fbbf24" seed={8012} />
+      <VoxelDoorModel position={[-3, 0, -ROOM_D / 2 + 0.2]} doorColor="#C8976B" frameColor="#8B6914" seed={8100} voxelSize={0.09} />
     </group>
   );
 }
@@ -394,6 +424,11 @@ function AquariumArchitecture() {
       <NoisyCylinder args={[0.025, 0.025, ROOM_H, 6]} position={[ROOM_W / 2 - 0.2, ROOM_H / 2, -3.5]} color="#4A6D8C" seed={1200} />
       <NoisyCylinder args={[0.025, 0.025, ROOM_H, 6]} position={[ROOM_W / 2 - 0.2, ROOM_H / 2, 3.5]} color="#4A6D8C" seed={1201} />
       <EmissiveBox size={[ROOM_W - 0.5, 0.02, 0.02]} position={[0, 0.05, -ROOM_D / 2 + 0.15]} color="#80DEEA" emissiveIntensity={3} />
+      {/* VoxelGridフィギュア */}
+      <VoxelFigurineModel position={[-1, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#4FC3F7" seed={9001} scale={0.8} />
+      <VoxelFigurineModel position={[-0.8, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#80DEEA" seed={9002} scale={0.8} />
+      <VoxelLetterBlockModel position={[-1.2, 1.5, -ROOM_D / 2 + 0.25]} letter="A" blockColor="#4FC3F7" seed={9010} />
+      <VoxelDoorModel position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#5A7A9C" frameColor="#2A5A8C" seed={9100} voxelSize={0.09} />
     </group>
   );
 }
@@ -417,6 +452,14 @@ function VolcanoArchitecture() {
         <NoisyCylinder key={`stal-${i}`} args={[0.02, 0.08, 0.4, 6]} position={[x, ROOM_H - 0.15, -1 + i * 0.8]} color="#5D4037" seed={1320 + i} />
       ))}
       <NoisyCylinder args={[0.2, 0.25, ROOM_H, 8]} position={[ROOM_W / 2 - 0.5, ROOM_H / 2, -ROOM_D / 2 + 0.5]} color="#3E2723" seed={1340} />
+      {/* VoxelGridフィギュア+文字ブロック */}
+      <VoxelFigurineModel position={[-1, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#FF6D00" seed={10001} scale={0.8} />
+      <VoxelFigurineModel position={[-0.8, 1.5, -ROOM_D / 2 + 0.25]} baseColor="#4E342E" seed={10002} scale={0.8} />
+      <VoxelLetterBlockModel position={[1, 1.5, -ROOM_D / 2 + 0.25]} letter="K" blockColor="#FF8F00" seed={10010} />
+      <VoxelDoorModel position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#3E2723" frameColor="#4E342E" seed={10100} voxelSize={0.09} />
+      {/* 追加棚 */}
+      <WallShelfWithItems position={[1, 2, -ROOM_D / 2 + 0.2]} shelfColor="#4E342E" itemColors={['#FF6D00', '#FF8F00', '#B71C1C', '#FFD54F', '#795548']} />
+      <WallShelfWithItems position={[-3, 2, -ROOM_D / 2 + 0.2]} shelfColor="#3E2723" itemColors={['#D32F2F', '#FF5722', '#BF360C', '#E65100']} />
     </group>
   );
 }
