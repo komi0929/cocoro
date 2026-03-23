@@ -213,7 +213,7 @@ export function AjitRoom() {
       <mesh position={[0, ROOM_H * 0.2, -ROOM_D / 2]} receiveShadow>
         <boxGeometry args={[ROOM_W, ROOM_H * 0.4, 0.16]} />
         <meshStandardMaterial
-          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.12, -0.22); return '#' + c.getHexString(); })()}
           roughness={0.7}
           metalness={0.05}
         />
@@ -252,7 +252,7 @@ export function AjitRoom() {
       <mesh position={[-ROOM_W / 2, ROOM_H * 0.2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <boxGeometry args={[ROOM_D, ROOM_H * 0.4, 0.16]} />
         <meshStandardMaterial
-          color={(() => { const c = new THREE.Color(theme.wallColor); c.multiplyScalar(0.55); return '#' + c.getHexString(); })()}
+          color={(() => { const c = new THREE.Color(theme.wallColor); c.offsetHSL(0, 0.12, -0.22); return '#' + c.getHexString(); })()}
           roughness={0.7}
           metalness={0.05}
         />
