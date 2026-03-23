@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import type { RoomTheme } from '@/types/cocoro';
 import { NoisyBox, NoisyCylinder, NoisySphere, EmissiveBox } from './furniture/VoxelBuilder';
+import { VoxelDoorModel, VoxelFigurineModel, VoxelLetterBlockModel } from './voxel/VoxelAssets';
 
 const ROOM_W = 8;
 const ROOM_D = 8;
@@ -284,6 +285,13 @@ function TreehouseArchitecture() {
       <WallShelfWithItems position={[2.5, 2.5, -ROOM_D / 2 + 0.2]} shelfColor="#78350f" itemColors={['#FFD700', '#4CAF50', '#FF9800', '#E91E63', '#2196F3']} />
       <WallShelfWithItems position={[2.5, 1.5, -ROOM_D / 2 + 0.2]} shelfColor="#78350f" itemColors={['#8BC34A', '#FF5722', '#3F51B5', '#9C27B0']} />
       <WallFrame position={[1.5, 2.4, -ROOM_D / 2 + 0.15]} frameColor="#5C3A1E" innerColor="#87CEEB" size={[0.5, 0.35]} />
+      {/* VoxelGridフィギュア */}
+      <VoxelFigurineModel position={[0.7, 2.35, -ROOM_D / 2 + 0.25]} baseColor="#4CAF50" seed={3001} scale={0.8} />
+      <VoxelFigurineModel position={[0.9, 2.35, -ROOM_D / 2 + 0.25]} baseColor="#FF6B6B" seed={3002} scale={0.8} />
+      <VoxelFigurineModel position={[0.3, 2.35, -ROOM_D / 2 + 0.25]} baseColor="#4FC3F7" seed={3003} scale={0.8} />
+      <VoxelLetterBlockModel position={[2.7, 2.65, -ROOM_D / 2 + 0.25]} letter="A" blockColor="#FF0000" seed={3010} />
+      <VoxelLetterBlockModel position={[2.9, 2.65, -ROOM_D / 2 + 0.25]} letter="B" blockColor="#00AA00" seed={3011} />
+      <VoxelLetterBlockModel position={[3.1, 2.65, -ROOM_D / 2 + 0.25]} letter="C" blockColor="#0000FF" seed={3012} />
     </group>
   );
 }
