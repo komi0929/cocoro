@@ -237,7 +237,8 @@ function ThemeWindow({
 function UndergroundArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#4a3728" frameColor="#5C4033" knobColor="#8B7355" style="arch" />
+      {/* VoxelDoorModel\u306b\u7f6e\u63db\u6e08\u307f */}
+
       <PendantCeilingLight position={[-1.5, ROOM_H, -1.5]} lampColor="#8B7355" emissiveColor="#FFB347" intensity={1.5} shape="lantern" />
       <PendantCeilingLight position={[1.5, ROOM_H, 1.5]} lampColor="#8B7355" emissiveColor="#FFB347" intensity={1.2} shape="lantern" />
       {/* 壁掛けトーチ */}
@@ -274,7 +275,7 @@ function UndergroundArchitecture() {
 function TreehouseArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#8B6914" frameColor="#5C3A1E" knobColor="#FFD700" style="standard" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#228B22" emissiveColor="#AAFF77" intensity={1.5} shape="dome" />
       <PendantCeilingLight position={[-2, ROOM_H, -2]} lampColor="#3CB371" emissiveColor="#77FF99" intensity={0.8} shape="crystal" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 0]} rotation={[0, -Math.PI / 2, 0]} frameColor="#5C3A1E" glassColor="#87CEEB" shape="round" glowColor="#AAFF77" />
@@ -306,7 +307,7 @@ function TreehouseArchitecture() {
 function BeachArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[0, 0, -ROOM_D / 2 + 0.2]} doorColor="#D4A574" frameColor="#8B6914" knobColor="#C0C0C0" style="standard" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#F5F0E0" emissiveColor="#FFE4B5" intensity={2} shape="dome" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, -1]} rotation={[0, -Math.PI / 2, 0]} frameColor="#F5F0E0" glassColor="#87CEEB" shape="rect" glowColor="#87CEEB" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 1.5]} rotation={[0, -Math.PI / 2, 0]} frameColor="#F5F0E0" glassColor="#87CEEB" shape="rect" glowColor="#87CEEB" />
@@ -334,7 +335,7 @@ function BeachArchitecture() {
 function SpaceArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#778899" frameColor="#555555" knobColor="#00BFFF" style="hatch" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[-1.5, ROOM_H, -1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[1.5, ROOM_H, 1.5]} lampColor="#444444" cordColor="#555555" emissiveColor="#00BFFF" intensity={1.5} shape="industrial" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, 0]} rotation={[0, -Math.PI / 2, 0]} frameColor="#555555" glassColor="#0D1B2A" shape="porthole" glowColor="#4FC3F7" />
@@ -364,7 +365,7 @@ function SpaceArchitecture() {
 function RooftopArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2.5, 0, -ROOM_D / 2 + 0.2]} doorColor="#78909C" frameColor="#546E7A" knobColor="#FFD54F" style="standard" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#37474F" cordColor="#455A64" emissiveColor="#FFE082" intensity={2} shape="cage" />
       <PendantCeilingLight position={[-2.5, ROOM_H, 2]} lampColor="#37474F" cordColor="#455A64" emissiveColor="#FFE082" intensity={1} shape="industrial" />
       {/* フェンス */}
@@ -388,7 +389,7 @@ function RooftopArchitecture() {
 function RetroGamingArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-3, 0, -ROOM_D / 2 + 0.2]} doorColor="#C8976B" frameColor="#8B6914" knobColor="#f472b6" style="standard" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#1e1b4b" emissiveColor="#f472b6" intensity={1.5} shape="industrial" />
       <PendantCeilingLight position={[-2, ROOM_H, -2]} lampColor="#1e1b4b" emissiveColor="#67e8f9" intensity={1} shape="cage" />
       <WallFrame position={[-1, 2.2, -ROOM_D / 2 + 0.1]} frameColor="#312e81" innerColor="#7c3aed" size={[0.5, 0.7]} />
@@ -417,7 +418,7 @@ function RetroGamingArchitecture() {
 function AquariumArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[2, 0, -ROOM_D / 2 + 0.2]} doorColor="#5A7A9C" frameColor="#2A5A8C" knobColor="#C0C0C0" style="hatch" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[0, ROOM_H, 0]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={1.5} shape="crystal" />
       <PendantCeilingLight position={[-2, ROOM_H, 2]} lampColor="#4FC3F7" emissiveColor="#80DEEA" intensity={0.8} shape="crystal" />
       <ThemeWindow position={[ROOM_W / 2 - 0.08, 2, -1]} rotation={[0, -Math.PI / 2, 0]} frameColor="#2A5A8C" glassColor="#0D47A1" shape="porthole" glowColor="#4FC3F7" />
@@ -437,7 +438,7 @@ function AquariumArchitecture() {
 function VolcanoArchitecture() {
   return (
     <group>
-      <ThemeDoor position={[-2, 0, -ROOM_D / 2 + 0.2]} doorColor="#3E2723" frameColor="#4E342E" knobColor="#FF8F00" style="arch" />
+      {/* VoxelDoorModelに置換済み */}
       <PendantCeilingLight position={[-1, ROOM_H, -1]} lampColor="#4E342E" emissiveColor="#FF6D00" intensity={2} shape="lantern" />
       <PendantCeilingLight position={[1, ROOM_H, 1]} lampColor="#4E342E" emissiveColor="#FF6D00" intensity={2} shape="lantern" />
       {/* 壁トーチ */}
