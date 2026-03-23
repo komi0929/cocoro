@@ -507,35 +507,26 @@ function TreehouseDecorations() {
         </group>
       ))}
 
-      {/* Leaf clusters (NoisyBox) */}
+      {/* Leaf clusters — 壁/枝の接合部に自然に配置 */}
       {[
-        [-2, 2.8, -2, 0.25], [1, 3, 0, 0.3], [-1, ROOM_H - 0.2, 2, 0.22],
-        [3, 2.5, -1, 0.2], [-3, 2.2, 1.5, 0.28], [0, ROOM_H, -3, 0.18],
-        [2, 2.6, 2.5, 0.2], [-1.5, 2.5, -3, 0.15], [3.5, 2.8, 0.5, 0.22],
+        [-ROOM_W / 2 + 0.3, 2.6, -2, 0.2], [-ROOM_W / 2 + 0.3, 2.0, 1, 0.22],
+        [ROOM_W / 2 - 0.3, 2.0, 0.5, 0.18], [ROOM_W / 2 - 0.3, 2.5, -1.5, 0.2],
       ].map(([x, y, z, size], i) => (
         <group key={`leaf-cluster-${i}`} position={[x!, y!, z!]}>
-          <NoisyBox size={[size!, size! * 0.8, size!]} position={[0, 0, 0]}
-            color={['#228B22', '#2E8B57', '#32CD32', '#1B5E20', '#4CAF50', '#388E3C'][i % 6]!}
+          <NoisyBox size={[size!, size! * 0.7, size!]} position={[0, 0, 0]}
+            color={['#228B22', '#2E8B57', '#4CAF50', '#1B5E20'][i % 4]!}
             roughness={0.88} seed={3210 + i} bevel={0.02} lightnessSpread={0.2} />
-          {[0, 1, 2, 3].map(j => {
-            const a = j * Math.PI / 2;
-            return (
-              <NoisyBox key={`lsub-${j}`}
-                size={[size! * 0.5, size! * 0.4, size! * 0.5]}
-                position={[Math.cos(a) * size! * 0.5, (j % 2 === 0 ? 0.03 : -0.03), Math.sin(a) * size! * 0.5]}
-                color={j % 2 === 0 ? '#2E7D32' : '#43A047'}
-                roughness={0.85} seed={3210 + i * 4 + j + 50} bevel={0.015} />
-            );
-          })}
+          <NoisyBox size={[size! * 0.6, size! * 0.5, size! * 0.6]}
+            position={[size! * 0.3, -0.02, size! * 0.2]}
+            color={i % 2 === 0 ? '#2E7D32' : '#43A047'}
+            roughness={0.85} seed={3250 + i} bevel={0.015} />
         </group>
       ))}
 
-      {/* VoxelGrid Mushrooms */}
-      <VoxelMushroomModel position={[-2, 0, 1]} scale={0.5} seed={6001} />
-      <VoxelMushroomModel position={[1, 0, 3]} scale={0.6} seed={6002} />
-      <VoxelMushroomModel position={[-3, 0, -2]} scale={0.4} seed={6003} />
-      <VoxelMushroomModel position={[0.5, 0, -1.5]} scale={0.35} seed={6004} />
-      <VoxelMushroomModel position={[3, 0, -0.5]} scale={0.45} seed={6005} />
+      {/* VoxelGrid Mushrooms — 壁際にまとめて配置 */}
+      <VoxelMushroomModel position={[-ROOM_W / 2 + 0.8, 0, 2.5]} scale={0.6} seed={6001} />
+      <VoxelMushroomModel position={[-ROOM_W / 2 + 1.2, 0, 2.8]} scale={0.45} seed={6002} />
+      <VoxelMushroomModel position={[ROOM_W / 2 - 0.8, 0, -2.5]} scale={0.5} seed={6003} />
 
       {/* Lantern */}
       <group position={[0, 2.2, 0]}>
@@ -616,11 +607,11 @@ function TreehouseDecorations() {
         <NoisyCylinder args={[0.012, 0.01, 0.25]} position={[0, 0.27, 0]} color="#228B22" roughness={0.8} seed={6711} />
         <NoisySphere args={[0.06, 8, 6]} position={[0, 0.42, 0]} color="#81C784" roughness={0.7} seed={6712} />
       </group>
-      {/* 8-11. Blocks, book, bottles, cubes */}
-      <group position={[-2.5, 0, 2.5]}>
-        {['#E74C3C', '#3498DB', '#F1C40F', '#2ECC71', '#9B59B6'].map((c, i) => (
+      {/* 8. 積み木ブロック — 棚の近くにまとめて */}
+      <group position={[ROOM_W / 2 - 1.5, 0, -ROOM_D / 2 + 0.5]}>
+        {['#E74C3C', '#3498DB', '#F1C40F', '#2ECC71'].map((c, i) => (
           <NoisyBox key={`blk-${i}`} size={[0.12, 0.12, 0.12]}
-            position={[(i % 2) * 0.13, i < 2 ? 0.06 : 0.18, i > 2 ? 0.1 : 0]}
+            position={[(i % 2) * 0.14, Math.floor(i / 2) * 0.13 + 0.06, 0]}
             color={c} roughness={0.5} seed={6800 + i} bevel={0.01} />
         ))}
       </group>
@@ -1379,17 +1370,19 @@ function SpaceDecorations() {
         <EmissiveBox size={[0.015, 0.015, 0.02]} position={[0, 0.04, -0.14]} color="#22d3ee" emissiveIntensity={1.5} />
       </group>
 
-      {/* Hologram planet (kept, enhanced with ring) */}
-      <mesh ref={holoRef} position={[0, 1.5, 0]}>
-        <sphereGeometry args={[0.3, 24, 16]} />
-        <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1} transparent opacity={0.35} wireframe />
-      </mesh>
-      {/* Planet ring */}
-      <mesh position={[0, 1.5, 0]} rotation={[0.3, 0, 0.2]}>
-        <torusGeometry args={[0.45, 0.015, 8, 32]} />
-        <meshStandardMaterial color="#a78bfa" emissive="#a78bfa" emissiveIntensity={1} transparent opacity={0.4} />
-      </mesh>
-      <pointLight position={[0, 1.5, 0]} color="#22d3ee" intensity={0.8} distance={3} decay={2} />
+      {/* Hologram planet — 壁沿いの小型ホログラムディスプレイ */}
+      <group position={[-2, 2.5, -ROOM_D / 2 + 0.5]}>
+        <mesh ref={holoRef}>
+          <sphereGeometry args={[0.15, 16, 12]} />
+          <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.6} transparent opacity={0.25} wireframe />
+        </mesh>
+        {/* Planet ring */}
+        <mesh rotation={[0.3, 0, 0.2]}>
+          <torusGeometry args={[0.22, 0.008, 8, 24]} />
+          <meshStandardMaterial color="#a78bfa" emissive="#a78bfa" emissiveIntensity={0.6} transparent opacity={0.3} />
+        </mesh>
+        <pointLight color="#22d3ee" intensity={0.4} distance={2} decay={2} />
+      </group>
 
       {/* VoxelGrid Console (kept) */}
       <VoxelSpaceConsoleModel position={[-ROOM_W / 2 + 0.5, 0, -2]} rotation={[0, Math.PI / 2, 0]} scale={0.8} seed={8001} />
