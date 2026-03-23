@@ -2,6 +2,7 @@
  * VoxelAudit — 3Dポリゴン量産エンジン品質監査ページ
  *
  * 全カテゴリのモデルを一覧表示し、品質確認と承認を行う。
+ * 品質ゲート（qualityGate）で自動チェックし、基準未達モデルを可視化。
  * URLパラメータ ?audit=voxel でアクセス。
  *
  * WebGLコンテキスト管理:
@@ -36,6 +37,8 @@ import {
   generateSeaweed, generateBuilding, generateWaterTower,
   generateSpaceConsole, generateTreasureChest, generateJellyfish
 } from './VoxelModels';
+import { qualityGate, type QualityGateResult } from './VoxelEngine';
+import { CATALOG } from './VoxelCatalog';
 
 const MAX_ACTIVE_CANVASES = 8;
 
@@ -44,6 +47,7 @@ type ModelDef = {
   fn: (seed: number) => VoxelData;
   voxelSize: number; emissive?: boolean;
   rank: 'S' | 'A' | 'B' | 'C';
+  gateResult?: QualityGateResult;
 };
 
 const ALL_MODELS: ModelDef[] = [
@@ -164,11 +168,14 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
   let voxelCount = 0;
   if (data) { for (const layer of data) { for (const row of layer) { for (const v of row) { if (v) voxelCount++; } } } }
 
+  const gate = model.gateResult;
+
   return (
-    <div ref={ref} style={S.card}>
+    <div ref={ref} style={{ ...S.card, borderColor: gate ? (gate.passed ? '#4CAF50' : '#F44336') : '#1e1e3a' }}>
       <div style={S.cardHeader}>
         <span style={S.cardName}>{model.name}</span>
         <span style={{ ...S.badge, background: rankColors[model.rank] ?? '#888' }}>{model.rank}</span>
+        {gate && <span style={{ ...S.badge, background: gate.passed ? '#4CAF50' : '#F44336', fontSize: 10 }}>{gate.score}点</span>}
         <span style={S.catBadge}>{model.category}</span>
         {voxelCount > 0 && <span style={{ fontSize: 10, color: '#555' }}>{voxelCount.toLocaleString()} voxels</span>}
       </div>
@@ -194,6 +201,18 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
           </div>
         )}
       </div>
+      {/* 品質ゲートチェック結果 */}
+      {gate && (
+        <div style={{ padding: '6px 8px', fontSize: 11, borderTop: '1px solid #1e1e3a' }}>
+          {gate.checks.map((c, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+              <span>{c.passed ? '✅' : '❌'}</span>
+              <span style={{ color: c.passed ? '#4CAF50' : '#F44336', fontWeight: 600 }}>{c.name}</span>
+              <span style={{ color: '#666', flex: 1 }}>{c.detail}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={S.seedRow}>
         <span style={{ fontSize: 11, color: '#666' }}>Seed: {seed}</span>
         <button onClick={() => onSeedChange(seed + 1)} style={S.btn}>+1</button>
@@ -206,10 +225,26 @@ function ModelCard({ model, seed, onSeedChange }: { model: ModelDef; seed: numbe
 export function VoxelAuditPage() {
   const [filter, setFilter] = useState('アバター');
   const [seeds, setSeeds] = useState<Record<string, number>>({});
-  const categories = ['全て', 'アバター', '家具', '環境', '旧モデル'];
-  const filtered = filter === '全て' ? ALL_MODELS : ALL_MODELS.filter(m => m.category === filter);
+  const categories = ['全て', 'アバター', '家具', '環境', '旧モデル', '🔍 カタログ品質'];
   const getSeed = useCallback((id: string) => seeds[id] ?? 42, [seeds]);
   const setSeed = useCallback((id: string, s: number) => setSeeds(p => ({ ...p, [id]: s })), []);
+
+  // カタログモデルの品質ゲート結果
+  const catalogModels = useMemo(() => CATALOG.map(cfg => {
+    const gate = qualityGate(cfg);
+    return {
+      id: `cat-${cfg.id}`,
+      name: `📐 ${cfg.name}`,
+      category: '🔍 カタログ品質',
+      fn: (_s: number) => { const { buildModel } = require('./VoxelEngine'); return buildModel(cfg, _s); },
+      voxelSize: cfg.renderDefaults?.voxelSize ?? 0.06,
+      rank: gate.suggestedRank,
+      gateResult: gate,
+    } as ModelDef;
+  }), []);
+
+  const allModels = useMemo(() => [...ALL_MODELS, ...catalogModels], [catalogModels]);
+  const filtered = filter === '全て' ? allModels : allModels.filter(m => m.category === filter);
 
   // カテゴリ切り替え時にすべてのスロットを解放
   useEffect(() => {
@@ -222,13 +257,23 @@ export function VoxelAuditPage() {
     furniture: ALL_MODELS.filter(m => m.category === '家具').length,
     env: ALL_MODELS.filter(m => m.category === '環境').length,
     old: ALL_MODELS.filter(m => m.category === '旧モデル').length,
+    catalog: catalogModels.length,
   };
+
+  // 品質ゲート集計
+  const gatePass = catalogModels.filter(m => m.gateResult?.passed).length;
+  const gateFail = catalogModels.filter(m => m.gateResult && !m.gateResult.passed).length;
 
   return (
     <div style={S.page}>
       <header style={S.header}>
         <h1 style={S.title}>🔧 ボクセル量産エンジン — 品質監査</h1>
-        <p style={S.sub}>アバター {counts.avatar} / 家具 {counts.furniture} / 環境 {counts.env} / 旧 {counts.old} = 計 {ALL_MODELS.length} モデル</p>
+        <p style={S.sub}>アバター {counts.avatar} / 家具 {counts.furniture} / 環境 {counts.env} / 旧 {counts.old} / カタログ {counts.catalog} = 計 {allModels.length} モデル</p>
+        {/* 品質ゲート集計 */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 8 }}>
+          <span style={{ color: '#4CAF50', fontWeight: 700, fontSize: 14 }}>✅ 品質通過: {gatePass}</span>
+          {gateFail > 0 && <span style={{ color: '#F44336', fontWeight: 700, fontSize: 14 }}>❌ 品質不足: {gateFail}</span>}
+        </div>
         <div style={S.filterBar}>
           {categories.map(c => (
             <button key={c} onClick={() => setFilter(c)} style={filter === c ? S.filterOn : S.filterOff}>{c}</button>

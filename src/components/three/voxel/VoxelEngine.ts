@@ -399,13 +399,157 @@ class VoxelModelRegistry {
   auditReport(): Array<{
     id: string; name: string; category: string;
     gridSize: [number, number, number]; quality?: ModelConfig['quality'];
+    gateResult: QualityGateResult;
   }> {
     return this.list().map(m => ({
       id: m.id, name: m.name, category: m.category,
       gridSize: m.gridSize, quality: m.quality,
+      gateResult: qualityGate(m),
     }));
   }
 }
 
 /** シングルトンレジストリ */
 export const voxelRegistry = new VoxelModelRegistry();
+
+// ============================================================
+// 品質ゲート（自動品質チェック）
+// ============================================================
+
+/** 高品質プリミティブの一覧 */
+const HIGH_QUALITY_OPS = new Set([
+  'rounded_box', 'gradient_ellipsoid', 'noisy_sphere',
+  'organic_roots', 'kawaii_face', 'noisy_fill',
+  'highlight', 'shade_gradient',
+]);
+
+/** カテゴリ別の最小グリッド密度 */
+const MIN_GRID_VOLUME: Record<string, number> = {
+  avatar: 16 * 14 * 8,      // 1792
+  decoration: 14 * 14 * 14,  // 2744
+  furniture: 10 * 6 * 6,     // 360
+  environment: 20 * 20 * 20, // 8000
+  item: 8 * 8 * 8,           // 512
+};
+
+/** カテゴリ別に推奨される高品質プリミティブの最低使用数 */
+const MIN_HQ_OPS: Record<string, number> = {
+  avatar: 2,      // kawaii_face + noisy_fill or gradient
+  decoration: 1,  // noisy_sphere or gradient
+  furniture: 1,   // rounded_box or noisy_fill
+  environment: 2, // noisy_sphere + organic_roots or gradient
+  item: 1,        // rounded_box or highlight
+};
+
+export interface QualityGateResult {
+  passed: boolean;
+  score: number;           // 0-100
+  suggestedRank: 'S' | 'A' | 'B' | 'C';
+  checks: QualityCheck[];
+}
+
+interface QualityCheck {
+  name: string;
+  passed: boolean;
+  detail: string;
+}
+
+/** ModelConfigの品質を自動チェック */
+export function qualityGate(config: ModelConfig): QualityGateResult {
+  const checks: QualityCheck[] = [];
+  let score = 0;
+
+  // 1. グリッドサイズチェック
+  const [sx, sy, sz] = config.gridSize;
+  const volume = sx * sy * sz;
+  const minVol = MIN_GRID_VOLUME[config.category] ?? 512;
+  const gridPass = volume >= minVol;
+  checks.push({
+    name: 'グリッド密度',
+    passed: gridPass,
+    detail: gridPass
+      ? `${volume.toLocaleString()} voxels (最小: ${minVol.toLocaleString()})`
+      : `不足: ${volume.toLocaleString()} < ${minVol.toLocaleString()}`,
+  });
+  if (gridPass) score += 20;
+
+  // 2. 高品質プリミティブ使用チェック
+  function countHQOps(ops: PrimitiveOp[]): number {
+    let c = 0;
+    for (const op of ops) {
+      if (HIGH_QUALITY_OPS.has(op.type)) c++;
+      if (op.type === 'repeat') c += countHQOps([op.op]);
+    }
+    return c;
+  }
+  const hqCount = countHQOps(config.operations);
+  const minHQ = MIN_HQ_OPS[config.category] ?? 1;
+  const hqPass = hqCount >= minHQ;
+  checks.push({
+    name: '高品質プリミティブ',
+    passed: hqPass,
+    detail: hqPass
+      ? `${hqCount}種使用 (最小: ${minHQ})`
+      : `不足: ${hqCount} < ${minHQ} — rounded_box/gradient_ellipsoid/noisy_sphere等を使用してください`,
+  });
+  if (hqPass) score += 30;
+
+  // 3. パレット数チェック（色の豊富さ）
+  const palCount = config.palettes?.length ?? 0;
+  const palPass = palCount >= 2;
+  checks.push({
+    name: 'カラーパレット',
+    passed: palPass,
+    detail: palPass
+      ? `${palCount}パレット定義`
+      : `不足: ${palCount} — 最低2パレット必要（ベース色+ディテール色）`,
+  });
+  if (palPass) score += 15;
+
+  // 4. 操作数チェック（ディテールの量）
+  const opCount = config.operations.length;
+  const opPass = opCount >= 5;
+  checks.push({
+    name: 'ディテール量',
+    passed: opPass,
+    detail: opPass
+      ? `${opCount}操作 — 十分なディテール`
+      : `不足: ${opCount} < 5 — 操作を追加してディテールを増やしてください`,
+  });
+  if (opPass) score += 15;
+
+  // 5. ランダム操作チェック（自然な変化の有無）
+  const hasRandom = (config.randomOperations?.length ?? 0) > 0 ||
+    config.operations.some(op => op.type === 'scatter' || op.type === 'noisy_sphere' || op.type === 'noisy_fill');
+  checks.push({
+    name: 'ランダム変化',
+    passed: hasRandom,
+    detail: hasRandom
+      ? 'ノイズ/散布操作あり — 自然な変化'
+      : 'なし — scatter/noisy_sphere/noisy_fill等を追加して自然な表面を',
+  });
+  if (hasRandom) score += 10;
+
+  // 6. レンダリング設定チェック
+  const hasAO = config.renderDefaults?.enableAO === true;
+  checks.push({
+    name: 'AO (アンビエントオクルージョン)',
+    passed: hasAO,
+    detail: hasAO ? 'AO有効' : 'AO無効 — enableAO: true にして奥行き感を',
+  });
+  if (hasAO) score += 10;
+
+  // ランク判定
+  let suggestedRank: 'S' | 'A' | 'B' | 'C';
+  if (score >= 90) suggestedRank = 'S';
+  else if (score >= 70) suggestedRank = 'A';
+  else if (score >= 40) suggestedRank = 'B';
+  else suggestedRank = 'C';
+
+  return {
+    passed: score >= 70,
+    score,
+    suggestedRank,
+    checks,
+  };
+}
