@@ -10,9 +10,10 @@ import React, { Suspense, useMemo } from 'react';
 import type { FurnitureItem } from '@/types/cocoro';
 import { VoxelGrid, type VoxelData } from '../voxel/VoxelGrid';
 import { FURNITURE_GENERATOR_MAP } from '../voxel/VoxelFurniture';
+import { ensureQuality } from '../voxel/VoxelEngine';
 
 // ============================================================
-// 量産エンジン家具 — VoxelGrid ベースレンダリング
+// 量産エンジン家具 — VoxelGrid ベースレンダリング（品質ゲート適用）
 // FURNITURE_GENERATOR_MAP に登録された全家具が自動的に使用される
 // ============================================================
 
@@ -30,11 +31,12 @@ function estimateVoxelSize(data: VoxelData): number {
   return 0.025;
 }
 
-/** 量産エンジン家具をVoxelGridで描画するコンポーネント */
+/** 量産エンジン家具をVoxelGridで描画（品質ゲート適用） */
 function EngineRenderedFurniture({ furnitureId }: { furnitureId: string }) {
   const data = useMemo(() => {
     const gen = FURNITURE_GENERATOR_MAP[furnitureId];
-    return gen ? gen() : null;
+    if (!gen) return null;
+    return ensureQuality(() => gen(), 'furniture');
   }, [furnitureId]);
 
   if (!data) return null;

@@ -11,10 +11,11 @@ import * as THREE from 'three';
 import type { AvatarConfig, FurnitureActionType } from '@/types/cocoro';
 import { VoxelGrid } from '../voxel/VoxelGrid';
 import { generateCubicAvatar } from '../voxel/VoxelAvatars';
+import { ensureQuality } from '../voxel/VoxelEngine';
 import { VoxelItem } from './VoxelItems';
 
 // ============================================================
-// Main Component — 量産エンジン直結
+// Main Component — 量産エンジン直結（品質ゲート適用）
 // ============================================================
 
 export interface VoxelAvatarProps {
@@ -38,8 +39,11 @@ export function VoxelAvatar({
 
   const { species, item } = config;
 
-  // 量産エンジンからボクセルデータを生成
-  const voxelData = useMemo(() => generateCubicAvatar(species), [species]);
+  // 量産エンジンからボクセルデータを生成（品質ゲート適用）
+  const voxelData = useMemo(
+    () => ensureQuality((s) => generateCubicAvatar(species, {}, s), 'avatar'),
+    [species],
+  );
 
   // Animation frame
   useFrame(({ clock }) => {
