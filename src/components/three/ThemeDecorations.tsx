@@ -427,9 +427,9 @@ function LoftDecorations() {
 
       {/* === 8-11: 共通小物（ブロック、本、ポーション、キューブ） === */}
       <group position={[-2.5, 0, 2.5]}>
-        {['#E74C3C', '#3498DB', '#F1C40F', '#2ECC71', '#9B59B6', '#E74C3C'].map((c, i) => (
+        {['#E74C3C', '#3498DB', '#F1C40F'].map((c, i) => (
           <NoisyBox key={`blk-${i}`} size={[0.12, 0.12, 0.12]}
-            position={[i < 4 ? (i % 2) * 0.13 : i === 4 ? 0.4 : -0.2, i < 2 ? 0.06 : i < 4 ? 0.18 : 0.06, i > 3 ? i * 0.06 : (i > 2 ? 0.05 : 0)]}
+            position={[(i % 2) * 0.13, i < 2 ? 0.06 : 0.18, i > 1 ? 0.05 : 0]}
             color={c} roughness={0.5} seed={5800 + i} bevel={0.01} />
         ))}
       </group>
