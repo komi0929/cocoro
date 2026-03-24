@@ -917,23 +917,32 @@ export function generateDoor(doorColor: string, frameColor: string, seed: number
     }
   }
 
-  // ドア本体 (木目色)
+  // ドア本体 (木目色) — 全レイヤー(z=0〜3)
   for (let x = 2; x < 12; x++) {
     for (let y = 0; y < 23; y++) {
-      const woodVariant = lerpColor(doorColor, DOOR_WOOD[Math.abs(x * 7 + y * 3 + seed) % DOOR_WOOD.length]!, 0.15 + rand() * 0.1);
-      setVoxel(grid, x, y, 1, woodVariant);
-      setVoxel(grid, x, y, 2, woodVariant);
+      const woodVariant = lerpColor(doorColor, DOOR_WOOD[Math.abs(x * 7 + y * 3 + seed) % DOOR_WOOD.length]!, 0.4 + rand() * 0.1);
+      for (let z = 0; z < 4; z++) {
+        setVoxel(grid, x, y, z, woodVariant);
+      }
     }
   }
 
-  // パネル4枚 (凹み = 色を暗く)
-  const panelDark = (c: string) => lerpColor(c, '#000000', 0.2);
+  // 正面を明るく (z=3)
+  for (let x = 2; x < 12; x++) {
+    for (let y = 0; y < 23; y++) {
+      const brightWood = lerpColor(doorColor, '#E8C99B', 0.5);
+      setVoxel(grid, x, y, 3, brightWood);
+    }
+  }
+
+  // パネル4枚 (凹み = 色を少し暗く、正面z=3に配置)
+  const panelDark = (c: string) => lerpColor(c, '#5C3D1E', 0.3);
   // 上2パネル
-  for (let x = 3; x < 7; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
-  for (let x = 7; x < 11; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+  for (let x = 3; x < 7; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
+  for (let x = 7; x < 11; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
   // 下2パネル
-  for (let x = 3; x < 7; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
-  for (let x = 7; x < 11; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 2, panelDark(doorColor));
+  for (let x = 3; x < 7; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
+  for (let x = 7; x < 11; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
 
   // ドアノブ
   setVoxel(grid, 10, 11, 3, pick(KNOB_METAL, seed));
