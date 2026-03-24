@@ -94,7 +94,7 @@ export function VoxelAvatar({
 
   // voxelSize controls overall avatar scale in the scene
   // The avatar grid is ~18×26×14 voxels, at 0.05 each → ~0.9×1.3×0.7 world units
-  const voxelSize = 0.028;
+  const voxelSize = 0.04;
 
   return (
     <group ref={groupRef}>
