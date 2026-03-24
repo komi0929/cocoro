@@ -94,7 +94,7 @@ export function VoxelAvatar({
 
   // voxelSize controls overall avatar scale in the scene
   // The avatar grid is ~18×26×14 voxels, at 0.05 each → ~0.9×1.3×0.7 world units
-  const voxelSize = 0.05;
+  const voxelSize = 0.035;
 
   return (
     <group ref={groupRef}>
@@ -102,7 +102,7 @@ export function VoxelAvatar({
         data={voxelData}
         voxelSize={voxelSize}
         enableAO
-        aoIntensity={0.55}
+        aoIntensity={0.7}
         // Center the avatar: offset so feet are at y=0
         position={[
           -(voxelData[0]?.[0]?.length ?? 18) * voxelSize / 2,

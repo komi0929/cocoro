@@ -50,7 +50,7 @@ function EngineRenderedFurniture({ furnitureId }: { furnitureId: string }) {
       data={data}
       voxelSize={voxelSize}
       enableAO
-      aoIntensity={0.55}
+      aoIntensity={0.7}
       position={[-W * voxelSize / 2, 0, -D * voxelSize / 2]}
     />
   );

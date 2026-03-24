@@ -47,10 +47,10 @@ export function AjitRoom() {
       {/* ===== Main Ceiling Light ===== */}
       <pointLight
         position={[0, ROOM_H - 0.5, 0]}
-        intensity={theme.ambientIntensity > 0.6 ? 6 : 4}
-        color={theme.ambientIntensity > 0.6 ? '#FFF8E1' : '#fde68a'}
-        distance={10}
-        decay={2}
+        intensity={theme.ambientIntensity > 0.6 ? 10 : 8}
+        color="#FFE8C0"
+        distance={12}
+        decay={1.8}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
