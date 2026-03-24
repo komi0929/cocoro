@@ -57,11 +57,11 @@ function getColor(cell: string | VoxelBlock): string {
 }
 
 function getRoughness(cell: string | VoxelBlock): number {
-  return typeof cell === 'string' ? 0.75 : (cell.roughness ?? 0.75);
+  return typeof cell === 'string' ? 0.45 : (cell.roughness ?? 0.45);
 }
 
 function getMetalness(cell: string | VoxelBlock): number {
-  return typeof cell === 'string' ? 0.05 : (cell.metalness ?? 0.05);
+  return typeof cell === 'string' ? 0.1 : (cell.metalness ?? 0.1);
 }
 
 function getEmissive(cell: string | VoxelBlock): string {
