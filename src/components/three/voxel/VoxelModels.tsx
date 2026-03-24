@@ -917,32 +917,25 @@ export function generateDoor(doorColor: string, frameColor: string, seed: number
     }
   }
 
-  // ドア本体 (木目色) — 全レイヤー(z=0〜3)
+  // ドア本体 (明るい木目色) — 全レイヤー(z=0〜3)
+  const BRIGHT_WOOD = ['#D4A574', '#C8976B', '#DEB887', '#E8C99B', '#CDAA7D'];
   for (let x = 2; x < 12; x++) {
     for (let y = 0; y < 23; y++) {
-      const woodVariant = lerpColor(doorColor, DOOR_WOOD[Math.abs(x * 7 + y * 3 + seed) % DOOR_WOOD.length]!, 0.4 + rand() * 0.1);
+      const woodVariant = BRIGHT_WOOD[Math.abs(x * 7 + y * 3 + seed) % BRIGHT_WOOD.length]!;
       for (let z = 0; z < 4; z++) {
         setVoxel(grid, x, y, z, woodVariant);
       }
     }
   }
 
-  // 正面を明るく (z=3)
-  for (let x = 2; x < 12; x++) {
-    for (let y = 0; y < 23; y++) {
-      const brightWood = lerpColor(doorColor, '#E8C99B', 0.5);
-      setVoxel(grid, x, y, 3, brightWood);
-    }
-  }
-
-  // パネル4枚 (凹み = 色を少し暗く、正面z=3に配置)
-  const panelDark = (c: string) => lerpColor(c, '#5C3D1E', 0.3);
+  // パネル4枚 (少し暗い木目、正面z=3に配置)
+  const PANEL_WOOD = ['#B8875B', '#A87B55', '#9B7045', '#BE8D65'];
   // 上2パネル
-  for (let x = 3; x < 7; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
-  for (let x = 7; x < 11; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
+  for (let x = 3; x < 7; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, PANEL_WOOD[Math.abs(x + y + seed) % PANEL_WOOD.length]!);
+  for (let x = 7; x < 11; x++) for (let y = 14; y < 21; y++) setVoxel(grid, x, y, 3, PANEL_WOOD[Math.abs(x + y + seed) % PANEL_WOOD.length]!);
   // 下2パネル
-  for (let x = 3; x < 7; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
-  for (let x = 7; x < 11; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, panelDark(doorColor));
+  for (let x = 3; x < 7; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, PANEL_WOOD[Math.abs(x + y + seed) % PANEL_WOOD.length]!);
+  for (let x = 7; x < 11; x++) for (let y = 2; y < 12; y++) setVoxel(grid, x, y, 3, PANEL_WOOD[Math.abs(x + y + seed) % PANEL_WOOD.length]!);
 
   // ドアノブ
   setVoxel(grid, 10, 11, 3, pick(KNOB_METAL, seed));
