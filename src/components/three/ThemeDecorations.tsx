@@ -30,20 +30,6 @@ const ROOM_H = 3.5;
 function CommonRoomLayout() {
   return (
     <group>
-      {/* === 1. 大型額縁絵画（左壁 — NORTH_STAR_4の恐竜絵画に相当） === */}
-      <group position={[-ROOM_W / 2 + 0.14, 2.0, -0.5]} rotation={[0, Math.PI / 2, 0]}>
-        <NoisyBox size={[1.8, 1.3, 0.08]} color="#8B6914" roughness={0.55} seed={5100} bevel={0.018} />
-        <mesh position={[0, 0, 0.05]}><planeGeometry args={[1.55, 1.05]} /><meshStandardMaterial color="#87CEEB" /></mesh>
-        {/* Mountains */}
-        {[[-0.5, -0.1, 0.35, '#2E7D32'], [-0.15, -0.15, 0.45, '#388E3C'], [0.2, -0.1, 0.4, '#1B5E20'], [0.5, -0.15, 0.3, '#4CAF50']].map(([x, y, h, c], i) => (
-          <NoisyBox key={`mtn-${i}`} size={[0.3, h as number, 0.01]} position={[x as number, (y as number) + (h as number) / 2 - 0.15, 0.06]}
-            color={c as string} roughness={0.8} seed={5110 + i} bevel={0.004} />
-        ))}
-        {/* Sun */}
-        <mesh position={[0.55, 0.35, 0.06]}><sphereGeometry args={[0.08, 12, 8]} /><meshStandardMaterial color="#FFD54F" emissive="#FFD54F" emissiveIntensity={0.5} /></mesh>
-        {/* Ground */}
-        <NoisyBox size={[1.5, 0.2, 0.01]} position={[0, -0.35, 0.06]} color="#8D6E63" roughness={0.85} seed={5115} bevel={0.003} />
-      </group>
 
       {/* === 2. 本棚（左壁沿い — NORTH_STAR_4準拠） === */}
       <group position={[-ROOM_W / 2 + 0.25, 0, -1]}>

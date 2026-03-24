@@ -206,13 +206,25 @@ function buildVoxelMesh(data: VoxelData, voxelSize: number, enableAO: boolean, a
           const nz = z + face.dir[2];
           if (isBlock(getVoxel(data, nx, ny, nz))) continue;
 
-          // 4頂点追加
+          // 4頂点追加 (with inset for bevel/nanoblock effect)
+          const inset = voxelSize * 0.06; // 6% inset → subtle gap between blocks
           for (let vi = 0; vi < 4; vi++) {
             const corner = face.corners[vi]!;
+            // Apply inset: push each vertex slightly toward the center of the voxel
+            const cx = corner[0]! * voxelSize;
+            const cy = corner[1]! * voxelSize;
+            const cz = corner[2]! * voxelSize;
+            // Inset toward center (0.5 * voxelSize, 0.5 * voxelSize, 0.5 * voxelSize)
+            const centerX = 0.5 * voxelSize;
+            const centerY = 0.5 * voxelSize;
+            const centerZ = 0.5 * voxelSize;
+            const ix = cx + (centerX - cx) * (inset / (voxelSize * 0.5));
+            const iy = cy + (centerY - cy) * (inset / (voxelSize * 0.5));
+            const iz = cz + (centerZ - cz) * (inset / (voxelSize * 0.5));
             positions.push(
-              ox + corner[0]! * voxelSize,
-              oy + corner[1]! * voxelSize,
-              oz + corner[2]! * voxelSize,
+              ox + ix,
+              oy + iy,
+              oz + iz,
             );
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
 
