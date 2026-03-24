@@ -18,6 +18,7 @@
 import React from 'react';
 import type { RoomTheme } from '@/types/cocoro';
 import { NoisyBox, NoisyCylinder, NoisySphere, EmissiveBox } from './furniture/VoxelBuilder';
+import { VoxelFigurineModel, VoxelLetterBlockModel } from './voxel/VoxelAssets';
 
 const ROOM_W = 8;
 const ROOM_D = 8;
@@ -132,6 +133,33 @@ function CommonRoomLayout() {
         <NoisyBox size={[0.2, 0.01, 0.28]} position={[-0.1, 0.01, 0]} color="#FFF8DC" roughness={0.9} seed={5900} bevel={0.003} />
         <NoisyBox size={[0.2, 0.01, 0.28]} position={[0.1, 0.01, 0]} color="#FFF8DC" roughness={0.9} seed={5901} bevel={0.003} />
         <NoisyBox size={[0.02, 0.02, 0.28]} position={[0, 0.01, 0]} color="#8B0000" roughness={0.7} seed={5902} bevel={0.002} />
+      </group>
+
+      {/* === 9. 壁棚2段+フィギュア+文字ブロック（背面壁右側 — NORTH_STAR_4準拠） === */}
+      <group position={[2.5, 0, -ROOM_D / 2 + 0.25]}>
+        {/* Shelf 1 (lower) */}
+        <NoisyBox size={[1.4, 0.05, 0.3]} position={[0, 1.2, 0]} color="#654321" roughness={0.7} seed={6200} bevel={0.01} />
+        {/* Shelf brackets */}
+        <NoisyBox size={[0.06, 0.3, 0.04]} position={[-0.65, 1.35, 0.13]} color="#5C3D1E" roughness={0.75} seed={6202} bevel={0.008} />
+        <NoisyBox size={[0.06, 0.3, 0.04]} position={[0.65, 1.35, 0.13]} color="#5C3D1E" roughness={0.75} seed={6203} bevel={0.008} />
+        {/* Shelf 2 (upper) */}
+        <NoisyBox size={[1.4, 0.05, 0.3]} position={[0, 2.0, 0]} color="#654321" roughness={0.7} seed={6201} bevel={0.01} />
+        {/* Figurines on lower shelf */}
+        <VoxelFigurineModel position={[-0.35, 1.28, 0]} baseColor="#FF6B6B" seed={6220} scale={0.8} />
+        <VoxelFigurineModel position={[0, 1.28, 0]} baseColor="#4ECDC4" seed={6221} scale={0.8} />
+        <VoxelFigurineModel position={[0.3, 1.28, 0]} baseColor="#FFE66D" seed={6222} scale={0.8} />
+        {/* Letter blocks on upper shelf (A, B, C) */}
+        <VoxelLetterBlockModel position={[-0.3, 2.1, 0]} letter="A" blockColor="#E74C3C" seed={6230} />
+        <VoxelLetterBlockModel position={[0, 2.1, 0]} letter="B" blockColor="#3498DB" seed={6231} />
+        <VoxelLetterBlockModel position={[0.3, 2.1, 0]} letter="C" blockColor="#F1C40F" seed={6232} />
+      </group>
+
+      {/* === 10. ドア横の壁棚（背面壁左側 — NORTH_STAR_4準拠） === */}
+      <group position={[-0.5, 0, -ROOM_D / 2 + 0.25]}>
+        <NoisyBox size={[0.9, 0.05, 0.25]} position={[0, 1.5, 0]} color="#654321" roughness={0.7} seed={6300} bevel={0.01} />
+        <VoxelFigurineModel position={[-0.25, 1.58, 0]} baseColor="#FFD54F" seed={6310} scale={0.7} />
+        <VoxelFigurineModel position={[0, 1.58, 0]} baseColor="#81C784" seed={6311} scale={0.7} />
+        <VoxelFigurineModel position={[0.2, 1.58, 0]} baseColor="#FF8A80" seed={6312} scale={0.7} />
       </group>
     </group>
   );
